@@ -74,6 +74,124 @@
 - **fieldset**：未勾选时同步库表单控件的禁用状态，重新启用时恢复原有状态。
 - **fieldset**：初始化、折叠及展开时保留调用方的 height、overflow 和 !important 优先级。
 
+## [4.0.0] - 2026-10-04
+
+### 新增
+
+- **docs**: 支持组件源码自动更新并修复启动竞态 (b10dccd6)
+- **tooltip**: 添加主题适配的四向悬浮提示组件 (003329aa)
+- **docs**: 支持动态调整表格示例的容器宽度 (be0d3403)
+- **docs**: 为综合示例页添加右侧内容导航 (f66a63dc)
+- **docs**: 在导航栏统一管理全站主题与组件尺寸 (33c1d649)
+- **docs**: 添加综合工作台与全部组件体验总览 (1aed8a7e)
+- **docs**: 使用 Playground 统一全站主题并保留示例状态 (366d04e5)
+- **tab-header**: 支持自适应图标与图文显示设置 (339b397e)
+- **tabs**: 支持溢出菜单与隐藏标题激活 (a59de6d8)
+- **tabs**: 支持悬停覆盖式水平滚动条 (3cd554af)
+- **tabs**: 支持标题自适应换行与对齐设置 (74366d6e)
+- **fieldset**: add a checkbox that toggles the section content (c15ad8ca)
+- **tabs-group**: add a container for tabs groups with drag and drop (193e5002)
+- **fieldset**: match border radius to form control sizes (edde4034)
+- **fieldset**: support all themes with borderless inherited-background titles (4f4577ea)
+- **tabs**: support native tab and sidebar view drag and drop (7a111108)
+- **fieldset**: add native sidebar view component (3f26be6d)
+
+### 修复
+
+- **docs**: 综合示例导航标题添加组件名称 (56742714)
+- **tooltip**: 修复隐藏状态并保留元素引用描述 (0a4dadfe)
+- **fieldset**: 修复折叠定位、缩放和标题焦点 (d79f8af1)
+- **fieldset**: 保持标题背景透明并为复选框留出边框缺口 (a4f82bad)
+- **fieldset**: 统一标题背景并完善分区禁用与焦点行为 (7f1508e9)
+- **demo**: 避免下拉选项值作为 HTML 插入 (9f140352)
+- **fieldset**: 对齐复选框与标题布局 (9b5cfae8)
+- **multi-select**: 下拉全选跳过未选中的禁用项 (7eacd7b2)
+- **multi-select**: 同步选择状态与表单提交值 (c17a9715)
+- **textfield**: 避免文件选择后回写非空路径 (6a7c4b42)
+- **dev**: 恢复 playground 环境模拟与原有示例 (5f4233b7)
+- **vscode**: 禁用打开工作区时自动启动 Vite (7fa50bbf)
+- **vscode**: 禁用 Vite 扩展打开项目时自动启动 (2b37e2c4)
+- **tabs**: 换算缩放场景的标题滚动距离 (2c025064)
+- **tabs**: 刷新标题成员变化后的菜单索引 (8ef34dba)
+- **tabs**: 拖拽新组继承标题布局设置 (bc52397e)
+- **tabs**: 隐藏未溢出的滚动覆盖层 (bffde9d6)
+- **tabs**: 统一缩放场景的菜单容量尺寸 (fa37bd47)
+- **tabs**: 恢复布局变化关闭菜单后的焦点 (608b2181)
+- **tabs**: 校验菜单选择后的异步焦点目标 (00508831)
+- **tabs**: 禁用溢出按钮前恢复可见焦点 (875f93ea)
+- **tabs**: 禁止打开无可操作项的溢出菜单 (ca6d2cbb)
+- **context-menu**: 重置数据身份变化后的高亮 (c384308c)
+- **tabs**: 同步打开菜单的视口位置 (8eb6f268)
+- **tabs**: 阻止菜单激活禁用标题 (b8307f37)
+- **tabs**: 保留溢出期间更新的标题禁用状态 (2edb2f4e)
+- **build**: 从组件清单中排除浏览器测试工具 (7402cc1f)
+- **build**: 将生成的运行时辅助代码包含在模块包中 (54bacfe2)
+- **tabs**: 恢复溢出变化后的可见焦点入口 (cae4fee8)
+- **tabs**: 保留标题内交互控件的键盘行为 (848402da)
+- **context-menu**: 清理菜单关闭后的外部点击监听器 (c4cb1058)
+- **test**: 在用例结束时释放原生键盘状态 (dd6e525a)
+- **context-menu**: 修复键盘选择索引与溢出菜单激活 (ec34157b)
+- **test**: 等待真实动画结束再验证布局恢复 (7309f451)
+- **test**: 恢复浏览器测试焦点并隔离指针状态 (a0d10148)
+- **tabs**: 完善溢出边界与无障碍交互 (20803421)
+- **fieldset**: 保留拖拽自定义状态并修复嵌套禁用恢复 (2fd1fd01)
+- **release**: 使用中文生成变更日志和发布提交 (2e26a424)
+- **fieldset**: 修复禁用状态同步并保留布局样式 (76cb4c17)
+- **fieldset**: blend legends with the surface behind the border (688be496)
+- **dev**: redirect gallery directory URLs to index page (0781795f)
+- **dev**: synchronize fieldset radius with gallery size controls (ac8dd881)
+
+### 性能
+
+- **tabs**: 忽略面板内部的无关内容变更 (6d92a1b0)
+- **build**: 使用 Vite 内置压缩保持单文件包体积 (6d4436ad)
+
+### 变更
+
+- **docs**: 移除旧开发站点并统一文档入口 (30ce09d9)
+- **docs**: 移除尺寸下拉框的文字标签 (210bdf52)
+- **docs**: 移除主题下拉框的文字标签 (16874b4b)
+- **docs**: 直接展示组件场景并精简综合体验页 (9b19c43f)
+- **docs**: 迁移开发示例并移除旧开发站点 (46095da0)
+
+### 文档
+
+- **tabs**: 补齐综合页与组件页的新功能说明和示例 (17be34f3)
+- **components**: 补充全部组件的功能场景与交互验证 (1ffd093f)
+- **dev**: 移除标签溢出示例的选择末项按钮 (ade5eced)
+- **dev**: 添加综合页标签溢出交互示例 (c29d1d80)
+- **tabs**: 修正文档迁移后的拖拽说明路径 (ab6361a1)
+- **tooling**: 记录迁移验证结果并清理旧工具残留 (5deb7bed)
+- **components**: 补齐中文指南组件示例与源码 API (e9f045f9)
+- **tooling**: 更新 pnpm、Vite 和 Vitest 开发指南 (4584e9a0)
+- **tabs**: 将拖拽功能文档示例和注释统一为中文 (80cb4c5d)
+- **dev**: 将组件开发示例说明和标签改为中文 (37dd602a)
+- **comments**: 将组件源码与开发配置注释统一为中文 (d31a7851)
+- **changelog**: 将历史变更记录翻译为中文 (9aa85063)
+- **agents**: 添加中文 AI 开发指南并统一项目文档规范 (1b7a9d8a)
+- **fieldset**: add themed drag demos and bundled theme verification (25594c02)
+- **tabs**: add drag and drop demo and native pointer smoke test (abe83ad2)
+
+### 测试
+
+- **form-container**: 固定连续输入测试的倒计时 (aa30c74f)
+- **tooltip**: 等待可见状态消除 CI 调度竞态 (0c36f7c1)
+- **fieldset**: 更新主题验证中的焦点外框断言 (9e7e1721)
+- **fieldset**: 等待实际动画完成以稳定布局回归检查 (97c0502b)
+- **fieldset**: 等待实际动画完成再验证折叠状态 (94589163)
+- **docs**: 明确标签页拖拽排序的释放位置 (0df23d4b)
+- **docs**: 补充交互搜索与子路径构建验证 (7c2b532f)
+- **tooling**: 将浏览器和发布工具测试迁移到 Vitest (401a81bf)
+
+### 持续集成
+
+- **tooling**: 使用 pnpm 验证和发布 Vite 构建 (5258b644)
+
+### 维护
+
+- **deps**: update `pnpm-lock.yaml` (e7a62acd)
+- **vite**: 排除编辑器生成的开发缓存 (e539a1ee)
+
 ## [3.3.1] - 2026-09-26
 
 ### 维护
