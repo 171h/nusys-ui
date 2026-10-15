@@ -81,7 +81,7 @@ export class VscodeFieldset extends VscElement {
   @property({type: Boolean, reflect: true})
   checkbox = false;
 
-  /** 在现有 legend 标题文字左侧显示复选框，点击标题也可切换；默认关闭，优先于 checkbox。 */
+  /** 在现有 legend 标题文字左侧显示复选框，点击标题也可切换，可切换时标题显示手型光标；默认关闭，优先于 checkbox。 */
   @property({type: Boolean, attribute: 'legend-checkbox', reflect: true})
   legendCheckbox = false;
 
@@ -255,6 +255,9 @@ export class VscodeFieldset extends VscElement {
     this._layoutObserver.disconnect();
     this._clearCheckboxBorder();
     this._legendCheckboxSpacer?.remove();
+    this.fieldsetElement
+      ?.querySelector('legend')
+      ?.removeAttribute('data-vsc-legend-clickable');
     this._restoreInertContent();
     for (const control of this._disabledControls) {
       this._releaseDisabledControl(control);
@@ -311,6 +314,7 @@ export class VscodeFieldset extends VscElement {
     const fieldset = this.fieldsetElement;
     const legend = fieldset?.querySelector('legend');
     this._syncLegendCheckboxSpacer(checkbox, legend);
+    this._syncLegendClickable(checkbox, legend);
     if (checkbox) {
       checkbox.ariaLabel =
         this.checkboxLabel.trim() || legend?.textContent?.trim() || '启用分区';
@@ -407,6 +411,17 @@ export class VscodeFieldset extends VscElement {
     if (legend.firstChild !== spacer) {
       legend.prepend(spacer);
     }
+  }
+
+  /** 标题可切换复选框时标记为可点击，供手型光标样式使用；禁用或未开启功能时移除。 */
+  private _syncLegendClickable(
+    checkbox: VscodeCheckbox | undefined,
+    legend: HTMLLegendElement | null | undefined
+  ) {
+    legend?.toggleAttribute(
+      'data-vsc-legend-clickable',
+      this.legendCheckbox && !!checkbox && !checkbox.disabled
+    );
   }
 
   private _clearCheckboxBorder() {

@@ -106,6 +106,11 @@ const styles = css`
     line-height: 18px;
   }
 
+  /* legend 标题可切换复选框时显示手型光标；组件在禁用或不可切换时移除该标记。 */
+  :where(vscode-fieldset > fieldset) > legend[data-vsc-legend-clickable] {
+    cursor: pointer;
+  }
+
   :where(vscode-fieldset > fieldset, vscode-tab-panel > fieldset)
     > legend[draggable='true'] {
     cursor: grab;

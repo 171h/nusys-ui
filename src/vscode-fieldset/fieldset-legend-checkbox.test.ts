@@ -114,6 +114,35 @@ describe('legend 左侧可选复选框', () => {
     expect(nativeDisabled.checked).to.equal(true);
   });
 
+  it('标题有可切换复选框时显示手型光标，禁用或未开启时保持默认', async () => {
+    const el = await makeLegendFieldset();
+    await settle(el);
+    const legend = el.querySelector('legend')!;
+    expect(getComputedStyle(legend).cursor).to.equal('pointer');
+    legend.setAttribute('draggable', 'true');
+    expect(getComputedStyle(legend).cursor).to.equal('grab');
+    legend.removeAttribute('draggable');
+    el.disabled = true;
+    await settle(el);
+    expect(getComputedStyle(legend).cursor).to.not.equal('pointer');
+    el.disabled = false;
+    el.legendCheckbox = false;
+    await settle(el);
+    expect(getComputedStyle(legend).cursor).to.not.equal('pointer');
+    const nativeDisabled = await fixture<VscodeFieldset>(html`
+      <vscode-fieldset legend-checkbox checked>
+        <fieldset disabled>
+          <legend>禁用标题</legend>
+          <input />
+        </fieldset>
+      </vscode-fieldset>
+    `);
+    await settle(nativeDisabled);
+    expect(
+      getComputedStyle(nativeDisabled.querySelector('legend')!).cursor
+    ).to.not.equal('pointer');
+  });
+
   for (const checkbox of [false, true]) {
     it(`未开启 legend-checkbox 时点击标题不切换（checkbox=${checkbox}）`, async () => {
       const el = await fixture<VscodeFieldset>(html`

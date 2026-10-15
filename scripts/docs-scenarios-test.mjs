@@ -231,10 +231,12 @@ export async function testScenarios(page, url) {
       titleLeft: title.getBoundingClientRect().left,
       legendLeft: legend.getBoundingClientRect().left,
       checkboxLeft: checkbox.getBoundingClientRect().left,
+      legendCursor: getComputedStyle(legend).cursor,
     };
   });
   assert.ok(positions.checkboxLeft >= positions.legendLeft);
   assert.ok(positions.checkboxRight <= positions.titleLeft);
+  assert.equal(positions.legendCursor, 'pointer');
   await frame.locator('vscode-fieldset vscode-checkbox').click();
   await frame.getByText('高级设置已关闭，参数已保留', {exact: true}).waitFor();
   await frame.locator('vscode-textfield').waitFor({state: 'hidden'});
