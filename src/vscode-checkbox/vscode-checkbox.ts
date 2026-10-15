@@ -43,6 +43,10 @@ export class VscodeCheckbox
 {
   static override styles = styles;
 
+  /** 同步到内部原生输入框的无障碍名称，供无可见标签的标题复选框使用。 */
+  @property({attribute: 'aria-label', reflect: true})
+  override ariaLabel: string | null = null;
+
   /** @internal */
   static formAssociated = true;
 
@@ -308,6 +312,7 @@ export class VscodeCheckbox
           id="input"
           class="checkbox"
           type="checkbox"
+          aria-label=${ifDefined(this.ariaLabel || undefined)}
           ?checked=${this.checked}
           role=${ifDefined(this.toggle ? 'switch' : undefined)}
           aria-checked=${ifDefined(

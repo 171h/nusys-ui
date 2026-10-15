@@ -81,7 +81,7 @@ export class VscodeFieldset extends VscElement {
   checkbox = false;
 
   /**
-   * 复选框标签，默认为空。
+   * 复选框标签，默认为空；未提供时使用分区标题作为无障碍名称。
    */
   @property({attribute: 'checkbox-label'})
   checkboxLabel = '';
@@ -219,6 +219,7 @@ export class VscodeFieldset extends VscElement {
     installFieldsetStyles(this);
     this._contentObserver.observe(this, {
       childList: true,
+      characterData: true,
       subtree: true,
       attributes: true,
       attributeFilter: ['style', 'class'],
@@ -286,6 +287,10 @@ export class VscodeFieldset extends VscElement {
     const checkbox = this._checkboxEl;
     const fieldset = this.fieldsetElement;
     const legend = fieldset?.querySelector('legend');
+    if (checkbox) {
+      checkbox.ariaLabel =
+        this.checkboxLabel.trim() || legend?.textContent?.trim() || '启用分区';
+    }
     if (this._borderFieldset !== fieldset || !checkbox || !legend) {
       this._clearCheckboxBorder();
     }

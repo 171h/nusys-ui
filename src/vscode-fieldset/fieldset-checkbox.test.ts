@@ -51,6 +51,68 @@ async function settle(el: VscodeFieldset) {
 }
 
 describe('fieldset 复选框', () => {
+  it('未设置复选框标签时使用标题作为无障碍名称并跟随标题变化', async () => {
+    const el = await makeFieldset({checked: true, mode: 'collapsed'});
+    const checkbox = checkboxOf(el);
+    expect(checkbox.ariaLabel).to.equal('Section');
+    expect(checkbox.label).to.equal('');
+    await checkbox.updateComplete;
+    await expect(checkbox).toBeAccessible();
+
+    legendOf(el).firstChild!.textContent = '高级设置';
+    await new Promise((resolve) => requestAnimationFrame(resolve));
+    expect(checkbox.ariaLabel).to.equal('高级设置');
+    await checkbox.updateComplete;
+    expect(checkbox.shadowRoot!.querySelector('input')!.ariaLabel).to.equal(
+      '高级设置'
+    );
+
+    el.checkboxLabel = '启用高级设置';
+    await el.updateComplete;
+    expect(checkbox.ariaLabel).to.equal('启用高级设置');
+    el.checkboxLabel = '';
+    await el.updateComplete;
+    expect(checkbox.ariaLabel).to.equal('高级设置');
+
+    legendOf(el).remove();
+    await new Promise((resolve) => requestAnimationFrame(resolve));
+    expect(checkbox.ariaLabel).to.equal('启用分区');
+  });
+
+  it('键盘切换时联动内容显隐并将业务事件冒泡到外部', async () => {
+    const wrapper = await fixture<HTMLDivElement>(html`
+      <div>
+        <vscode-fieldset checkbox checked unchecked-mode="collapsed">
+          <fieldset style="min-height: 0">
+            <legend>高级设置</legend>
+            <label>参数 <input value="保留参数" /></label>
+          </fieldset>
+        </vscode-fieldset>
+      </div>
+    `);
+    const el = wrapper.querySelector('vscode-fieldset')!;
+    await el.updateComplete;
+    const changes: boolean[] = [];
+    wrapper.addEventListener('vsc-fieldset-checked-change', (event) => {
+      changes.push(event.detail.checked);
+    });
+    checkboxOf(el).focus();
+    await sendKeys({press: 'Space'});
+    await settle(el);
+    expect(changes).to.deep.equal([false]);
+    expect(getComputedStyle(contentOf(el)).display).to.equal('none');
+    expect(contentOf(el).inert).to.equal(true);
+
+    await sendKeys({press: 'Space'});
+    await settle(el);
+    expect(changes).to.deep.equal([false, true]);
+    expect(getComputedStyle(contentOf(el)).display).to.not.equal('none');
+    expect(contentOf(el).querySelector('input')!.value).to.equal('保留参数');
+    el.checked = false;
+    await settle(el);
+    expect(changes).to.deep.equal([false, true]);
+  });
+
   it('minimal 折叠后完整容纳复选框，展开后重新对齐自定义标题', async () => {
     const el = await makeFieldset({
       checked: true,
