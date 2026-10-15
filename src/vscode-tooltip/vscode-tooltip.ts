@@ -139,6 +139,7 @@ export class VscodeTooltip extends VscElement {
     this._target.removeEventListener('mouseleave', this._leave);
     this._target.removeEventListener('focusin', this._focusIn);
     this._target.removeEventListener('focusout', this._focusOut);
+    this._target.removeEventListener('keydown', this._targetKeyDown);
     const ids = (this._target.getAttribute('aria-describedby') || '')
       .split(/\s+/)
       .filter(Boolean);
@@ -193,6 +194,7 @@ export class VscodeTooltip extends VscElement {
         target.addEventListener('mouseleave', this._leave);
         target.addEventListener('focusin', this._focusIn);
         target.addEventListener('focusout', this._focusOut);
+        target.addEventListener('keydown', this._targetKeyDown);
       }
       this.requestUpdate();
     }
@@ -357,6 +359,26 @@ export class VscodeTooltip extends VscElement {
     }
     if (!this._hasInteraction()) {
       this._open = false;
+    }
+  };
+
+  private _targetKeyDown = (event: KeyboardEvent): void => {
+    // 外部关联不改变 Tab 顺序，用快捷键跨过中间控件进入提示面板。
+    if (
+      (this.for || this.target) &&
+      event.key === 'ArrowDown' &&
+      event.altKey &&
+      !event.ctrlKey &&
+      !event.metaKey &&
+      !event.shiftKey &&
+      !event.defaultPrevented &&
+      this._panel.matches(':popover-open') &&
+      this._panel.getClientRects().length > 0 &&
+      getComputedStyle(this._panel).visibility === 'visible'
+    ) {
+      this._panel.querySelector<HTMLButtonElement>('.pin')!.focus();
+      event.preventDefault();
+      event.stopPropagation();
     }
   };
 

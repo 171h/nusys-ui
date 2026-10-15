@@ -27,6 +27,62 @@ const setup = () =>
 describe('vscode-tooltip', () => {
   afterEach(async () => resetMouse());
 
+  for (const association of ['for', 'target'] as const) {
+    it(`${association} 外部目标可跨过中间控件进入面板、固定和访问链接，Escape 恢复焦点`, async () => {
+      await sendMouse({type: 'move', position: [1200, 900]});
+      const root = await fixture<HTMLDivElement>(html`
+        <div>
+          <button id="keyboard-tooltip-target">说明</button>
+          <button>下一个字段</button>
+          <vscode-tooltip
+            for=${association === 'for' ? 'keyboard-tooltip-target' : ''}
+            markdown
+            text="[文档](https://example.com)"
+          ></vscode-tooltip>
+        </div>
+      `);
+      const [target, next] = root.querySelectorAll('button');
+      const el = root.querySelector('vscode-tooltip')!;
+      if (association === 'target') {
+        el.target = target;
+      }
+      await el.updateComplete;
+      target.focus();
+      await el.updateComplete;
+      await sendKeys({press: 'Tab'});
+      await el.updateComplete;
+      expect(document.activeElement).to.equal(next);
+      expect(panel(el).matches(':popover-open')).to.equal(false);
+
+      target.focus();
+      await el.updateComplete;
+      await sendKeys({press: 'Alt+ArrowDown'});
+      const pin = panel(el).querySelector('button')!;
+      expect(el.shadowRoot!.activeElement).to.equal(pin);
+      expect(panel(el).matches(':popover-open')).to.equal(true);
+      await sendKeys({press: 'Enter'});
+      expect(el.pinned).to.equal(true);
+      await sendKeys({press: 'Space'});
+      expect(el.pinned).to.equal(false);
+      await sendKeys({press: 'Tab'});
+      expect(el.shadowRoot!.activeElement).to.equal(
+        panel(el).querySelector('a')
+      );
+      expect(panel(el).matches(':popover-open')).to.equal(true);
+      await sendKeys({press: 'Shift+Tab'});
+      expect(el.shadowRoot!.activeElement).to.equal(pin);
+      await sendKeys({press: 'Space'});
+      expect(el.pinned).to.equal(true);
+      await sendKeys({press: 'Escape'});
+      await el.updateComplete;
+      expect(el.pinned).to.equal(false);
+      expect(panel(el).matches(':popover-open')).to.equal(false);
+      expect(document.activeElement).to.equal(target);
+      await sendKeys({press: 'Tab'});
+      expect(document.activeElement).to.equal(next);
+    });
+  }
+
   it('真实鼠标缓慢经过箭头间隙、停留和选择文字时保持显示，离开后关闭', async () => {
     const el = await setup();
     const target = el.querySelector('button')!;
