@@ -310,6 +310,45 @@ try {
     false
   );
   await fieldTip.waitFor({state: 'hidden'});
+  frame = await open('tooltip', 3);
+  for (const theme of ['light', 'dark', 'hc-light', 'hc-dark']) {
+    await selectTheme(theme);
+    for (const size of ['small', 'medium', 'large']) {
+      await selectSize(size);
+      frame = page.frames().filter((candidate) => candidate.parentFrame())[3];
+      await frame
+        .getByRole('button', {name: '查看参数说明', exact: true})
+        .hover();
+      const markdownPanel = frame.locator('vscode-tooltip .tooltip');
+      await markdownPanel.waitFor();
+      assert.equal(await markdownPanel.locator('th').count(), 3);
+      await markdownPanel.locator('td').first().hover();
+      await frame.getByRole('button', {name: '固定提示', exact: true}).click();
+      await page.mouse.move(0, 0);
+      assert.equal(
+        await frame
+          .locator('vscode-tooltip')
+          .evaluate((element) => element.pinned),
+        true
+      );
+      if (size === 'medium') {
+        await page
+          .locator('.example-frame')
+          .nth(3)
+          .screenshot({
+            path: resolve(
+              root,
+              `coverage/docs-screenshots/tooltip-markdown-${theme}.png`
+            ),
+          });
+      }
+      await frame
+        .getByRole('button', {name: '取消固定提示', exact: true})
+        .focus();
+      await page.keyboard.press('Escape');
+      await markdownPanel.waitFor({state: 'hidden'});
+    }
+  }
   // 恢复尺寸测试前的默认环境，避免固定高度预览继承 large 尺寸。
   await selectTheme('light');
   await selectSize('medium');
@@ -596,6 +635,21 @@ try {
   await page.goto(url('examples/csp-check.html'));
   await page.getByRole('button', {name: '保存'}).click();
   await page.getByText('脚本与组件加载成功', {exact: true}).waitFor();
+  await page.getByRole('button', {name: '参数说明', exact: true}).hover();
+  const cspTip = page.locator('vscode-tooltip .tooltip');
+  await cspTip.waitFor();
+  assert.equal(
+    await cspTip
+      .locator('td')
+      .last()
+      .evaluate((element) => getComputedStyle(element).textAlign),
+    'right'
+  );
+  await page.getByRole('button', {name: '固定提示', exact: true}).click();
+  assert.equal(
+    await page.locator('vscode-tooltip').evaluate((element) => element.pinned),
+    true
+  );
   assert.equal(
     await page
       .locator('vscode-icon')

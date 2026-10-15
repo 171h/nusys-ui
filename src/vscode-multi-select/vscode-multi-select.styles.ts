@@ -27,8 +27,19 @@ export default [
 
     .select-face .face-values {
       flex: 1 1 auto;
-      /* 防止标签遮挡下拉图标 */
-      margin-right: 20px;
+      margin-right: 0;
+      transition: margin-right 160ms ease;
+    }
+
+    .select-face:hover .face-values,
+    :host(:focus-within) .select-face .face-values {
+      margin-right: 14px;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .select-face .face-values {
+        transition: none;
+      }
     }
 
     .combobox-face .face-values {

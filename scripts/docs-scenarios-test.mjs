@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import {componentScenarios} from '../docs/data/scenarios.mjs';
+import {testSelectHover} from './docs-select-hover-test.mjs';
 
 export async function testResponsiveTable(frame) {
   const width = frame.getByRole('slider', {name: '容器宽度'});
@@ -58,6 +59,20 @@ export async function testScenarios(page, url) {
     );
     return frame;
   };
+  const previousViewport = page.viewportSize();
+  await page.setViewportSize({width: 1440, height: 1000});
+  for (const component of ['single-select', 'multi-select']) {
+    await page.goto(url(`components/${component}`));
+    const element = await page
+      .locator('[data-scenario="select-hover"] iframe')
+      .elementHandle();
+    const hoverFrame = await element.contentFrame();
+    await hoverFrame.waitForFunction(
+      () => document.documentElement.dataset.ready === 'true'
+    );
+    await testSelectHover(hoverFrame);
+  }
+  await page.setViewportSize(previousViewport);
   let frame = await open('tooltip-controls');
   const tip = frame.locator('#action-tip');
   await frame.getByRole('button', {name: '保存', exact: true}).hover();
@@ -78,6 +93,26 @@ export async function testScenarios(page, url) {
     false
   );
   await tip.locator('.tooltip').waitFor({state: 'hidden'});
+
+  frame = await open('tooltip-markdown');
+  const markdownTip = frame.locator('vscode-tooltip');
+  const markdownPanel = markdownTip.locator('.tooltip');
+  await frame.getByRole('button', {name: '查看参数说明', exact: true}).hover();
+  await markdownPanel.waitFor();
+  assert.equal(await markdownPanel.locator('th').count(), 3);
+  assert.equal(await markdownPanel.locator('td').count(), 6);
+  await markdownPanel.locator('strong').hover();
+  await frame.getByRole('button', {name: '固定提示', exact: true}).click();
+  await page.mouse.move(0, 0);
+  await frame
+    .getByRole('button', {name: '查看参数说明', exact: true})
+    .evaluate((element) => element.blur());
+  assert.equal(await markdownTip.evaluate((element) => element.pinned), true);
+  assert.equal(await markdownPanel.isVisible(), true);
+  await frame.getByRole('button', {name: '取消固定提示', exact: true}).focus();
+  await page.keyboard.press('Escape');
+  await markdownPanel.waitFor({state: 'hidden'});
+  assert.equal(await markdownTip.evaluate((element) => element.pinned), false);
 
   frame = await open('button-form');
   await frame.locator('vscode-textfield input').fill('修改项目');
