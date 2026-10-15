@@ -356,6 +356,21 @@ try {
   assert.match(await frame.locator('output').textContent(), /新项目/);
 
   frame = await open('fieldset');
+  assert.equal(
+    await frame
+      .locator('vscode-fieldset')
+      .evaluate((element) =>
+        element.shadowRoot.querySelector('vscode-checkbox')
+      ),
+    null
+  );
+  assert.equal(
+    await frame
+      .locator('vscode-textfield')
+      .evaluate((element) => element.disabled),
+    false
+  );
+  frame = await open('fieldset', 1);
   await testFieldsetThemes(page, frame, selectTheme, selectSize);
   const fieldsetCheckbox = frame.getByRole('checkbox', {
     name: '启用风荷载',

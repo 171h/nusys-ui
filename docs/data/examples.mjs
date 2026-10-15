@@ -94,9 +94,8 @@ export const examples = {
     js: "document.querySelector('form').addEventListener('submit', (event) => { event.preventDefault(); document.querySelector('output').textContent = JSON.stringify(Array.from(new FormData(event.target))); });",
   },
   fieldset: {
-    title: '标题复选框、内容显隐与业务事件',
-    html: '<vscode-fieldset checkbox checked checkbox-label="启用风荷载" unchecked-mode="collapsed"><fieldset><legend>风荷载</legend><vscode-label for="pressure">基本风压</vscode-label><vscode-textfield id="pressure" value="0.5" type="number"></vscode-textfield><vscode-checkbox label="考虑阵风" checked></vscode-checkbox></fieldset></vscode-fieldset><output aria-live="polite">风荷载已启用</output>',
-    js: "document.querySelector('vscode-fieldset').addEventListener('vsc-fieldset-checked-change', (event) => { document.querySelector('output').textContent = event.detail.checked ? '风荷载已启用' : '风荷载已关闭，参数已保留'; });",
+    title: '普通分区与原生标题',
+    html: '<vscode-fieldset><fieldset><legend>风荷载</legend><vscode-label for="pressure">基本风压</vscode-label><vscode-textfield id="pressure" value="0.5" type="number"></vscode-textfield><vscode-checkbox label="考虑阵风" checked></vscode-checkbox></fieldset></vscode-fieldset>',
   },
   collapsible: {
     title: '折叠内容与标题操作',
