@@ -31,7 +31,8 @@ export default [
       transition: margin-right 160ms ease;
     }
 
-    .select-face:hover .face-values {
+    .select-face:hover .face-values,
+    :host(:focus-within) .select-face .face-values {
       margin-right: 14px;
     }
 

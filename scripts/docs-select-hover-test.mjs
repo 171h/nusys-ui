@@ -21,7 +21,7 @@ export async function testSelectHover(frame) {
     );
     assert.equal(
       await icon.evaluate((el) => getComputedStyle(el).opacity),
-      '0.9'
+      '0'
     );
     const fullWidth = await text.evaluate(
       (el) => el.getBoundingClientRect().width
@@ -87,9 +87,52 @@ export async function testSelectHover(frame) {
     );
     assert.equal(
       await icon.evaluate((el) => getComputedStyle(el).opacity),
-      '0.9'
+      '0'
     );
     assert.deepEqual(await control.evaluate((el) => el.value), value);
+
+    await control.locator('.select-face').focus();
+    await frame.waitForFunction(
+      ({id, selector}) =>
+        document
+          .querySelector(`#${id}`)
+          .shadowRoot.querySelector(selector)
+          .getAnimations()
+          .some((animation) => animation.playState === 'paused'),
+      {id, selector}
+    );
+    await text.evaluate((el) => el.getAnimations()[0].finish());
+    assert.equal(
+      await icon.evaluate((el) => getComputedStyle(el).opacity),
+      '1'
+    );
+    assert.ok(
+      Math.abs(
+        (await text.evaluate((el) => el.getBoundingClientRect().width)) -
+          hoverWidth
+      ) < 1
+    );
+    await control.hover();
+    await leave();
+    assert.equal(
+      await icon.evaluate((el) => getComputedStyle(el).opacity),
+      '1'
+    );
+    await frame.locator('#select-hover-width').focus();
+    await frame.waitForFunction(
+      ({id, selector}) =>
+        document
+          .querySelector(`#${id}`)
+          .shadowRoot.querySelector(selector)
+          .getAnimations()
+          .some((animation) => animation.playState === 'paused'),
+      {id, selector}
+    );
+    await text.evaluate((el) => el.getAnimations()[0].finish());
+    assert.equal(
+      await icon.evaluate((el) => getComputedStyle(el).opacity),
+      '0'
+    );
   }
 
   const combo = frame.locator('#hover-combobox');
@@ -115,8 +158,26 @@ export async function testSelectHover(frame) {
           .shadowRoot.querySelector('input')
       ).paddingRight === '4px'
   );
+  await combo.locator('input').focus();
+  await leave();
+  await frame.waitForFunction(
+    () =>
+      getComputedStyle(
+        document
+          .querySelector('#hover-combobox')
+          .shadowRoot.querySelector('input')
+      ).paddingRight === '18px'
+  );
+  assert.equal(
+    await combo.locator('.icon').evaluate((el) => getComputedStyle(el).opacity),
+    '1'
+  );
   const width = frame.getByRole('slider', {name: /控件宽度/});
   await width.focus();
+  assert.equal(
+    await combo.locator('.icon').evaluate((el) => getComputedStyle(el).opacity),
+    '0'
+  );
   await width.press('Home');
   await frame.waitForFunction(
     () =>

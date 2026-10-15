@@ -123,7 +123,8 @@ export default [
       white-space: nowrap;
     }
 
-    .select-face:hover .text {
+    .select-face:hover .text,
+    :host(:focus-within) .select-face .text {
       margin-right: 14px;
     }
 
@@ -185,7 +186,8 @@ export default [
       transition: padding-right 160ms ease;
     }
 
-    .combobox-face:hover .combobox-input {
+    .combobox-face:hover .combobox-input,
+    :host(:focus-within) .combobox-input {
       padding-right: 18px;
     }
 
@@ -250,10 +252,11 @@ export default [
     }
 
     .face .icon {
-      opacity: 0.9;
+      opacity: 0;
     }
 
-    .face:hover .icon {
+    .face:hover .icon,
+    :host(:focus-within) .face .icon {
       opacity: 1;
     }
 

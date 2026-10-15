@@ -110,14 +110,14 @@ export const extraExamples = {
     540
   ),
   'select-hover': demo(
-    '悬停图标与文字宽度',
+    '悬停与焦点下的图标和文字宽度',
     [
-      '下拉图标默认不透明度 90%，悬停时恢复 100%',
-      '文字默认使用完整内容区，悬停时为图标预留宽度',
+      '下拉图标默认隐藏，悬停或获得焦点时显示',
+      '文字默认使用完整内容区，悬停或获得焦点时为图标预留宽度',
       '进入与离开的双向过渡、长文字截断和多选标签折叠',
       '组合框、禁用状态及全站主题和尺寸切换',
     ],
-    `<p id="select-hover-instructions">将鼠标移入、移出下方控件，观察图标与文字区域的变化。拖动宽度滑块可检查长文字截断和标签折叠；也可切换右上角的主题、尺寸和减少动画设置。</p><label for="select-hover-width">控件宽度 <output id="select-hover-width-value">220 px</output></label><input id="select-hover-width" type="range" min="160" max="420" value="220" step="10"><div id="select-hover-controls"><vscode-label for="hover-single">单选长文字</vscode-label><vscode-single-select id="hover-single"><vscode-option value="long" selected>这是一段较长的选项文字，用于观察悬停前后的可见范围</vscode-option><vscode-option value="short">简短选项</vscode-option></vscode-single-select><vscode-label for="hover-multi">多选标签折叠</vscode-label><vscode-multi-select id="hover-multi"><vscode-option value="ts" selected>TypeScript</vscode-option><vscode-option value="js" selected>JavaScript</vscode-option><vscode-option value="json" selected>JSON 数据</vscode-option><vscode-option value="md" selected>Markdown 文档</vscode-option></vscode-multi-select><vscode-label for="hover-combobox">可输入组合框</vscode-label><vscode-single-select id="hover-combobox" combobox label="可输入组合框"><vscode-option value="long" selected>在组合框中输入文字，观察图标旁的可用空间</vscode-option><vscode-option value="short">简短选项</vscode-option></vscode-single-select><vscode-label for="hover-disabled">禁用对照</vscode-label><vscode-single-select id="hover-disabled" disabled><vscode-option selected>禁用状态的长文字与下拉图标</vscode-option></vscode-single-select></div>`,
+    `<p id="select-hover-instructions">将鼠标移入、移出下方控件，或使用 Tab 键移入、移出焦点，观察图标与文字区域的变化。获得焦点后，鼠标离开仍显示图标。拖动宽度滑块可检查长文字截断和标签折叠；也可切换右上角的主题、尺寸和减少动画设置。</p><label for="select-hover-width">控件宽度 <output id="select-hover-width-value">220 px</output></label><input id="select-hover-width" type="range" min="160" max="420" value="220" step="10"><div id="select-hover-controls"><vscode-label for="hover-single">单选长文字</vscode-label><vscode-single-select id="hover-single"><vscode-option value="long" selected>这是一段较长的选项文字，用于观察悬停前后的可见范围</vscode-option><vscode-option value="short">简短选项</vscode-option></vscode-single-select><vscode-label for="hover-multi">多选标签折叠</vscode-label><vscode-multi-select id="hover-multi"><vscode-option value="ts" selected>TypeScript</vscode-option><vscode-option value="js" selected>JavaScript</vscode-option><vscode-option value="json" selected>JSON 数据</vscode-option><vscode-option value="md" selected>Markdown 文档</vscode-option></vscode-multi-select><vscode-label for="hover-combobox">可输入组合框</vscode-label><vscode-single-select id="hover-combobox" combobox label="可输入组合框"><vscode-option value="long" selected>在组合框中输入文字，观察图标旁的可用空间</vscode-option><vscode-option value="short">简短选项</vscode-option></vscode-single-select><vscode-label for="hover-disabled">禁用对照</vscode-label><vscode-single-select id="hover-disabled" disabled><vscode-option selected>禁用状态的长文字与下拉图标</vscode-option></vscode-single-select></div>`,
     `const width=document.querySelector('#select-hover-width');const update=()=>{document.querySelector('#select-hover-controls').style.width=width.value+'px';document.querySelector('#select-hover-width-value').textContent=width.value+' px';};width.addEventListener('input',update);update();`,
     600,
     '#select-hover-width-value{display:inline;margin:0} #select-hover-width{display:block;width:100%;max-width:420px;margin:8px 0 16px} #select-hover-controls{max-width:100%;display:grid;grid-template-columns:minmax(0,1fr);gap:6px} #select-hover-controls vscode-single-select,#select-hover-controls vscode-multi-select{width:100%}'

@@ -7,7 +7,7 @@ import '../../vscode-multi-select/index.js';
 describe('下拉选择框共享样式', () => {
   for (const multiple of [false, true]) {
     for (const combobox of [false, true]) {
-      it(`${multiple ? '多选' : '单选'}${combobox ? '组合框' : '选择框'}悬停时恢复图标不透明度`, async () => {
+      it(`${multiple ? '多选' : '单选'}${combobox ? '组合框' : '选择框'}仅悬停或获得焦点时显示图标`, async () => {
         const el = await fixture(
           multiple
             ? html`<vscode-multi-select .combobox=${combobox}>
@@ -20,11 +20,48 @@ describe('下拉选择框共享样式', () => {
         const icon = el.shadowRoot!.querySelector<HTMLElement>('.face .icon')!;
 
         await sendMouse({type: 'move', position: [1000, 900]});
-        expect(getComputedStyle(icon).opacity).to.eq('0.9');
+        expect(getComputedStyle(icon).opacity).to.eq('0');
         await moveMouseOnElement(el);
         expect(getComputedStyle(icon).opacity).to.eq('1');
         await sendMouse({type: 'move', position: [1000, 900]});
-        expect(getComputedStyle(icon).opacity).to.eq('0.9');
+        expect(getComputedStyle(icon).opacity).to.eq('0');
+
+        const focusTarget = el.shadowRoot!.querySelector<HTMLElement>(
+          combobox ? '.combobox-input' : '.select-face'
+        )!;
+        focusTarget.focus();
+        await aTimeout(200);
+        expect(getComputedStyle(icon).opacity).to.eq('1');
+        const content = el.shadowRoot!.querySelector<HTMLElement>(
+          combobox ? '.combobox-input' : multiple ? '.face-values' : '.text'
+        )!;
+        expect(
+          combobox
+            ? getComputedStyle(content).paddingRight
+            : getComputedStyle(content).marginRight
+        ).to.eq(combobox ? '18px' : '14px');
+        await moveMouseOnElement(el);
+        await sendMouse({type: 'move', position: [1000, 900]});
+        expect(getComputedStyle(icon).opacity).to.eq('1');
+
+        if (combobox) {
+          const button =
+            el.shadowRoot!.querySelector<HTMLButtonElement>(
+              '.combobox-button'
+            )!;
+          button.focus();
+          expect(getComputedStyle(icon).opacity).to.eq('1');
+          button.blur();
+        } else {
+          focusTarget.blur();
+        }
+        await aTimeout(200);
+        expect(getComputedStyle(icon).opacity).to.eq('0');
+        expect(
+          combobox
+            ? getComputedStyle(content).paddingRight
+            : getComputedStyle(content).marginRight
+        ).to.eq(combobox ? '4px' : '0px');
       });
     }
   }
