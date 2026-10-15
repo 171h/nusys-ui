@@ -233,6 +233,14 @@ export default [
       top: 5px;
     }
 
+    .face .icon {
+      opacity: 0.9;
+    }
+
+    .face:hover .icon {
+      opacity: 1;
+    }
+
     .icon svg {
       color: var(--vscode-foreground, #cccccc);
       height: 100%;
