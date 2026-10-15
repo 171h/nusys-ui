@@ -207,6 +207,13 @@ export async function testScenarios(page, url) {
   await page.keyboard.press('Space');
   await frame.getByText('高级设置已启用', {exact: true}).waitFor();
   await frame.locator('vscode-textfield').waitFor({state: 'visible'});
+  const legendTitle = frame.locator('legend > span:not([aria-hidden])');
+  await legendTitle.click();
+  await frame.getByText('高级设置已关闭，参数已保留', {exact: true}).waitFor();
+  await frame.locator('vscode-textfield').waitFor({state: 'hidden'});
+  await legendTitle.click();
+  await frame.getByText('高级设置已启用', {exact: true}).waitFor();
+  await frame.locator('vscode-textfield').waitFor({state: 'visible'});
   assert.equal(
     await frame
       .locator('vscode-textfield')

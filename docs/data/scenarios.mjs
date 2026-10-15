@@ -191,7 +191,7 @@ export const extraExamples = {
     [
       'legend-checkbox 默认关闭、现有标题左侧布局',
       'checked、unchecked-mode=collapsed、保留参数',
-      '鼠标、空格键与自定义业务事件',
+      '复选框或标题点击、空格键与自定义业务事件',
     ],
     '<vscode-fieldset legend-checkbox checked unchecked-mode="collapsed" checkbox-label="启用高级设置"><fieldset><legend><span>高级设置</span></legend><vscode-label for="advanced-value">参数</vscode-label><vscode-textfield id="advanced-value" value="保留参数"></vscode-textfield></fieldset></vscode-fieldset><output aria-live="polite">高级设置已启用</output>',
     "document.querySelector('vscode-fieldset').addEventListener('vsc-fieldset-checked-change', (event) => { document.querySelector('output').textContent = event.detail.checked ? '高级设置已启用' : '高级设置已关闭，参数已保留'; });"

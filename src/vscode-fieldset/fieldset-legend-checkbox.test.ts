@@ -38,6 +38,136 @@ function toggle(el: VscodeFieldset) {
 }
 
 describe('legend 左侧可选复选框', () => {
+  it('点击标题文字可取消和选中，复用显隐、参数保留与业务事件', async () => {
+    const el = await makeLegendFieldset();
+    await settle(el);
+    const title = el.querySelector<HTMLElement>(
+      'legend > span:not([aria-hidden])'
+    )!;
+    const changes: boolean[] = [];
+    const callbacks: boolean[] = [];
+    el.addEventListener('vsc-fieldset-checked-change', (event) => {
+      changes.push(event.detail.checked);
+    });
+    el.checkedChange = (checked) => {
+      callbacks.push(checked);
+    };
+    title.click();
+    await settle(el);
+    expect(el.checked).to.equal(false);
+    expect(checkboxOf(el).checked).to.equal(false);
+    expect(
+      getComputedStyle(el.querySelector('vscode-textfield')!).display
+    ).to.equal('none');
+    title.click();
+    await settle(el);
+    expect(el.checked).to.equal(true);
+    expect(checkboxOf(el).checked).to.equal(true);
+    expect(el.querySelector('vscode-textfield')!.disabled).to.equal(false);
+    expect(el.querySelector('vscode-textfield')!.value).to.equal('保留参数');
+    expect(changes).to.deep.equal([false, true]);
+    expect(callbacks).to.deep.equal(changes);
+    expect(el.shadowRoot!.activeElement).to.equal(checkboxOf(el));
+  });
+
+  it('点击标题内的按钮、链接或编辑区时保留独立操作', async () => {
+    const el = await makeLegendFieldset();
+    const legend = el.querySelector('legend')!;
+    const button = legend.querySelector('button')!;
+    const link = document.createElement('a');
+    link.href = '#help';
+    link.textContent = '查看帮助';
+    link.addEventListener('click', (event) => event.preventDefault());
+    const editor = document.createElement('span');
+    editor.contentEditable = 'true';
+    editor.textContent = '可编辑标题';
+    legend.append(link, editor);
+    await settle(el);
+    let changes = 0;
+    let actions = 0;
+    el.addEventListener('vsc-fieldset-checked-change', () => changes++);
+    button.addEventListener('click', () => actions++);
+    button.click();
+    link.click();
+    editor.click();
+    expect(actions).to.equal(1);
+    expect(changes).to.equal(0);
+    expect(el.checked).to.equal(true);
+  });
+
+  it('组件或原生分区初始禁用时点击标题不改变状态', async () => {
+    const el = await makeLegendFieldset();
+    el.disabled = true;
+    await settle(el);
+    el.querySelector<HTMLElement>('legend')!.click();
+    expect(el.checked).to.equal(true);
+    const nativeDisabled = await fixture<VscodeFieldset>(html`
+      <vscode-fieldset legend-checkbox checked>
+        <fieldset disabled>
+          <legend>禁用标题</legend>
+          <input />
+        </fieldset>
+      </vscode-fieldset>
+    `);
+    await settle(nativeDisabled);
+    nativeDisabled.querySelector('legend')!.click();
+    expect(nativeDisabled.checked).to.equal(true);
+  });
+
+  for (const checkbox of [false, true]) {
+    it(`未开启 legend-checkbox 时点击标题不切换（checkbox=${checkbox}）`, async () => {
+      const el = await fixture<VscodeFieldset>(html`
+        <vscode-fieldset ?checkbox=${checkbox} checked>
+          <fieldset>
+            <legend>普通标题</legend>
+            <input />
+          </fieldset>
+        </vscode-fieldset>
+      `);
+      await settle(el);
+      el.querySelector('legend')!.click();
+      expect(el.checked).to.equal(true);
+      expect(el.querySelector('fieldset')!.disabled).to.equal(false);
+    });
+  }
+
+  for (const cancel of ['event', 'callback'] as const) {
+    it(`标题点击支持通过 ${cancel} 取消默认显隐行为`, async () => {
+      const el = await makeLegendFieldset();
+      if (cancel === 'event') {
+        el.addEventListener('vsc-fieldset-checked-change', (event) => {
+          event.preventDefault();
+        });
+      } else {
+        el.checkedChange = () => false;
+      }
+      el.querySelector('legend')!.click();
+      await settle(el);
+      expect(el.checked).to.equal(false);
+      expect(el.querySelector('fieldset')!.disabled).to.equal(false);
+      expect(
+        getComputedStyle(el.querySelector('vscode-textfield')!).display
+      ).to.not.equal('none');
+    });
+  }
+
+  it('标题自身取消 click 后不切换，替换标题后仍可响应点击', async () => {
+    const el = await makeLegendFieldset();
+    const title = el.querySelector<HTMLElement>(
+      'legend > span:not([aria-hidden])'
+    )!;
+    title.addEventListener('click', (event) => event.preventDefault());
+    title.click();
+    expect(el.checked).to.equal(true);
+    const replacement = document.createElement('legend');
+    replacement.textContent = '替换后的标题';
+    el.querySelector('legend')!.replaceWith(replacement);
+    await settle(el);
+    replacement.click();
+    await settle(el);
+    expect(el.checked).to.equal(false);
+  });
+
   it('默认不渲染复选框，也不改变原有标题节点和内容状态', async () => {
     const el = await fixture<VscodeFieldset>(html`
       <vscode-fieldset>

@@ -81,7 +81,7 @@ export class VscodeFieldset extends VscElement {
   @property({type: Boolean, reflect: true})
   checkbox = false;
 
-  /** 在现有 legend 标题文字左侧显示复选框；默认关闭，优先于 checkbox。 */
+  /** 在现有 legend 标题文字左侧显示复选框，点击标题也可切换；默认关闭，优先于 checkbox。 */
   @property({type: Boolean, attribute: 'legend-checkbox', reflect: true})
   legendCheckbox = false;
 
@@ -235,6 +235,7 @@ export class VscodeFieldset extends VscElement {
 
   override connectedCallback() {
     super.connectedCallback();
+    this.addEventListener('click', this._onLegendClick);
     installFieldsetStyles(this);
     this._contentObserver.observe(this, {
       childList: true,
@@ -249,6 +250,7 @@ export class VscodeFieldset extends VscElement {
   }
 
   override disconnectedCallback() {
+    this.removeEventListener('click', this._onLegendClick);
     this._contentObserver.disconnect();
     this._layoutObserver.disconnect();
     this._clearCheckboxBorder();
@@ -424,6 +426,39 @@ export class VscodeFieldset extends VscElement {
     this._observeLayout();
     this._syncCheckboxLayout();
   }
+
+  private _onLegendClick = (event: MouseEvent) => {
+    const checkbox = this._checkboxEl;
+    if (
+      !this.legendCheckbox ||
+      !checkbox ||
+      this.disabled ||
+      checkbox.disabled ||
+      event.defaultPrevented
+    ) {
+      return;
+    }
+    const legend = this.fieldsetElement?.querySelector('legend');
+    const path = event.composedPath();
+    const legendIndex = legend ? path.indexOf(legend) : -1;
+    if (
+      legendIndex < 0 ||
+      path
+        .slice(0, legendIndex)
+        .some(
+          (element) =>
+            element instanceof Element &&
+            element.matches(
+              'a[href], button, input, select, textarea, label, summary, [contenteditable]:not([contenteditable="false"]), [tabindex], [role="button"], [role="link"], [role="checkbox"], [role="switch"], [role="menuitem"]'
+            )
+        )
+    ) {
+      return;
+    }
+    checkbox.focus();
+    checkbox.checked = !checkbox.checked;
+    this._onCheckboxChange();
+  };
 
   private _onCheckboxChange() {
     const checked = this._checkboxEl?.checked ?? false;
