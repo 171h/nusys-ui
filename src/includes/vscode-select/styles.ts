@@ -66,12 +66,6 @@ export default [
       padding: 1px 4px;
     }
 
-    :host([size='small']) .combobox-button {
-      height: 12px;
-      margin: 0 1px 0 0;
-      padding: 1px;
-    }
-
     :host([size='large']) .combobox-input {
       padding: 5px 4px;
     }
@@ -123,9 +117,15 @@ export default [
       display: block;
       height: 18px;
       overflow: hidden;
-      padding-right: 20px;
+      margin-right: 0;
       text-overflow: ellipsis;
+      transition: margin-right 160ms ease;
       white-space: nowrap;
+    }
+
+    .select-face:hover .text,
+    :host(:focus-within) .select-face .text {
+      margin-right: 14px;
     }
 
     .select-face.multiselect {
@@ -182,6 +182,13 @@ export default [
       line-height: 16px;
       padding: 4px;
       width: 100%;
+      min-width: 0;
+      transition: padding-right 160ms ease;
+    }
+
+    .combobox-face:hover .combobox-input,
+    :host(:focus-within) .combobox-input {
+      padding-right: 18px;
     }
 
     .combobox-input:focus {
@@ -198,11 +205,22 @@ export default [
       cursor: pointer;
       display: flex;
       flex-shrink: 0;
-      height: 16px;
+      height: auto;
       justify-content: center;
-      margin: 1px 1px 0 0;
-      padding: 3px;
-      width: 22px;
+      margin: 0;
+      padding: 0;
+      position: absolute;
+      right: 4px;
+      top: 0;
+      bottom: 0;
+      width: 14px;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .select-face .text,
+      .combobox-input {
+        transition: none;
+      }
     }
 
     .combobox-button:hover,
@@ -231,6 +249,15 @@ export default [
       position: absolute;
       right: 6px;
       top: 5px;
+    }
+
+    .face .icon {
+      opacity: 0;
+    }
+
+    .face:hover .icon,
+    :host(:focus-within) .face .icon {
+      opacity: 1;
     }
 
     .icon svg {

@@ -3,6 +3,7 @@ import {components} from '../docs/data/components.mjs';
 import {examples} from '../docs/data/examples.mjs';
 import {showcaseGroups} from '../docs/data/showcase.mjs';
 import {testResponsiveTable} from './docs-scenarios-test.mjs';
+import {testSelectHover} from './docs-select-hover-test.mjs';
 
 export async function testShowcase(page, url, selectTheme, screenshots) {
   await page.setViewportSize({width: 1440, height: 1000});
@@ -120,6 +121,7 @@ export async function testShowcase(page, url, selectTheme, screenshots) {
   await page.keyboard.press('Escape');
   await tooltipFrame.getByRole('tooltip').waitFor({state: 'hidden'});
   await testResponsiveTable(frames.get('table-responsive'));
+  await testSelectHover(frames.get('select-hover'));
   const frame = frames.get('percentage');
   const input = frame.locator('vscode-textfield input');
   await input.focus();
