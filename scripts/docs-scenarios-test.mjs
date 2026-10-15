@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import {componentScenarios} from '../docs/data/scenarios.mjs';
+import {testSelectHover} from './docs-select-hover-test.mjs';
 
 export async function testResponsiveTable(frame) {
   const width = frame.getByRole('slider', {name: '容器宽度'});
@@ -58,6 +59,20 @@ export async function testScenarios(page, url) {
     );
     return frame;
   };
+  const previousViewport = page.viewportSize();
+  await page.setViewportSize({width: 1440, height: 1000});
+  for (const component of ['single-select', 'multi-select']) {
+    await page.goto(url(`components/${component}`));
+    const element = await page
+      .locator('[data-scenario="select-hover"] iframe')
+      .elementHandle();
+    const hoverFrame = await element.contentFrame();
+    await hoverFrame.waitForFunction(
+      () => document.documentElement.dataset.ready === 'true'
+    );
+    await testSelectHover(hoverFrame);
+  }
+  await page.setViewportSize(previousViewport);
   let frame = await open('tooltip-controls');
   const tip = frame.locator('#action-tip');
   await frame.getByRole('button', {name: '保存', exact: true}).hover();
