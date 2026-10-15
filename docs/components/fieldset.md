@@ -21,6 +21,20 @@ import 'nusys-ui/dist/vscode-checkbox/index.js';
 
 嵌套分区会保留控件原本的 disabled 状态；取消默认处理后的状态在拖拽后保留。通过 `vsc-fieldset-checked-change` 或 `checkedChange` 可接管行为，见 [fieldset 复选框](../fieldset-checkbox)。分区可用作标签页面板直属视图，见 [拖拽布局](../tabs-drag-drop)。
 
+需要通过标题复选框控制内容显隐时，设置 `checkbox` 和 `unchecked-mode="collapsed"`；添加 `checked` 可默认展开。取消勾选会隐藏并禁用内容，重新勾选恢复内容且保留输入值。省略 `checkbox-label` 时，复选框使用分区标题作为无障碍名称。
+
+监听事件可同时执行保存开关状态、重新计算等业务逻辑，不调用 `preventDefault()` 即可保留默认显隐行为：
+
+```js
+const section = document.querySelector('vscode-fieldset');
+section.addEventListener('vsc-fieldset-checked-change', (event) => {
+  const enabled = event.detail.checked;
+  updateSettings({enabled});
+});
+```
+
+`updateSettings` 由应用实现。事件会冒泡并穿过 shadow DOM 边界；代码直接修改 `checked` 会同步内容状态，但不会派发此用户交互事件。
+
 ## 交互示例
 
 使用右上角导航栏的全站主题和尺寸选择，使用鼠标或键盘操作。代码视图包含此预览实际执行的 HTML、CSS 与 JavaScript。

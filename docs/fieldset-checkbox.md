@@ -13,6 +13,8 @@
 
 默认插槽应包含带 legend 的原生 fieldset。复选框在组件内部渲染，内容保留原生表单语义。
 
+省略 `checkbox-label` 时不显示额外标签文字，复选框使用当前 legend 的文字作为无障碍名称；标题动态变化时同步更新。没有标题文字时回退为“启用分区”，建议始终提供有意义的标题或复选框标签。
+
 标题默认加粗。复选框及其标签位于右上角边框线上，与当前标题垂直居中对齐；标签字号跟随标题，使用常规字重和略淡的标题颜色。切换组件尺寸或自定义标题字号后，仍保持此对齐关系。
 
 标题和复选框标签的背景共用 `--vsc-fieldset-header-background`，默认值为 `transparent`，不绘制任何背景颜色，也不回退到侧栏或编辑区背景。主题切换后仍保持透明。应用可在 `vscode-fieldset` 或其祖先上显式设置同一变量：
@@ -74,7 +76,7 @@ fieldset.checkedChange = (checked) => {
 
 取消默认处理后的内容状态在拖拽或重新连接后保留；之后通过代码修改 checked、checkbox 或 uncheckedMode 属性会重新应用默认行为。
 
-通过代码修改 checked 属性会应用默认行为。自定义处理可通过 fieldsetElement 获取原生元素。
+通过代码修改 checked 属性会应用默认行为，但不会派发 `vsc-fieldset-checked-change` 或调用 `checkedChange`，可避免模型同步时重复触发业务操作。自定义处理可通过 fieldsetElement 获取原生元素。
 
 ## 动画与布局
 
