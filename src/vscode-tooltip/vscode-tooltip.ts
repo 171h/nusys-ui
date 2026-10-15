@@ -1,10 +1,28 @@
 import {html, PropertyValues, TemplateResult} from 'lit';
 import {property, query, state} from 'lit/decorators.js';
+import {unsafeHTML} from 'lit/directives/unsafe-html.js';
+import MarkdownIt from 'markdown-it';
 import {customElement, VscElement} from '../includes/VscElement.js';
 import styles from './vscode-tooltip.styles.js';
 
 export type TooltipPlacement = 'top' | 'bottom' | 'left' | 'right';
 let nextId = 0;
+// 禁止原始 HTML，并沿用解析器对链接协议的校验。
+const markdown = new MarkdownIt({html: false, breaks: true});
+// 在生成 HTML 前移除表格内联样式，避免严格 CSP 阻止样式解析。
+for (const tag of ['th_open', 'td_open']) {
+  markdown.renderer.rules[tag] = (tokens, index, options, _env, renderer) => {
+    const token = tokens[index];
+    const align = String(token.attrGet('style') || '').match(
+      /^text-align:\s*(left|center|right);?$/
+    )?.[1];
+    token.attrs = token.attrs?.filter(([name]) => name !== 'style') || null;
+    if (align) {
+      token.attrSet('data-align', align);
+    }
+    return renderer.renderToken(tokens, index, options);
+  };
+}
 
 /**
  * 鼠标悬停或键盘聚焦时显示活动栏风格的文字提示。
@@ -13,6 +31,7 @@ let nextId = 0;
  * @slot - 一个触发元素；键盘操作时该元素应能获得焦点。
  * @slot _description - 内部文字插槽，由组件管理，使用者无需提供内容。
  * @csspart tooltip - 提示面板，包含指向触发元素的小箭头。
+ * @csspart pin - 右上角的固定按钮。
  * @cssprop [--vscode-editorHoverWidget-background=#252526] - 提示背景色。
  * @cssprop [--vscode-editorHoverWidget-foreground=#cccccc] - 提示文字颜色。
  * @cssprop [--vscode-editorHoverWidget-border=#454545] - 提示及箭头边框颜色。
@@ -26,8 +45,14 @@ let nextId = 0;
 export class VscodeTooltip extends VscElement {
   static override styles = styles;
 
-  /** 提示文字，按纯文本渲染。 */
+  /** 提示内容，默认按纯文本渲染；启用 markdown 后支持 Markdown。 */
   @property() text = '';
+
+  /** 将 text 按 Markdown 渲染，支持表格；默认关闭，不允许原始 HTML。 */
+  @property({type: Boolean, reflect: true}) markdown = false;
+
+  /** 固定提示，鼠标移开或失焦后仍显示；再次点击固定按钮或按 Escape 可取消。 */
+  @property({type: Boolean, reflect: true}) pinned = false;
 
   /** 提示相对触发元素的方向；活动栏通常使用 right。 */
   @property({reflect: true}) placement: TooltipPlacement = 'bottom';
@@ -63,6 +88,9 @@ export class VscodeTooltip extends VscElement {
   private _timer?: ReturnType<typeof setTimeout>;
   private _hovered = false;
   private _focused = false;
+  private _panelHovered = false;
+  private _panelFocused = false;
+  private _markdownHTML = '';
   private _dismissed = false;
   private _anchorVisible = true;
   private _frame?: number;
@@ -94,6 +122,7 @@ export class VscodeTooltip extends VscElement {
   }
 
   override disconnectedCallback(): void {
+    this.pinned = false;
     this._close();
     this._unlinkTarget();
     this._hovered = this._focused = false;
@@ -151,6 +180,9 @@ export class VscodeTooltip extends VscElement {
       return;
     }
     if (target !== this._target) {
+      if (this._target || !target) {
+        this.pinned = false;
+      }
       this._close();
       this._unlinkTarget();
       this._target = target;
@@ -227,19 +259,60 @@ export class VscodeTooltip extends VscElement {
   };
 
   private _panelEnter = (): void => {
-    this._hovered = true;
+    this._panelHovered = true;
+    this._open = true;
     clearTimeout(this._timer);
   };
 
   private _leave = (): void => {
     this._hovered = false;
+    this._scheduleHide();
+  };
+
+  private _panelLeave = (): void => {
+    this._panelHovered = false;
+    this._scheduleHide();
+  };
+
+  private _scheduleHide(): void {
     clearTimeout(this._timer);
     // 保留跨越箭头间隙的时间，使鼠标能够移入提示面板。
     this._timer = setTimeout(() => {
-      if (!this._focused && !this._hovered) {
+      if (!this._hasInteraction()) {
         this._open = false;
       }
     }, 100);
+  }
+
+  private _hasInteraction(): boolean {
+    return (
+      this._focused || this._hovered || this._panelHovered || this._panelFocused
+    );
+  }
+
+  private _panelFocusIn = (): void => {
+    this._panelFocused = true;
+    this._open = true;
+    clearTimeout(this._timer);
+  };
+
+  private _panelFocusOut = (event: FocusEvent): void => {
+    if (
+      event.relatedTarget === this ||
+      (event.relatedTarget instanceof Node &&
+        this._panel.contains(event.relatedTarget))
+    ) {
+      return;
+    }
+    this._panelFocused = false;
+    if (!this._hasInteraction()) {
+      this._open = false;
+    }
+  };
+
+  private _togglePinned = (): void => {
+    this.pinned = !this.pinned;
+    this._open = this._hasInteraction();
   };
 
   private _focusIn = (event: FocusEvent): void => {
@@ -275,7 +348,14 @@ export class VscodeTooltip extends VscElement {
     }
     this._focused = false;
     this._unlinkFocusedDescription();
-    if (!this._hovered) {
+    if (
+      event.relatedTarget === this ||
+      (event.relatedTarget instanceof Node &&
+        this._panel.contains(event.relatedTarget))
+    ) {
+      this._panelFocused = true;
+    }
+    if (!this._hasInteraction()) {
       this._open = false;
     }
   };
@@ -283,9 +363,17 @@ export class VscodeTooltip extends VscElement {
   private _escape = (event: KeyboardEvent): void => {
     if (event.key === 'Escape') {
       // 目标内部关闭提示时，不让同一次 Escape 继续关闭上层对话框。
-      if (this._target && event.composedPath().includes(this._target)) {
+      if (
+        this._target &&
+        (event.composedPath().includes(this._target) ||
+          event.composedPath().includes(this._panel))
+      ) {
         event.stopPropagation();
       }
+      if (this._panel.contains(this.shadowRoot!.activeElement)) {
+        this._target?.focus();
+      }
+      this.pinned = false;
       this._dismissed = true;
       this._close();
       this.requestUpdate();
@@ -307,6 +395,7 @@ export class VscodeTooltip extends VscElement {
   private _close(): void {
     clearTimeout(this._timer);
     this._open = false;
+    this._panelHovered = this._panelFocused = false;
     if (this._panel?.matches(':popover-open')) {
       this._panel.hidePopover();
     }
@@ -421,20 +510,30 @@ export class VscodeTooltip extends VscElement {
     return false;
   }
 
+  protected override willUpdate(changes: PropertyValues): void {
+    if (changes.has('text') || changes.has('markdown')) {
+      const template = document.createElement('template');
+      template.innerHTML = this.markdown
+        ? markdown.render(this.text || '')
+        : '';
+      this._markdownHTML = template.innerHTML;
+      this._description.textContent = this.markdown
+        ? template.content.textContent || ''
+        : this.text || '';
+    }
+  }
+
   protected override updated(changes: PropertyValues): void {
     if (!this.isConnected) {
       return;
     }
-    if (changes.has('for') || changes.has('target')) {
+    if (changes.has('for') || changes.has('target') || !this._target) {
       this._mutation.disconnect();
       this._syncTarget();
       this._observeRoot();
     }
-    if (changes.has('open')) {
+    if (changes.has('open') || (changes.has('pinned') && this.pinned)) {
       this._dismissed = false;
-    }
-    if (this._description.textContent !== (this.text || '')) {
-      this._description.textContent = this.text || '';
     }
     if (
       this.disabled ||
@@ -442,10 +541,11 @@ export class VscodeTooltip extends VscElement {
       !this._target ||
       this._dismissed
     ) {
+      this.pinned = false;
       this._close();
       return;
     }
-    if (this._open || this.open) {
+    if (this._open || this.open || this.pinned) {
       if (!this._panel.matches(':popover-open')) {
         this._panel.showPopover();
         this._resize.observe(this._target!);
@@ -469,10 +569,33 @@ export class VscodeTooltip extends VscElement {
         part="tooltip"
         popover="manual"
         data-placement=${this.placement}
+        role="group"
+        aria-label="提示"
         @mouseenter=${this._panelEnter}
-        @mouseleave=${this._leave}
+        @mouseleave=${this._panelLeave}
+        @focusin=${this._panelFocusIn}
+        @focusout=${this._panelFocusOut}
       >
-        <slot name="_description"></slot>
+        <button
+          class="pin"
+          part="pin"
+          type="button"
+          aria-label=${this.pinned ? '取消固定提示' : '固定提示'}
+          aria-pressed=${this.pinned ? 'true' : 'false'}
+          title=${this.pinned ? '取消固定提示' : '固定提示'}
+          @click=${this._togglePinned}
+        >
+          <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true">
+            <path
+              d="M9.5 1 15 6.5l-.7.7-1.6-.5-3 3 .5 2.6-.7.7-2.8-2.8-3.5 3.5-1.4.7.7-1.4L6 9.5 3.2 6.7l.7-.7 2.6.5 3-3L9 1.9z"
+              fill="currentColor"
+            />
+          </svg>
+        </button>
+        <div class="content">
+          <slot name="_description" ?hidden=${this.markdown}></slot>
+          ${this.markdown ? html`<div class="markdown">${unsafeHTML(this._markdownHTML)}</div>` : ''}
+        </div>
       </div>
     `;
   }

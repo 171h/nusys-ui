@@ -14,7 +14,7 @@ export default css`
     position: fixed;
     inset: auto;
     margin: 0;
-    padding: 3px 7px;
+    padding: 3px 29px 3px 7px;
     box-sizing: border-box;
     min-width: min(var(--vsc-tooltip-min-width, 0px), calc(100vw - 16px));
     max-width: min(var(--vsc-tooltip-max-width, 320px), calc(100vw - 16px));
@@ -44,11 +44,120 @@ export default css`
     white-space: normal;
     cursor: default;
   }
-  slot[name='_description'] {
-    display: block;
-    white-space: pre-wrap;
+  .content {
     max-height: calc(100vh - 26px);
     overflow: auto;
+  }
+  slot[name='_description']:not([hidden]) {
+    display: block;
+    white-space: pre-wrap;
+  }
+  slot[hidden] {
+    display: none;
+  }
+  .pin {
+    position: absolute;
+    top: 1px;
+    right: 2px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    padding: 2px;
+    border: 0;
+    border-radius: 3px;
+    color: inherit;
+    background: transparent;
+    cursor: pointer;
+  }
+  .pin:hover,
+  .pin[aria-pressed='true'] {
+    background: var(--vscode-toolbar-hoverBackground, rgba(90, 93, 94, 0.31));
+  }
+  .pin:focus-visible {
+    outline: 1px solid var(--vscode-focusBorder, #0078d4);
+    outline-offset: -1px;
+  }
+  .pin[aria-pressed='true'] {
+    color: var(--vscode-textLink-foreground, #3794ff);
+  }
+  .markdown > :first-child {
+    margin-top: 0;
+  }
+  .markdown > :last-child {
+    margin-bottom: 0;
+  }
+  .markdown p,
+  .markdown ul,
+  .markdown ol,
+  .markdown pre,
+  .markdown blockquote,
+  .markdown table {
+    margin: 8px 0;
+  }
+  .markdown ul,
+  .markdown ol {
+    padding-left: 20px;
+  }
+  .markdown a {
+    color: var(--vscode-textLink-foreground, #3794ff);
+  }
+  .markdown a:focus-visible {
+    outline: 1px solid var(--vscode-focusBorder, #0078d4);
+  }
+  .markdown code,
+  .markdown pre {
+    font-family: var(--vscode-editor-font-family, monospace);
+    background: var(
+      --vscode-textCodeBlock-background,
+      rgba(128, 128, 128, 0.15)
+    );
+  }
+  .markdown pre {
+    overflow: auto;
+    padding: 6px;
+  }
+  .markdown blockquote {
+    padding-left: 8px;
+    border-left: 3px solid var(--vscode-textBlockQuote-border, #454545);
+  }
+  .markdown table {
+    border-collapse: collapse;
+  }
+  .markdown th,
+  .markdown td {
+    padding: 4px 8px;
+    border: 1px solid var(--vscode-editorHoverWidget-border, #454545);
+  }
+  .markdown [data-align='left'] {
+    text-align: left;
+  }
+  .markdown [data-align='center'] {
+    text-align: center;
+  }
+  .markdown [data-align='right'] {
+    text-align: right;
+  }
+  .tooltip::after {
+    content: '';
+    position: absolute;
+  }
+  .tooltip[data-placement='bottom']::after {
+    inset: -9px 0 auto;
+    height: 9px;
+  }
+  .tooltip[data-placement='top']::after {
+    inset: auto 0 -9px;
+    height: 9px;
+  }
+  .tooltip[data-placement='right']::after {
+    inset: 0 auto 0 -9px;
+    width: 9px;
+  }
+  .tooltip[data-placement='left']::after {
+    inset: 0 -9px 0 auto;
+    width: 9px;
   }
   .tooltip::before {
     content: '';
