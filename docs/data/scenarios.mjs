@@ -21,7 +21,7 @@ const tree = (attrs = '') =>
 const split = (attrs = '') =>
   `<vscode-split-layout ${attrs} style="height:180px"><div slot="start">起始面板</div><div slot="end">结束面板</div></vscode-split-layout>`;
 export const componentScenarios = {
-  tooltip: ['tooltip-field', 'tooltip-controls'],
+  tooltip: ['tooltip-field', 'tooltip-controls', 'tooltip-markdown'],
   badge: ['badge-variants'],
   button: ['button-variants', 'button-form'],
   'button-group': ['button-group-menu'],
@@ -69,6 +69,18 @@ export const componentScenarios = {
   'tree-item': ['tree-variants', 'tree-controls', 'tree-item-slots'],
 };
 export const extraExamples = {
+  'tooltip-markdown': demo(
+    'Markdown 表格与固定提示',
+    [
+      'markdown 渲染强调、代码、列表和表格',
+      '鼠标移入面板、选择文字与滚动时保持显示',
+      '右上角 pinned 按钮固定或取消，Tab 操作与 Escape 关闭',
+    ],
+    '<div class="markdown-tooltip"><vscode-tooltip markdown delay="0" placement="bottom" text="**参数说明**&#10;&#10;使用 `kPa` 输入风压。&#10;&#10;| 参数 | 单位 | 示例 |&#10;| --- | --- | ---: |&#10;| 基本风压 | kPa | 0.5 |&#10;| 地面粗糙度 | 类别 | B |&#10;&#10;- 可选择文字&#10;- 点击右上角图标固定提示" style="--vsc-tooltip-max-width:420px"><vscode-button>查看参数说明</vscode-button></vscode-tooltip></div>',
+    '',
+    360,
+    '.markdown-tooltip{display:flex;justify-content:center;padding:12px 0}'
+  ),
   'tooltip-field': demo(
     '外部字段关联与持续提示',
     [

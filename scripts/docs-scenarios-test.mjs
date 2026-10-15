@@ -79,6 +79,26 @@ export async function testScenarios(page, url) {
   );
   await tip.locator('.tooltip').waitFor({state: 'hidden'});
 
+  frame = await open('tooltip-markdown');
+  const markdownTip = frame.locator('vscode-tooltip');
+  const markdownPanel = markdownTip.locator('.tooltip');
+  await frame.getByRole('button', {name: '查看参数说明', exact: true}).hover();
+  await markdownPanel.waitFor();
+  assert.equal(await markdownPanel.locator('th').count(), 3);
+  assert.equal(await markdownPanel.locator('td').count(), 6);
+  await markdownPanel.locator('strong').hover();
+  await frame.getByRole('button', {name: '固定提示', exact: true}).click();
+  await page.mouse.move(0, 0);
+  await frame
+    .getByRole('button', {name: '查看参数说明', exact: true})
+    .evaluate((element) => element.blur());
+  assert.equal(await markdownTip.evaluate((element) => element.pinned), true);
+  assert.equal(await markdownPanel.isVisible(), true);
+  await frame.getByRole('button', {name: '取消固定提示', exact: true}).focus();
+  await page.keyboard.press('Escape');
+  await markdownPanel.waitFor({state: 'hidden'});
+  assert.equal(await markdownTip.evaluate((element) => element.pinned), false);
+
   frame = await open('button-form');
   await frame.locator('vscode-textfield input').fill('修改项目');
   await frame.getByRole('button', {name: '提交', exact: true}).click();

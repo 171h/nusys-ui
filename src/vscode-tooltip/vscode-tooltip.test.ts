@@ -9,6 +9,7 @@ import {VscodeTooltip, TooltipPlacement} from './index.js';
 import '../vscode-textfield/index.js';
 import '../vscode-radio-group/index.js';
 import '../vscode-radio/index.js';
+import {resetMouse, sendKeys, sendMouse} from '../includes/browser-commands.js';
 
 const panel = (el: VscodeTooltip) =>
   el.shadowRoot!.querySelector<HTMLElement>('.tooltip')!;
@@ -24,6 +25,229 @@ const setup = () =>
   `);
 
 describe('vscode-tooltip', () => {
+  afterEach(async () => resetMouse());
+
+  for (const association of ['for', 'target'] as const) {
+    it(`${association} 外部目标可跨过中间控件进入面板、固定和访问链接，Escape 恢复焦点`, async () => {
+      await sendMouse({type: 'move', position: [1200, 900]});
+      const root = await fixture<HTMLDivElement>(html`
+        <div>
+          <button id="keyboard-tooltip-target">说明</button>
+          <button>下一个字段</button>
+          <vscode-tooltip
+            for=${association === 'for' ? 'keyboard-tooltip-target' : ''}
+            markdown
+            text="[文档](https://example.com)"
+          ></vscode-tooltip>
+        </div>
+      `);
+      const [target, next] = root.querySelectorAll('button');
+      const el = root.querySelector('vscode-tooltip')!;
+      if (association === 'target') {
+        el.target = target;
+      }
+      await el.updateComplete;
+      target.focus();
+      await el.updateComplete;
+      await sendKeys({press: 'Tab'});
+      await el.updateComplete;
+      expect(document.activeElement).to.equal(next);
+      expect(panel(el).matches(':popover-open')).to.equal(false);
+
+      target.focus();
+      await el.updateComplete;
+      await sendKeys({press: 'Alt+ArrowDown'});
+      const pin = panel(el).querySelector('button')!;
+      expect(el.shadowRoot!.activeElement).to.equal(pin);
+      expect(panel(el).matches(':popover-open')).to.equal(true);
+      await sendKeys({press: 'Enter'});
+      expect(el.pinned).to.equal(true);
+      await sendKeys({press: 'Space'});
+      expect(el.pinned).to.equal(false);
+      await sendKeys({press: 'Tab'});
+      expect(el.shadowRoot!.activeElement).to.equal(
+        panel(el).querySelector('a')
+      );
+      expect(panel(el).matches(':popover-open')).to.equal(true);
+      await sendKeys({press: 'Shift+Tab'});
+      expect(el.shadowRoot!.activeElement).to.equal(pin);
+      await sendKeys({press: 'Space'});
+      expect(el.pinned).to.equal(true);
+      await sendKeys({press: 'Escape'});
+      await el.updateComplete;
+      expect(el.pinned).to.equal(false);
+      expect(panel(el).matches(':popover-open')).to.equal(false);
+      expect(document.activeElement).to.equal(target);
+      await sendKeys({press: 'Tab'});
+      expect(document.activeElement).to.equal(next);
+    });
+  }
+
+  it('真实鼠标缓慢经过箭头间隙、停留和选择文字时保持显示，离开后关闭', async () => {
+    const el = await setup();
+    const target = el.querySelector('button')!;
+    const anchor = target.getBoundingClientRect();
+    await sendMouse({
+      type: 'move',
+      position: [anchor.x + anchor.width / 2, anchor.y + anchor.height / 2],
+    });
+    await waitUntil(() => panel(el).matches(':popover-open'));
+    const rect = panel(el).getBoundingClientRect();
+    await sendMouse({
+      type: 'move',
+      position: [anchor.x + anchor.width / 2, anchor.bottom + 4],
+    });
+    await aTimeout(180);
+    expect(panel(el).matches(':popover-open')).to.equal(true);
+    await sendMouse({type: 'down', position: [rect.x + 8, rect.y + 8]});
+    await sendMouse({type: 'move', position: [rect.x + 60, rect.y + 8]});
+    await sendMouse({type: 'up'});
+    await aTimeout(150);
+    expect(panel(el).matches(':popover-open')).to.equal(true);
+    await sendMouse({type: 'move', position: [10, 10]});
+    await waitUntil(() => !panel(el).matches(':popover-open'));
+  });
+
+  it('面板进入后收到目标离开和失焦事件仍保持显示', async () => {
+    const el = await setup();
+    const target = el.querySelector('button')!;
+    target.focus();
+    await el.updateComplete;
+    panel(el).dispatchEvent(new MouseEvent('mouseenter'));
+    target.dispatchEvent(new MouseEvent('mouseleave'));
+    target.blur();
+    await aTimeout(150);
+    expect(panel(el).matches(':popover-open')).to.equal(true);
+    panel(el).dispatchEvent(new MouseEvent('mouseleave'));
+    await waitUntil(() => !panel(el).matches(':popover-open'));
+  });
+
+  it('Markdown 渲染标题、强调、代码、列表与表格，动态更新并可恢复纯文本', async () => {
+    const el = await setup();
+    el.markdown = true;
+    el.open = true;
+    el.text =
+      '# 参数\n\n**风压**与 `kPa`\n\n- 说明\n\n| 名称 | 值 |\n| --- | ---: |\n| 风压 | 0.5 |';
+    await el.updateComplete;
+    await el.updateComplete;
+    expect(panel(el).querySelector('h1')!.textContent).to.equal('参数');
+    expect(panel(el).querySelector('strong')!.textContent).to.equal('风压');
+    expect(panel(el).querySelector('code')!.textContent).to.equal('kPa');
+    expect(panel(el).querySelector('li')!.textContent).to.equal('说明');
+    expect(panel(el).querySelectorAll('th').length).to.equal(2);
+    expect(panel(el).querySelectorAll('td')[1].textContent).to.equal('0.5');
+    expect(
+      getComputedStyle(panel(el).querySelectorAll('td')[1]).textAlign
+    ).to.equal('right');
+    expect(panel(el).querySelector('[style]')).to.equal(null);
+    expect(el.querySelector('[role="tooltip"]')!.textContent).to.include(
+      '风压'
+    );
+    expect(el.querySelector('[role="tooltip"]')!.textContent).not.to.include(
+      '**'
+    );
+    el.text = '**更新**';
+    await el.updateComplete;
+    await el.updateComplete;
+    expect(panel(el).querySelector('strong')!.textContent).to.equal('更新');
+    el.markdown = false;
+    await el.updateComplete;
+    expect(panel(el).querySelector('.markdown')).to.equal(null);
+    expect(el.querySelector('[role="tooltip"]')!.textContent).to.equal(
+      '**更新**'
+    );
+  });
+
+  it('Markdown 不执行原始 HTML 和危险链接，普通链接保留', async () => {
+    const el = await setup();
+    el.markdown = true;
+    el.text =
+      '<img src=x onerror="alert(1)">\n\n<script>alert(1)</script>\n\n[危险](javascript:alert(1)) [编码](jav&#x61;script:alert(1)) [正常](https://example.com)';
+    await el.updateComplete;
+    await el.updateComplete;
+    expect(panel(el).querySelector('script, img, [onerror]')).to.equal(null);
+    expect(panel(el).querySelectorAll('a').length).to.equal(1);
+    expect(panel(el).querySelector('a')!.getAttribute('href')).to.equal(
+      'https://example.com'
+    );
+    expect(panel(el).querySelector('.markdown')!.textContent).to.include(
+      '<script>'
+    );
+  });
+
+  it('Tab 可进入固定按钮，键盘固定后移开和失焦保持显示，Escape 取消固定并恢复焦点', async () => {
+    const el = await setup();
+    const target = el.querySelector('button')!;
+    target.focus();
+    await el.updateComplete;
+    const pin = panel(el).querySelector('button')!;
+    await sendKeys({press: 'Tab'});
+    expect(el.shadowRoot!.activeElement).to.equal(pin);
+    await sendKeys({press: 'Enter'});
+    await el.updateComplete;
+    expect(el.pinned).to.equal(true);
+    expect(pin.getAttribute('aria-pressed')).to.equal('true');
+    pin.blur();
+    await sendMouse({type: 'move', position: [10, 10]});
+    await aTimeout(150);
+    expect(panel(el).matches(':popover-open')).to.equal(true);
+    pin.focus();
+    await sendKeys({press: 'Escape'});
+    await el.updateComplete;
+    expect(el.pinned).to.equal(false);
+    expect(panel(el).matches(':popover-open')).to.equal(false);
+    expect(document.activeElement).to.equal(target);
+  });
+
+  it('鼠标可切换固定，取消后离开关闭；禁用、目标替换和移除清除固定状态', async () => {
+    const el = await setup();
+    el.querySelector('button')!.focus();
+    await el.updateComplete;
+    const pin = panel(el).querySelector('button')!;
+    const rect = pin.getBoundingClientRect();
+    await sendMouse({type: 'click', position: [rect.x + 10, rect.y + 10]});
+    expect(el.pinned).to.equal(true);
+    await sendMouse({type: 'click'});
+    expect(el.pinned).to.equal(false);
+    pin.blur();
+    await sendMouse({type: 'move', position: [10, 10]});
+    await waitUntil(() => !panel(el).matches(':popover-open'));
+    el.pinned = true;
+    await el.updateComplete;
+    expect(panel(el).matches(':popover-open')).to.equal(true);
+    el.disabled = true;
+    await el.updateComplete;
+    expect(el.pinned).to.equal(false);
+    expect(panel(el).matches(':popover-open')).to.equal(false);
+    el.disabled = false;
+    el.pinned = true;
+    await el.updateComplete;
+    el.querySelector('button')!.replaceWith(document.createElement('button'));
+    await waitUntil(() => !el.pinned);
+    el.pinned = true;
+    await el.updateComplete;
+    el.remove();
+    expect(el.pinned).to.equal(false);
+    expect(panel(el).matches(':popover-open')).to.equal(false);
+  });
+
+  it('初始 pinned 属性直接显示，Markdown 链接获得焦点时保持显示', async () => {
+    const el = await fixture<VscodeTooltip>(
+      html`<vscode-tooltip pinned markdown text="[文档](https://example.com)"
+        ><button>说明</button></vscode-tooltip
+      >`
+    );
+    expect(el.pinned).to.equal(true);
+    expect(panel(el).matches(':popover-open')).to.equal(true);
+    const link = panel(el).querySelector('a')!;
+    link.focus();
+    el.pinned = false;
+    await el.updateComplete;
+    expect(panel(el).matches(':popover-open')).to.equal(true);
+    link.blur();
+    await el.updateComplete;
+    expect(panel(el).matches(':popover-open')).to.equal(false);
+  });
   for (const initiallyHidden of [true, false]) {
     it(`外部关联提示${initiallyHidden ? '初始隐藏' : '显示后隐藏'}时遵守 hidden，并可恢复显示`, async () => {
       const root = await fixture<HTMLDivElement>(html`
@@ -278,6 +502,8 @@ describe('vscode-tooltip', () => {
     button.dispatchEvent(new MouseEvent('mouseenter'));
     await aTimeout(20);
     expect(panel(el).matches(':popover-open')).to.equal(true);
+    button.dispatchEvent(new MouseEvent('mouseleave'));
+    panel(el).dispatchEvent(new MouseEvent('mouseenter'));
     panel(el).dispatchEvent(new MouseEvent('mouseleave'));
     await aTimeout(120);
     expect(panel(el).matches(':popover-open')).to.equal(false);
