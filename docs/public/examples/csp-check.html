@@ -51,6 +51,13 @@
       <vscode-form-helper>此页面没有依赖 node_modules URL。</vscode-form-helper>
     </vscode-form-group>
     <vscode-button icon="save">保存</vscode-button>
+    <vscode-tooltip
+      markdown
+      delay="0"
+      text="**严格 CSP 表格**&#10;&#10;| 名称 | 数值 |&#10;| --- | ---: |&#10;| 风压 | 0.5 |"
+    >
+      <button>参数说明</button>
+    </vscode-tooltip>
     <output aria-live="polite"></output>
     <script type="module" nonce="docs-example">
       await customElements.whenDefined('vscode-button');
