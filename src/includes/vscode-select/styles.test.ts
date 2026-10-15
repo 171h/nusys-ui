@@ -1,4 +1,4 @@
-import {fixture, html, expect, aTimeout} from '../testing.js';
+import {fixture, html, expect} from '../testing.js';
 import {emulateMedia, sendMouse} from '../browser-commands.js';
 import {moveMouseOnElement} from '../test-helpers.js';
 import '../../vscode-single-select/index.js';
@@ -30,16 +30,18 @@ describe('下拉选择框共享样式', () => {
           combobox ? '.combobox-input' : '.select-face'
         )!;
         focusTarget.focus();
-        await aTimeout(200);
         expect(getComputedStyle(icon).opacity).to.eq('1');
         const content = el.shadowRoot!.querySelector<HTMLElement>(
           combobox ? '.combobox-input' : multiple ? '.face-values' : '.text'
         )!;
-        expect(
-          combobox
-            ? getComputedStyle(content).paddingRight
-            : getComputedStyle(content).marginRight
-        ).to.eq(combobox ? '18px' : '14px');
+        // 等待实际过渡终点，避免 CI 调度延迟时读取动画中间值。
+        await expect
+          .poll(() =>
+            combobox
+              ? getComputedStyle(content).paddingRight
+              : getComputedStyle(content).marginRight
+          )
+          .toBe(combobox ? '18px' : '14px');
         await moveMouseOnElement(el);
         await sendMouse({type: 'move', position: [1000, 900]});
         expect(getComputedStyle(icon).opacity).to.eq('1');
@@ -55,13 +57,14 @@ describe('下拉选择框共享样式', () => {
         } else {
           focusTarget.blur();
         }
-        await aTimeout(200);
         expect(getComputedStyle(icon).opacity).to.eq('0');
-        expect(
-          combobox
-            ? getComputedStyle(content).paddingRight
-            : getComputedStyle(content).marginRight
-        ).to.eq(combobox ? '4px' : '0px');
+        await expect
+          .poll(() =>
+            combobox
+              ? getComputedStyle(content).paddingRight
+              : getComputedStyle(content).marginRight
+          )
+          .toBe(combobox ? '4px' : '0px');
       });
     }
   }
@@ -88,7 +91,7 @@ describe('下拉选择框共享样式', () => {
         )!;
         const icon = el.shadowRoot!.querySelector<HTMLElement>('.face .icon')!;
         await sendMouse({type: 'move', position: [1000, 900]});
-        await aTimeout(200);
+        await expect.poll(() => getComputedStyle(text).marginRight).toBe('0px');
         const fullWidth = text.getBoundingClientRect().width;
         const faceStyle = getComputedStyle(face);
         expect(fullWidth).to.be.closeTo(
@@ -129,16 +132,16 @@ describe('下拉选择框共享样式', () => {
       );
       const input = el.shadowRoot!.querySelector<HTMLInputElement>('input')!;
       await sendMouse({type: 'move', position: [1000, 900]});
-      await aTimeout(200);
+      await expect.poll(() => getComputedStyle(input).paddingRight).toBe('4px');
       const padding = parseFloat(getComputedStyle(input).paddingRight);
       await moveMouseOnElement(el);
-      await aTimeout(200);
-      expect(parseFloat(getComputedStyle(input).paddingRight)).to.eq(
-        padding + 14
-      );
+      await expect
+        .poll(() => parseFloat(getComputedStyle(input).paddingRight))
+        .toBe(padding + 14);
       await sendMouse({type: 'move', position: [1000, 900]});
-      await aTimeout(200);
-      expect(parseFloat(getComputedStyle(input).paddingRight)).to.eq(padding);
+      await expect
+        .poll(() => parseFloat(getComputedStyle(input).paddingRight))
+        .toBe(padding);
     });
   }
 
