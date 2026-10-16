@@ -1,16 +1,23 @@
 import assert from 'node:assert/strict';
+import {execFileSync} from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import {test} from 'vitest';
 
 import {
+  getRemoteTagObjectId,
   renderChangelog,
   resolveVersion,
   resolveVersionTag,
   updateChangelog,
 } from './release-lib.mjs';
-import {buildReleasePushArgs, confirm, promptVersionTag} from './release.mjs';
+import {
+  buildReleasePushArgs,
+  confirm,
+  confirmTagOverwrite,
+  promptVersionTag,
+} from './release.mjs';
 import {extractReleaseNotes} from './extract-release-notes.mjs';
 
 function stubReadline(...answers) {
@@ -67,6 +74,108 @@ test('promptVersionTag uses the suggestion when Enter is pressed', async () => {
 test('confirm defaults to no and accepts an explicit yes', async () => {
   assert.equal(await confirm(stubReadline('').rl, 'Release?'), false);
   assert.equal(await confirm(stubReadline('yes').rl, 'Release?'), true);
+});
+
+test('覆盖已有标签必须输入 y，其他输入默认取消', async () => {
+  for (const [local, remote] of [
+    [true, false],
+    [false, true],
+    [true, true],
+  ]) {
+    for (const answer of ['', 'n', 'yes', 'overwrite']) {
+      assert.equal(
+        await confirmTagOverwrite(
+          stubReadline(answer).rl,
+          'v2.6.0',
+          local,
+          remote
+        ),
+        false
+      );
+    }
+    const {rl, questions} = stubReadline(' y ');
+    assert.equal(await confirmTagOverwrite(rl, 'v2.6.0', local, remote), true);
+    assert.match(questions[0], /v2\.6\.0.*请输入 y 确认/);
+    if (local) assert.match(questions[0], /本地/);
+    if (remote) assert.match(questions[0], /origin 远程/);
+  }
+  const {rl, questions} = stubReadline();
+  assert.equal(await confirmTagOverwrite(rl, 'v2.6.0', false, false), true);
+  assert.deepEqual(questions, []);
+});
+
+test('远程查询失败保留 Git 错误，不将连接失败视为标签不存在', () => {
+  const failure = Object.assign(new Error('Git failed'), {
+    status: 128,
+    stderr: Buffer.from('fatal: Could not connect to server'),
+  });
+  assert.throws(
+    () =>
+      getRemoteTagObjectId('v2.6.0', () => {
+        throw failure;
+      }),
+    (error) => {
+      assert.match(error.message, /无法查询 origin 上的标签 v2\.6\.0/);
+      assert.match(error.message, /Could not connect to server/);
+      assert.equal(error.cause, failure);
+      return true;
+    }
+  );
+  assert.equal(
+    getRemoteTagObjectId('v2.6.0', () => {
+      throw {status: 2};
+    }),
+    ''
+  );
+});
+
+test('真实 Git 远程标签支持确认后覆盖，并拒绝覆盖并发修改', async (t) => {
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'release-tags-'));
+  t.onTestFinished(() => fs.rmSync(directory, {recursive: true, force: true}));
+  const remote = path.join(directory, 'origin.git');
+  const worktree = path.join(directory, 'worktree');
+  const run = (cwd, args) =>
+    execFileSync('git', args, {
+      cwd,
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'pipe'],
+    }).trim();
+  run(directory, ['init', '--bare', remote]);
+  run(directory, ['init', '--initial-branch=main', worktree]);
+  const runGit = (args) => run(worktree, args);
+  runGit(['config', 'user.name', '发布测试']);
+  runGit(['config', 'user.email', 'release@example.invalid']);
+  runGit(['config', 'commit.gpgsign', 'false']);
+  runGit(['config', 'tag.gpgsign', 'false']);
+  runGit(['remote', 'add', 'origin', remote]);
+  runGit(['commit', '--allow-empty', '-m', 'chore: 初始化测试']);
+  assert.equal(getRemoteTagObjectId('v2.6.0', runGit), '');
+  runGit(['tag', '-a', 'v2.6.0', '-m', '首次标签']);
+  runGit(buildReleasePushArgs('main', 'v2.6.0'));
+  const originalId = getRemoteTagObjectId('v2.6.0', runGit);
+  assert.equal(originalId, runGit(['rev-parse', 'refs/tags/v2.6.0']));
+  assert.notEqual(originalId, runGit(['rev-parse', 'refs/tags/v2.6.0^{}']));
+
+  assert.equal(
+    await confirmTagOverwrite(stubReadline('y').rl, 'v2.6.0', true, true),
+    true
+  );
+  runGit(['commit', '--allow-empty', '-m', 'fix: 更新测试']);
+  runGit(['tag', '--force', '-a', 'v2.6.0', '-m', '替换标签']);
+  runGit(buildReleasePushArgs('main', 'v2.6.0', originalId));
+  const updatedId = getRemoteTagObjectId('v2.6.0', runGit);
+  assert.equal(updatedId, runGit(['rev-parse', 'refs/tags/v2.6.0']));
+  assert.notEqual(updatedId, originalId);
+
+  const remoteHead = run(remote, ['rev-parse', 'refs/heads/main']);
+  run(remote, ['update-ref', 'refs/tags/v2.6.0', originalId]);
+  runGit(['commit', '--allow-empty', '-m', 'fix: 后续测试']);
+  runGit(['tag', '--force', '-a', 'v2.6.0', '-m', '再次替换标签']);
+  assert.throws(() =>
+    runGit(buildReleasePushArgs('main', 'v2.6.0', updatedId))
+  );
+  assert.equal(getRemoteTagObjectId('v2.6.0', runGit), originalId);
+  assert.equal(run(remote, ['rev-parse', 'refs/heads/main']), remoteHead);
 });
 
 test('buildReleasePushArgs pushes branch and tag atomically', () => {

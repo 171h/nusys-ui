@@ -68,9 +68,9 @@ export function localTagExists(tag) {
   }
 }
 
-export function getRemoteTagObjectId(tag) {
+export function getRemoteTagObjectId(tag, runGit = git) {
   try {
-    const output = git(
+    const output = runGit(
       ['ls-remote', '--exit-code', '--tags', 'origin', `refs/tags/${tag}`],
       true,
       true
@@ -78,9 +78,11 @@ export function getRemoteTagObjectId(tag) {
     return output.split(/\s+/)[0] ?? '';
   } catch (error) {
     if (error?.status === 2) return '';
-    throw new Error(`Could not check whether ${tag} exists on origin.`, {
-      cause: error,
-    });
+    const details = error?.stderr?.toString().trim() || error.message;
+    throw new Error(
+      `无法查询 origin 上的标签 ${tag}，请检查网络连接和 Git 访问权限后重试。${details ? `\n${details}` : ''}`,
+      {cause: error}
+    );
   }
 }
 

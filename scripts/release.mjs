@@ -25,6 +25,18 @@ export async function confirm(rl, question) {
   );
 }
 
+export async function confirmTagOverwrite(rl, tag, hasLocalTag, hasRemoteTag) {
+  const locations = [
+    hasLocalTag ? '本地' : '',
+    hasRemoteTag ? 'origin 远程' : '',
+  ].filter(Boolean);
+  if (!locations.length) return true;
+  const answer = await rl.question(
+    `标签 ${tag} 已存在于${locations.join('和')}，是否覆盖？请输入 y 确认 [y/N] `
+  );
+  return answer.trim().toLowerCase() === 'y';
+}
+
 export async function promptVersionTag(rl, currentVersion, requestedVersion) {
   const suggestedVersion = resolveVersion(currentVersion, requestedVersion);
   const suggestedTag = `v${suggestedVersion}`;
@@ -101,18 +113,7 @@ async function main() {
     const hasLocalTag = localTagExists(tag);
     const remoteTagObjectId = getRemoteTagObjectId(tag);
     const hasRemoteTag = Boolean(remoteTagObjectId);
-    const existingLocations = [
-      hasLocalTag ? 'locally' : '',
-      hasRemoteTag ? 'on origin' : '',
-    ].filter(Boolean);
-
-    if (
-      existingLocations.length &&
-      !(await confirm(
-        rl,
-        `Tag ${tag} already exists ${existingLocations.join(' and ')}. Overwrite it?`
-      ))
-    ) {
+    if (!(await confirmTagOverwrite(rl, tag, hasLocalTag, hasRemoteTag))) {
       return console.log('Release cancelled.');
     }
 
