@@ -395,7 +395,43 @@ try {
   assert.match(await frame.locator('output').textContent(), /新项目/);
 
   frame = await open('fieldset');
+  assert.equal(
+    await frame
+      .locator('vscode-fieldset')
+      .evaluate((element) =>
+        element.shadowRoot.querySelector('vscode-checkbox')
+      ),
+    null
+  );
+  assert.equal(
+    await frame
+      .locator('vscode-textfield')
+      .evaluate((element) => element.disabled),
+    false
+  );
+  frame = await open('fieldset', 1);
   await testFieldsetThemes(page, frame, selectTheme, selectSize);
+  const fieldsetCheckbox = frame.getByRole('checkbox', {
+    name: '启用风荷载',
+    exact: true,
+  });
+  await fieldsetCheckbox.focus();
+  await page.keyboard.press('Space');
+  await frame.getByText('风荷载已关闭，参数已保留', {exact: true}).waitFor();
+  await frame.locator('vscode-textfield').waitFor({state: 'hidden'});
+  await page.keyboard.press('Space');
+  await frame.getByText('风荷载已启用', {exact: true}).waitFor();
+  await frame.locator('vscode-textfield').waitFor({state: 'visible'});
+  assert.equal(
+    await frame
+      .locator('vscode-textfield')
+      .evaluate((element) => element.value),
+    '0.5'
+  );
+  await frame.locator('vscode-fieldset').evaluate((element) => {
+    element.checkboxLabel = '';
+  });
+  await frame.getByRole('checkbox', {name: '风荷载', exact: true}).waitFor();
   await frame.locator('vscode-fieldset').evaluate((element) => {
     element.checked = false;
   });

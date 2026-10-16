@@ -52,7 +52,12 @@ export const componentScenarios = {
   'form-helper': ['form-layouts'],
   'form-group': ['form-layouts'],
   'form-container': ['form-layouts', 'form-dirty-controls'],
-  fieldset: ['fieldset-modes', 'fieldset-callback'],
+  fieldset: [
+    'fieldset-checkbox',
+    'fieldset-legend-checkbox',
+    'fieldset-modes',
+    'fieldset-callback',
+  ],
   collapsible: ['collapsible-variants'],
   'context-menu': ['menu-persistent', 'button-group-menu'],
   'context-menu-item': ['menu-persistent'],
@@ -204,6 +209,22 @@ export const extraExamples = {
     ],
     `<vscode-form-container mark-duration="forever"><vscode-form-group><vscode-label for="dirty">名称</vscode-label><vscode-textfield id="dirty" value="初始名称"></vscode-textfield></vscode-form-group></vscode-form-container><div class="variants"><vscode-button id="reset">清除修改标记</vscode-button><vscode-button id="mark">手动标记</vscode-button><vscode-button id="disable" secondary>切换高亮</vscode-button></div><output aria-live="polite"></output>`,
     `const container=document.querySelector('vscode-form-container');document.querySelector('#reset').onclick=()=>{container.reset();document.querySelector('output').textContent='dirty='+container.dirty;};document.querySelector('#mark').onclick=()=>container.mark();document.querySelector('#disable').onclick=()=>{container.markable=!container.markable;document.querySelector('output').textContent='markable='+container.markable;};document.querySelector('vscode-textfield').addEventListener('input',()=>requestAnimationFrame(()=>document.querySelector('output').textContent=JSON.stringify(container.constructor.getFormStates().map(state=>({dirty:state.dirty})))));`
+  ),
+  'fieldset-checkbox': demo(
+    '右上角复选框与事件',
+    ['checkbox、checkbox-label', 'unchecked-mode、vsc-fieldset-checked-change'],
+    '<vscode-fieldset checkbox checked checkbox-label="启用风荷载" unchecked-mode="collapsed"><fieldset><legend>风荷载</legend><vscode-label for="pressure">基本风压</vscode-label><vscode-textfield id="pressure" value="0.5" type="number"></vscode-textfield><vscode-checkbox label="考虑阵风" checked></vscode-checkbox></fieldset></vscode-fieldset><output aria-live="polite">风荷载已启用</output>',
+    "document.querySelector('vscode-fieldset').addEventListener('vsc-fieldset-checked-change', (event) => { document.querySelector('output').textContent = event.detail.checked ? '风荷载已启用' : '风荷载已关闭，参数已保留'; });"
+  ),
+  'fieldset-legend-checkbox': demo(
+    '可选的 legend 左侧复选框',
+    [
+      'legend-checkbox 默认关闭、现有标题左侧布局',
+      'checked、unchecked-mode=collapsed、保留参数',
+      '复选框或标题点击、空格键与自定义业务事件',
+    ],
+    '<vscode-fieldset legend-checkbox checked unchecked-mode="collapsed" checkbox-label="启用高级设置"><fieldset><legend><span>高级设置</span></legend><vscode-label for="advanced-value">参数</vscode-label><vscode-textfield id="advanced-value" value="保留参数"></vscode-textfield></fieldset></vscode-fieldset><output aria-live="polite">高级设置已启用</output>',
+    "document.querySelector('vscode-fieldset').addEventListener('vsc-fieldset-checked-change', (event) => { document.querySelector('output').textContent = event.detail.checked ? '高级设置已启用' : '高级设置已关闭，参数已保留'; });"
   ),
   'fieldset-modes': demo(
     '三种取消勾选模式',

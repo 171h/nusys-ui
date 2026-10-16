@@ -94,8 +94,8 @@ export const examples = {
     js: "document.querySelector('form').addEventListener('submit', (event) => { event.preventDefault(); document.querySelector('output').textContent = JSON.stringify(Array.from(new FormData(event.target))); });",
   },
   fieldset: {
-    title: '可选分区与折叠',
-    html: '<vscode-fieldset checkbox checked checkbox-label="启用风荷载" unchecked-mode="collapsed"><fieldset><legend>风荷载</legend><vscode-label for="pressure">基本风压</vscode-label><vscode-textfield id="pressure" value="0.5" type="number"></vscode-textfield><vscode-checkbox label="考虑阵风" checked></vscode-checkbox></fieldset></vscode-fieldset>',
+    title: '普通分区与原生标题',
+    html: '<vscode-fieldset><fieldset><legend>风荷载</legend><vscode-label for="pressure">基本风压</vscode-label><vscode-textfield id="pressure" value="0.5" type="number"></vscode-textfield><vscode-checkbox label="考虑阵风" checked></vscode-checkbox></fieldset></vscode-fieldset>',
   },
   collapsible: {
     title: '折叠内容与标题操作',

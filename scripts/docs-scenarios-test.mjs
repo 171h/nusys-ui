@@ -220,6 +220,44 @@ export async function testScenarios(page, url) {
     () => !document.querySelector('vscode-form-container').dirty
   );
 
+  frame = await open('fieldset-legend-checkbox');
+  const legendToggle = frame.getByRole('checkbox', {name: '启用高级设置'});
+  const positions = await frame.locator('vscode-fieldset').evaluate((host) => {
+    const checkbox = host.shadowRoot.querySelector('vscode-checkbox');
+    const legend = host.querySelector('legend');
+    const title = legend.querySelector('span:not([aria-hidden])');
+    return {
+      checkboxRight: checkbox.getBoundingClientRect().right,
+      titleLeft: title.getBoundingClientRect().left,
+      legendLeft: legend.getBoundingClientRect().left,
+      checkboxLeft: checkbox.getBoundingClientRect().left,
+      legendCursor: getComputedStyle(legend).cursor,
+    };
+  });
+  assert.ok(positions.checkboxLeft >= positions.legendLeft);
+  assert.ok(positions.checkboxRight <= positions.titleLeft);
+  assert.equal(positions.legendCursor, 'pointer');
+  await frame.locator('vscode-fieldset vscode-checkbox').click();
+  await frame.getByText('高级设置已关闭，参数已保留', {exact: true}).waitFor();
+  await frame.locator('vscode-textfield').waitFor({state: 'hidden'});
+  await legendToggle.focus();
+  await page.keyboard.press('Space');
+  await frame.getByText('高级设置已启用', {exact: true}).waitFor();
+  await frame.locator('vscode-textfield').waitFor({state: 'visible'});
+  const legendTitle = frame.locator('legend > span:not([aria-hidden])');
+  await legendTitle.click();
+  await frame.getByText('高级设置已关闭，参数已保留', {exact: true}).waitFor();
+  await frame.locator('vscode-textfield').waitFor({state: 'hidden'});
+  await legendTitle.click();
+  await frame.getByText('高级设置已启用', {exact: true}).waitFor();
+  await frame.locator('vscode-textfield').waitFor({state: 'visible'});
+  assert.equal(
+    await frame
+      .locator('vscode-textfield')
+      .evaluate((element) => element.value),
+    '保留参数'
+  );
+
   frame = await open('fieldset-modes');
   for (const mode of ['visible', 'collapsed', 'minimal']) {
     const fieldset = frame.locator(`vscode-fieldset[unchecked-mode="${mode}"]`);

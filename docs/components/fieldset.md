@@ -17,9 +17,27 @@ import 'nusys-ui/dist/vscode-checkbox/index.js';
 
 ## 使用说明
 
-默认插槽包裹一个原生 `<fieldset>`，使用 `<legend>` 提供分区标题，保留表单与分区语义。`checkbox` 显示边框复选框，`checked` 启用内容，`unchecked-mode` 控制保持可见、折叠或最小显示。
+默认插槽包裹一个原生 `<fieldset>`，使用 `<legend>` 提供分区标题，保留表单与分区语义。普通分区默认不显示复选框，内容和标题保持原有行为。
+
+`legend-checkbox` 是默认关闭的可选功能：开启后，复选框位于现有 `legend` 文字左侧，保留标题中已有的文字、图标和操作。`checked` 启用内容，`unchecked-mode` 控制保持可见、折叠或最小显示。原有 `checkbox` 右上角复选框接口仍保持兼容；同时设置时仅显示左侧复选框。
+
+开启 `legend-checkbox` 后，点击复选框或 `legend` 标题文字均可选中或取消选中，并触发相同的显隐行为、事件和回调；可切换时标题显示手型光标。标题内的按钮、链接和编辑区域保留各自操作；禁用分区时不响应标题切换。
 
 嵌套分区会保留控件原本的 disabled 状态；取消默认处理后的状态在拖拽后保留。通过 `vsc-fieldset-checked-change` 或 `checkedChange` 可接管行为，见 [fieldset 复选框](../fieldset-checkbox)。分区可用作标签页面板直属视图，见 [拖拽布局](../tabs-drag-drop)。
+
+需要通过标题左侧复选框控制内容显隐时，设置 `legend-checkbox` 和 `unchecked-mode="collapsed"`；添加 `checked` 可默认展开。取消勾选会隐藏并禁用内容，重新勾选恢复内容且保留输入值。`checkbox-label` 在左侧模式下仅用于无障碍名称，不会重复显示标题；省略时使用分区标题文字。
+
+监听事件可同时执行保存开关状态、重新计算等业务逻辑，不调用 `preventDefault()` 即可保留默认显隐行为：
+
+```js
+const section = document.querySelector('vscode-fieldset');
+section.addEventListener('vsc-fieldset-checked-change', (event) => {
+  const enabled = event.detail.checked;
+  updateSettings({enabled});
+});
+```
+
+`updateSettings` 由应用实现。事件会冒泡并穿过 shadow DOM 边界；代码直接修改 `checked` 会同步内容状态，但不会派发此用户交互事件。
 
 ## 交互示例
 
@@ -27,9 +45,11 @@ import 'nusys-ui/dist/vscode-checkbox/index.js';
 
 <ExamplePreview example="fieldset" />
 
+上方为无复选框的普通分区。下方为单独启用标题左侧复选框的用法，交互演示见功能场景中的“可选的 legend 左侧复选框”。
+
 ```html
 <vscode-fieldset
-  checkbox
+  legend-checkbox
   checked
   checkbox-label="启用风荷载"
   unchecked-mode="collapsed"

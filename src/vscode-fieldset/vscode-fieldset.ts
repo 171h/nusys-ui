@@ -47,6 +47,7 @@ const disabledControlStates = new WeakMap<
  * 可移动的侧栏视图；在默认插槽中提供含 legend 的原生 fieldset。
  *
  * checkbox 属性在边框右上角显示与标题对齐的复选框。
+ * legend-checkbox 属性在现有 legend 文字左侧显示可选复选框。
  * 复选框控制内容的禁用状态，并根据 unchecked-mode 控制显示方式。
  * 高度变化带有动画；用户偏好减少动态效果时跳过动画。
  *
@@ -80,8 +81,12 @@ export class VscodeFieldset extends VscElement {
   @property({type: Boolean, reflect: true})
   checkbox = false;
 
+  /** 在现有 legend 标题文字左侧显示复选框，点击标题也可切换，可切换时标题显示手型光标；默认关闭，优先于 checkbox。 */
+  @property({type: Boolean, attribute: 'legend-checkbox', reflect: true})
+  legendCheckbox = false;
+
   /**
-   * 复选框标签，默认为空。
+   * 复选框标签，默认为空；未提供时使用分区标题作为无障碍名称。
    */
   @property({attribute: 'checkbox-label'})
   checkboxLabel = '';
@@ -133,6 +138,8 @@ export class VscodeFieldset extends VscElement {
   private _contentCollapsed = false;
 
   private _borderFieldset?: HTMLFieldSetElement;
+
+  private _legendCheckboxSpacer?: HTMLSpanElement;
 
   private _contentObserver = new MutationObserver((records) => {
     this._syncDisabledControls();
@@ -196,6 +203,11 @@ export class VscodeFieldset extends VscElement {
         white-space: nowrap;
       }
 
+      :host([legend-checkbox]) .checkbox-row vscode-checkbox {
+        padding: 0;
+        right: auto;
+      }
+
       :host([data-vsc-collapsed][unchecked-mode='minimal']) {
         min-height: var(--_vsc-fieldset-minimal-height, 26px);
       }
@@ -205,6 +217,13 @@ export class VscodeFieldset extends VscElement {
         vscode-checkbox {
         top: calc(var(--_vsc-fieldset-minimal-height, 26px) / 2) !important;
         right: 10px !important;
+      }
+
+      :host([legend-checkbox][data-vsc-collapsed][unchecked-mode='minimal'])
+        .checkbox-row
+        vscode-checkbox {
+        left: 12px !important;
+        right: auto !important;
       }
     `,
   ];
@@ -216,9 +235,11 @@ export class VscodeFieldset extends VscElement {
 
   override connectedCallback() {
     super.connectedCallback();
+    this.addEventListener('click', this._onLegendClick);
     installFieldsetStyles(this);
     this._contentObserver.observe(this, {
       childList: true,
+      characterData: true,
       subtree: true,
       attributes: true,
       attributeFilter: ['style', 'class'],
@@ -229,9 +250,14 @@ export class VscodeFieldset extends VscElement {
   }
 
   override disconnectedCallback() {
+    this.removeEventListener('click', this._onLegendClick);
     this._contentObserver.disconnect();
     this._layoutObserver.disconnect();
     this._clearCheckboxBorder();
+    this._legendCheckboxSpacer?.remove();
+    this.fieldsetElement
+      ?.querySelector('legend')
+      ?.removeAttribute('data-vsc-legend-clickable');
     this._restoreInertContent();
     for (const control of this._disabledControls) {
       this._releaseDisabledControl(control);
@@ -246,6 +272,7 @@ export class VscodeFieldset extends VscElement {
       !this._rendered ||
       changed.has('checked') ||
       changed.has('checkbox') ||
+      changed.has('legendCheckbox') ||
       changed.has('disabled') ||
       changed.has('uncheckedMode')
     ) {
@@ -286,6 +313,12 @@ export class VscodeFieldset extends VscElement {
     const checkbox = this._checkboxEl;
     const fieldset = this.fieldsetElement;
     const legend = fieldset?.querySelector('legend');
+    this._syncLegendCheckboxSpacer(checkbox, legend);
+    this._syncLegendClickable(checkbox, legend);
+    if (checkbox) {
+      checkbox.ariaLabel =
+        this.checkboxLabel.trim() || legend?.textContent?.trim() || '启用分区';
+    }
     if (this._borderFieldset !== fieldset || !checkbox || !legend) {
       this._clearCheckboxBorder();
     }
@@ -318,7 +351,13 @@ export class VscodeFieldset extends VscElement {
           parseFloat(legendStyle.borderBottomWidth));
     const scaleY = legendRect.height / legendHeight || 1;
     checkbox.style.top = `${(legendRect.top + legendRect.height / 2 - rowRect.top) / scaleY}px`;
-    checkbox.style.right = `${(rowRect.right - fieldsetRect.right) / scaleX + 10}px`;
+    if (this.legendCheckbox && this._legendCheckboxSpacer) {
+      checkbox.style.left = `${(this._legendCheckboxSpacer.getBoundingClientRect().left - rowRect.left) / scaleX}px`;
+      checkbox.style.right = 'auto';
+    } else {
+      checkbox.style.removeProperty('left');
+      checkbox.style.right = `${(rowRect.right - fieldsetRect.right) / scaleX + 10}px`;
+    }
     checkbox.style.setProperty(
       '--vsc-form-control-font-size',
       legendStyle.fontSize
@@ -337,8 +376,8 @@ export class VscodeFieldset extends VscElement {
       fieldset.style.borderColor,
       `${Math.max(0, legendRect.left - fieldsetRect.left) / scaleX}px`,
       `${(legendRect.right - fieldsetRect.left) / scaleX}px`,
-      `${(Math.max(legendRect.right, checkboxRect.left) - fieldsetRect.left) / scaleX}px`,
-      `${(checkboxRect.right - fieldsetRect.left) / scaleX}px`,
+      `${((this.legendCheckbox ? legendRect.right : Math.max(legendRect.right, checkboxRect.left)) - fieldsetRect.left) / scaleX}px`,
+      `${((this.legendCheckbox ? legendRect.right : checkboxRect.right) - fieldsetRect.left) / scaleX}px`,
     ];
     BORDER_PROPERTIES.forEach((property, index) => {
       const value = values[index];
@@ -346,6 +385,43 @@ export class VscodeFieldset extends VscElement {
         fieldset.style.setProperty(property, value);
       }
     });
+  }
+
+  /** 仅为可选标题复选框预留行内位置，保留标题已有节点、样式和事件。 */
+  private _syncLegendCheckboxSpacer(
+    checkbox: VscodeCheckbox | undefined,
+    legend: HTMLLegendElement | null | undefined
+  ) {
+    if (!this.legendCheckbox || !checkbox || !legend) {
+      this._legendCheckboxSpacer?.remove();
+      return;
+    }
+    if (!this._legendCheckboxSpacer) {
+      const spacer = this.ownerDocument.createElement('span');
+      spacer.setAttribute('aria-hidden', 'true');
+      spacer.style.cssText =
+        'display: inline-block; height: 1px; vertical-align: middle; pointer-events: none';
+      this._legendCheckboxSpacer = spacer;
+    }
+    const spacer = this._legendCheckboxSpacer;
+    const width = `${checkbox.offsetWidth + 4}px`;
+    if (spacer.style.width !== width) {
+      spacer.style.width = width;
+    }
+    if (legend.firstChild !== spacer) {
+      legend.prepend(spacer);
+    }
+  }
+
+  /** 标题可切换复选框时标记为可点击，供手型光标样式使用；禁用或未开启功能时移除。 */
+  private _syncLegendClickable(
+    checkbox: VscodeCheckbox | undefined,
+    legend: HTMLLegendElement | null | undefined
+  ) {
+    legend?.toggleAttribute(
+      'data-vsc-legend-clickable',
+      this.legendCheckbox && !!checkbox && !checkbox.disabled
+    );
   }
 
   private _clearCheckboxBorder() {
@@ -365,6 +441,39 @@ export class VscodeFieldset extends VscElement {
     this._observeLayout();
     this._syncCheckboxLayout();
   }
+
+  private _onLegendClick = (event: MouseEvent) => {
+    const checkbox = this._checkboxEl;
+    if (
+      !this.legendCheckbox ||
+      !checkbox ||
+      this.disabled ||
+      checkbox.disabled ||
+      event.defaultPrevented
+    ) {
+      return;
+    }
+    const legend = this.fieldsetElement?.querySelector('legend');
+    const path = event.composedPath();
+    const legendIndex = legend ? path.indexOf(legend) : -1;
+    if (
+      legendIndex < 0 ||
+      path
+        .slice(0, legendIndex)
+        .some(
+          (element) =>
+            element instanceof Element &&
+            element.matches(
+              'a[href], button, input, select, textarea, label, summary, [contenteditable]:not([contenteditable="false"]), [tabindex], [role="button"], [role="link"], [role="checkbox"], [role="switch"], [role="menuitem"]'
+            )
+        )
+    ) {
+      return;
+    }
+    checkbox.focus();
+    checkbox.checked = !checkbox.checked;
+    this._onCheckboxChange();
+  };
 
   private _onCheckboxChange() {
     const checked = this._checkboxEl?.checked ?? false;
@@ -406,7 +515,7 @@ export class VscodeFieldset extends VscElement {
     if (this._checkboxEl) {
       this._checkboxEl.disabled = this._initialDisabled || this.disabled;
     }
-    if (!this.checkbox) {
+    if (!this.checkbox && !this.legendCheckbox) {
       this._stopAnimation();
       this.removeAttribute(COLLAPSED_ATTR);
       this._clearAnimationStyles();
@@ -473,7 +582,9 @@ export class VscodeFieldset extends VscElement {
   /** 同步库控件的实际禁用状态，并保留其原有 disabled 值。 */
   private _syncDisabledControls() {
     const fieldset = this.fieldsetElement;
-    const disabled = (this.checkbox || this.disabled) && !!fieldset?.disabled;
+    const disabled =
+      (this.checkbox || this.legendCheckbox || this.disabled) &&
+      !!fieldset?.disabled;
 
     for (const control of this._disabledControls) {
       if (!disabled || !fieldset?.contains(control)) {
@@ -711,12 +822,12 @@ export class VscodeFieldset extends VscElement {
   override render(): TemplateResult {
     return html`
       ${
-        this.checkbox
+        this.checkbox || this.legendCheckbox
           ? html`
               <div class="checkbox-row" part="checkbox">
                 <vscode-checkbox
                   size=${this.size}
-                  label=${this.checkboxLabel}
+                  label=${this.legendCheckbox ? '' : this.checkboxLabel}
                   ?checked=${this.checked}
                   @change=${this._onCheckboxChange}
                 ></vscode-checkbox>

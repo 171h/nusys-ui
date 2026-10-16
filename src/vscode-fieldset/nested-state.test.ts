@@ -7,7 +7,13 @@ import type {VscodeTextfield} from '../vscode-textfield/index.js';
 
 const settle = async (element: VscodeFieldset) => {
   await element.updateComplete;
-  await new Promise((resolve) => setTimeout(resolve, 240));
+  // 等待真实动画结束，避免 CI 调度延迟使固定等待时间不足。
+  await Promise.all(
+    element
+      .getAnimations({subtree: true})
+      .map((animation) => animation.finished)
+  );
+  await element.updateComplete;
 };
 
 function toggle(element: VscodeFieldset) {

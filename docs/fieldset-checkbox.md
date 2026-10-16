@@ -1,9 +1,9 @@
 # Fieldset 复选框
 
-`vscode-fieldset` 可在边框右上角显示与 legend 垂直对齐的复选框，默认控制内容的启用状态。
+`vscode-fieldset` 默认不显示复选框。使用可选的 `legend-checkbox` 在现有 legend 标题文字左侧增加复选框，配合 `unchecked-mode="collapsed"` 控制内容显隐；未开启时保持普通分区的标题、内容和交互。
 
 ```html
-<vscode-fieldset checkbox checkbox-label="风荷载" unchecked-mode="collapsed">
+<vscode-fieldset legend-checkbox checked unchecked-mode="collapsed">
   <fieldset>
     <legend>风荷载</legend>
     <label>基本风压 <input /></label>
@@ -11,9 +11,15 @@
 </vscode-fieldset>
 ```
 
-默认插槽应包含带 legend 的原生 fieldset。复选框在组件内部渲染，内容保留原生表单语义。
+默认插槽应包含带 legend 的原生 fieldset。左侧复选框与现有标题文字位于同一标题行，不替换标题节点；内容保留原生表单语义。动态关闭 `legendCheckbox` 后移除复选框及其占位，恢复普通标题和内容。
 
-标题默认加粗。复选框及其标签位于右上角边框线上，与当前标题垂直居中对齐；标签字号跟随标题，使用常规字重和略淡的标题颜色。切换组件尺寸或自定义标题字号后，仍保持此对齐关系。
+`checkbox` 是已有的右上角复选框接口，仍保持兼容。两者均未设置时不会增加复选框；同时设置时仅显示 legend 左侧复选框。`checked`、`unchecked-mode`、`disabled` 和事件接口适用于两种复选框。
+
+开启 `legend-checkbox` 后，点击现有 `legend` 标题文字也会切换勾选状态，焦点移到复选框，并触发与点击复选框相同的 `vsc-fieldset-checked-change` 事件及 `checkedChange` 回调。取消默认处理的方式不变。标题内的按钮、链接、输入控件及可编辑区域保留独立行为；取消标题 `click` 的默认行为可阻止此次切换。可切换时标题显示手型光标；显式禁用的分区、原生分区初始禁用及未开启此可选功能的分区不会因标题点击而切换，也不显示手型光标。
+
+省略 `checkbox-label` 时不显示额外标签文字，复选框使用当前 legend 的文字作为无障碍名称；标题动态变化时同步更新。没有标题文字时回退为“启用分区”，建议始终提供有意义的标题或复选框标签。
+
+标题默认加粗。`legend-checkbox` 模式下复选框位于标题文字左侧，`checkbox-label` 仅设置无障碍名称，不增加可见标签。原有 `checkbox` 模式下，复选框及其标签位于右上角边框线上，与当前标题垂直居中对齐；标签字号跟随标题，使用常规字重和略淡的标题颜色。切换组件尺寸或自定义标题字号后，仍保持对齐。
 
 标题和复选框标签的背景共用 `--vsc-fieldset-header-background`，默认值为 `transparent`，不绘制任何背景颜色，也不回退到侧栏或编辑区背景。主题切换后仍保持透明。应用可在 `vscode-fieldset` 或其祖先上显式设置同一变量：
 
@@ -29,15 +35,16 @@ vscode-fieldset {
 
 ## 属性
 
-| HTML 属性        | JavaScript 属性 | 类型                                    | 默认值      | 说明                       |
-| ---------------- | --------------- | --------------------------------------- | ----------- | -------------------------- |
-| `checkbox`       | `checkbox`      | boolean                                 | `false`     | 在边框上显示复选框。       |
-| `checkbox-label` | `checkboxLabel` | string                                  | `''`        | 复选框标签。               |
-| `checked`        | `checked`       | boolean                                 | `false`     | 勾选状态；勾选时启用内容。 |
-| `disabled`       | `disabled`      | boolean                                 | `false`     | 禁用整个分区及标题复选框。 |
-| `unchecked-mode` | `uncheckedMode` | `'visible' \| 'collapsed' \| 'minimal'` | `'visible'` | 未勾选时的展示方式。       |
+| HTML 属性         | JavaScript 属性  | 类型                                    | 默认值      | 说明                                   |
+| ----------------- | ---------------- | --------------------------------------- | ----------- | -------------------------------------- |
+| `checkbox`        | `checkbox`       | boolean                                 | `false`     | 在边框上显示复选框。                   |
+| `legend-checkbox` | `legendCheckbox` | boolean                                 | `false`     | 在现有 legend 文字左侧显示可选复选框。 |
+| `checkbox-label`  | `checkboxLabel`  | string                                  | `''`        | 复选框标签。                           |
+| `checked`         | `checked`        | boolean                                 | `false`     | 勾选状态；勾选时启用内容。             |
+| `disabled`        | `disabled`       | boolean                                 | `false`     | 禁用整个分区及标题复选框。             |
+| `unchecked-mode`  | `uncheckedMode`  | `'visible' \| 'collapsed' \| 'minimal'` | `'visible'` | 未勾选时的展示方式。                   |
 
-`checkbox`、`checked`、`disabled` 和 `unchecked-mode` 会反映到 HTML 属性，可用 `vscode-fieldset[checked]` 选择器设置样式。`checkboxLabel` 不会自动反映到 HTML 属性。
+`checkbox`、`legend-checkbox`、`checked`、`disabled` 和 `unchecked-mode` 会反映到 HTML 属性，可用 `vscode-fieldset[checked]` 选择器设置样式。`checkboxLabel` 不会自动反映到 HTML 属性。
 
 ## 未勾选时的展示方式
 
@@ -47,7 +54,7 @@ vscode-fieldset {
 | `collapsed` | 禁用并隐藏内容，保留标题、边框和复选框。     |
 | `minimal`   | 隐藏内容、标题和边框，仅保留复选框及其标签。 |
 
-没有 checkbox 属性时，组件不显示复选框，也不会修改原生 fieldset 的禁用状态。
+没有 `checkbox` 或 `legend-checkbox` 属性时，组件不显示复选框；`checked` 和 `unchecked-mode` 不会触发内容显隐或禁用。显式 `disabled` 属性继续控制分区禁用状态。
 
 ## 自定义行为
 
@@ -74,7 +81,7 @@ fieldset.checkedChange = (checked) => {
 
 取消默认处理后的内容状态在拖拽或重新连接后保留；之后通过代码修改 checked、checkbox 或 uncheckedMode 属性会重新应用默认行为。
 
-通过代码修改 checked 属性会应用默认行为。自定义处理可通过 fieldsetElement 获取原生元素。
+通过代码修改 checked 属性会应用默认行为，但不会派发 `vsc-fieldset-checked-change` 或调用 `checkedChange`，可避免模型同步时重复触发业务操作。自定义处理可通过 fieldsetElement 获取原生元素。
 
 ## 动画与布局
 
@@ -135,6 +142,6 @@ minimal 模式隐藏原生 fieldset，因此不能通过 legend 拖动视图。�
 
 ## 交互示例
 
-<ExamplePreview example="fieldset" />
+<ExamplePreview example="fieldset-legend-checkbox" />
 
 通过预览工具栏切换主题和尺寸。更多属性见 [Fieldset API](./api/generated/fieldset)。

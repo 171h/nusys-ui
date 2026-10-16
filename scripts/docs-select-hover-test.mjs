@@ -28,11 +28,17 @@ export async function testSelectHover(frame) {
     );
     // 暂停真实 CSS 过渡，确定性地检查动画中间帧与两个端点。
     await text.evaluate((el) => {
+      // 延长过渡时长，避免 CI 负载导致事件延迟或过渡提前结束时无法捕获动画。
+      el.style.transitionDuration = '100s';
       el.addEventListener('transitionrun', (event) => {
         if (event.propertyName !== 'margin-right') return;
-        const animation = el.getAnimations()[0];
+        const animation = el
+          .getAnimations()
+          .find((item) => item.transitionProperty === 'margin-right');
+        if (!animation) return;
         animation.pause();
-        animation.currentTime = 80;
+        // 与 160ms 过渡在 80ms 处的进度一致。
+        animation.currentTime = animation.effect.getTiming().duration / 2;
       });
     });
     await control.hover();
@@ -133,6 +139,7 @@ export async function testSelectHover(frame) {
       await icon.evaluate((el) => getComputedStyle(el).opacity),
       '0'
     );
+    await text.evaluate((el) => el.style.removeProperty('transition-duration'));
   }
 
   const combo = frame.locator('#hover-combobox');
