@@ -48,6 +48,15 @@ export class VscodeTooltip extends VscElement {
   /** 提示内容，默认按纯文本渲染；启用 markdown 后支持 Markdown。 */
   @property() text = '';
 
+  /** 提示面板的无障碍名称。 */
+  @property({attribute: 'tooltip-label'}) tooltipLabel = '提示';
+
+  /** 未固定时图钉的提示及无障碍名称。 */
+  @property({attribute: 'pin-label'}) pinLabel = '固定提示';
+
+  /** 已固定时图钉的提示及无障碍名称。 */
+  @property({attribute: 'unpin-label'}) unpinLabel = '取消固定提示';
+
   /** 将 text 按 Markdown 渲染，支持表格；默认关闭，不允许原始 HTML。 */
   @property({type: Boolean, reflect: true}) markdown = false;
 
@@ -592,7 +601,7 @@ export class VscodeTooltip extends VscElement {
         popover="manual"
         data-placement=${this.placement}
         role="group"
-        aria-label="提示"
+        aria-label=${this.tooltipLabel}
         @mouseenter=${this._panelEnter}
         @mouseleave=${this._panelLeave}
         @focusin=${this._panelFocusIn}
@@ -602,9 +611,9 @@ export class VscodeTooltip extends VscElement {
           class="pin"
           part="pin"
           type="button"
-          aria-label=${this.pinned ? '取消固定提示' : '固定提示'}
+          aria-label=${this.pinned ? this.unpinLabel : this.pinLabel}
           aria-pressed=${this.pinned ? 'true' : 'false'}
-          title=${this.pinned ? '取消固定提示' : '固定提示'}
+          title=${this.pinned ? this.unpinLabel : this.pinLabel}
           @click=${this._togglePinned}
         >
           <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true">

@@ -28,6 +28,23 @@ import 'nusys-ui/dist/vscode-tooltip/index.js';
 
 `pinned` 是可读写、反射到同名属性的布尔状态，可通过 `<vscode-tooltip pinned>` 或 `tip.pinned = true` 固定。禁用提示、清空内容、替换目标或移除组件会清除固定状态。固定仅控制关闭行为，仍跟随目标定位并遵守目标可见性规则；`open` 持续提示不受取消固定影响。固定按钮可通过 `::part(pin)` 调整样式。
 
+## 国际化
+
+通过 `tooltip-label`（JavaScript 属性 `tooltipLabel`）设置提示面板的无障碍名称，通过 `pin-label` / `unpin-label`（`pinLabel` / `unpinLabel`）设置未固定和已固定时按钮的原生悬浮提示及无障碍名称。默认分别为“提示”“固定提示”“取消固定提示”，保留原有中文行为。
+
+```html
+<vscode-tooltip
+  text="Search (Ctrl+Shift+F)"
+  tooltip-label="Tooltip"
+  pin-label="Pin tooltip"
+  unpin-label="Unpin tooltip"
+>
+  <vscode-button>搜索</vscode-button>
+</vscode-tooltip>
+```
+
+组件不自动检测语言；应用切换语言时同步更新这三个属性和 `text`，已显示或固定的提示会立即更新文案。Vue 模板可用 `:tooltip-label="t('tooltip.label')"`、`:pin-label="t('tooltip.pin')"` 和 `:unpin-label="t('tooltip.unpin')"` 绑定应用的翻译结果。
+
 ## Markdown 与表格
 
 设置 `markdown` 后，`text` 支持标题、强调、行内代码、代码块、列表、引用、链接和 Markdown 表格。未设置时仍按纯文本显示。长表格和代码在面板内滚动，可通过 `--vsc-tooltip-max-width` 调整可用宽度。

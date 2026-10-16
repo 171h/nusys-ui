@@ -27,6 +27,62 @@ const setup = () =>
 describe('vscode-tooltip', () => {
   afterEach(async () => resetMouse());
 
+  it('默认保留中文面板名称和固定按钮文案', async () => {
+    const el = await setup();
+    const pin = panel(el).querySelector('button')!;
+    expect(panel(el).getAttribute('aria-label')).to.equal('提示');
+    expect(pin.getAttribute('aria-label')).to.equal('固定提示');
+    expect(pin.title).to.equal('固定提示');
+    el.querySelector('button')!.focus();
+    await el.updateComplete;
+    pin.click();
+    await el.updateComplete;
+    expect(el.pinned).to.equal(true);
+    expect(pin.getAttribute('aria-label')).to.equal('取消固定提示');
+    expect(pin.title).to.equal('取消固定提示');
+  });
+
+  it('支持通过属性翻译文案，并在显示和固定期间动态切换语言', async () => {
+    const el = await fixture<VscodeTooltip>(html`
+      <vscode-tooltip
+        text="说明内容"
+        tooltip-label="Tooltip"
+        pin-label="Pin tooltip"
+        unpin-label="Unpin tooltip"
+      >
+        <button>查看说明</button>
+      </vscode-tooltip>
+    `);
+    el.querySelector('button')!.focus();
+    await el.updateComplete;
+    const pin = panel(el).querySelector('button')!;
+    expect(panel(el).getAttribute('aria-label')).to.equal('Tooltip');
+    expect(pin.getAttribute('aria-label')).to.equal('Pin tooltip');
+    expect(pin.title).to.equal('Pin tooltip');
+    pin.click();
+    await el.updateComplete;
+    expect(pin.getAttribute('aria-label')).to.equal('Unpin tooltip');
+    expect(pin.title).to.equal('Unpin tooltip');
+
+    el.tooltipLabel = '提示';
+    el.pinLabel = '固定提示';
+    el.unpinLabel = '取消固定提示';
+    await el.updateComplete;
+    expect(panel(el).getAttribute('aria-label')).to.equal('提示');
+    expect(pin.getAttribute('aria-label')).to.equal('取消固定提示');
+    expect(pin.title).to.equal('取消固定提示');
+    expect(pin.getAttribute('aria-pressed')).to.equal('true');
+    expect(panel(el).matches(':popover-open')).to.equal(true);
+    pin.click();
+    await el.updateComplete;
+    expect(pin.getAttribute('aria-label')).to.equal('固定提示');
+    expect(pin.title).to.equal('固定提示');
+    expect(pin.getAttribute('aria-pressed')).to.equal('false');
+    expect(el.querySelector('[role="tooltip"]')!.textContent).to.equal(
+      '说明内容'
+    );
+  });
+
   for (const association of ['for', 'target'] as const) {
     it(`${association} 外部目标可跨过中间控件进入面板、固定和访问链接，Escape 恢复焦点`, async () => {
       await sendMouse({type: 'move', position: [1200, 900]});
