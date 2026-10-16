@@ -67,7 +67,7 @@ export default css`
     padding: 2px;
     border: 0;
     border-radius: 3px;
-    color: inherit;
+    color: var(--vscode-descriptionForeground, #aaaaaa);
     background: transparent;
     cursor: pointer;
   }
@@ -78,9 +78,6 @@ export default css`
   .pin:focus-visible {
     outline: 1px solid var(--vscode-focusBorder, #0078d4);
     outline-offset: -1px;
-  }
-  .pin[aria-pressed='true'] {
-    color: var(--vscode-textLink-foreground, #3794ff);
   }
   .markdown > :first-child {
     margin-top: 0;
