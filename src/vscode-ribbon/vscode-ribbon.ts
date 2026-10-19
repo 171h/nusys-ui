@@ -112,6 +112,10 @@ export class VscodeRibbon extends VscElement {
   @property({type: Boolean, reflect: true})
   collapsed = false;
 
+  /** 是否显示折叠按钮并允许折叠；设为 `false` 后功能区始终展开。 */
+  @property({type: Boolean, reflect: true})
+  collapsible = true;
+
   /** 将折叠状态与最后标签写入 `localStorage`。 */
   @property({type: Boolean, reflect: true, attribute: 'persist-state'})
   persistState = false;
@@ -257,6 +261,9 @@ export class VscodeRibbon extends VscElement {
 
   protected override willUpdate(changed: PropertyValues): void {
     super.willUpdate(changed);
+    if (!this.collapsible && this.collapsed) {
+      this.collapsed = false;
+    }
     if (changed.has('tabs')) {
       this._models = buildRibbonTabs(this.tabs);
       this._resetResponsiveState();
@@ -620,8 +627,11 @@ export class VscodeRibbon extends VscElement {
     }
   }
 
-  private _toggleCollapse(): void {
-    this.collapsed = !this.collapsed;
+  private _setCollapsed(collapsed: boolean): void {
+    if (!this.collapsible || this.collapsed === collapsed) {
+      return;
+    }
+    this.collapsed = collapsed;
     this._overlayOpen = false;
     this._closeMenu(false);
     this._closeGroup(false);
@@ -634,6 +644,46 @@ export class VscodeRibbon extends VscElement {
       }) as VscRibbonCollapseEvent
     );
     this._scheduleLayout();
+  }
+
+  /** 折叠按钮区。 */
+  collapse(): void {
+    this._setCollapsed(true);
+  }
+
+  /** 展开按钮区。 */
+  expand(): void {
+    this._setCollapsed(false);
+  }
+
+  /** 切换折叠状态。 */
+  toggleCollapsed(): void {
+    this._setCollapsed(!this.collapsed);
+  }
+
+  /** 切换到指定标签；标签不存在时忽略。 */
+  selectTab(tabId: string): void {
+    const tab = this._models.find((model) => model.id === tabId);
+    if (tab) {
+      this._selectTab(tab);
+    }
+  }
+
+  /** 关闭所有下拉菜单、分组弹层与折叠覆盖层。 */
+  closeMenus(): void {
+    this._closeMenu(false);
+    this._closeGroup(false);
+    this._overlayOpen = false;
+  }
+
+  /** 重新测量并执行一次响应式降级。 */
+  refreshLayout(): void {
+    this._resetResponsiveState();
+    this._scheduleLayout();
+  }
+
+  private _toggleCollapse(): void {
+    this._setCollapsed(!this.collapsed);
   }
 
   private _onTabsKeyDown = (event: KeyboardEvent): void => {
@@ -742,15 +792,47 @@ export class VscodeRibbon extends VscElement {
     }
   }
 
-  private _toggleMenu(item: RibbonItemModel, anchor: HTMLElement): void {
+  private _toggleMenu(
+    item: RibbonItemModel,
+    anchor: HTMLElement,
+    focus: 'first' | 'last' = 'first'
+  ): void {
     if (this._isMenuOpen(item)) {
       this._closeMenu(true);
       return;
     }
-    this._openItemMenu(item, anchor);
+    this._openItemMenu(item, anchor, focus);
   }
 
-  private _openItemMenu(item: RibbonItemModel, anchor: HTMLElement): void {
+  private _onTriggerKeyDown(
+    event: KeyboardEvent,
+    item: RibbonItemModel,
+    anchor: HTMLElement
+  ): void {
+    if (
+      event.altKey ||
+      event.ctrlKey ||
+      event.metaKey ||
+      event.shiftKey ||
+      !item.menu ||
+      (event.key !== 'ArrowDown' && event.key !== 'ArrowUp')
+    ) {
+      return;
+    }
+    event.preventDefault();
+    const focus = event.key === 'ArrowUp' ? 'last' : 'first';
+    if (this._isMenuOpen(item)) {
+      this._focusMenu(focus);
+      return;
+    }
+    this._openItemMenu(item, anchor, focus);
+  }
+
+  private _openItemMenu(
+    item: RibbonItemModel,
+    anchor: HTMLElement,
+    focus: 'first' | 'last' = 'first'
+  ): void {
     if (!item.menu) {
       return;
     }
@@ -763,7 +845,7 @@ export class VscodeRibbon extends VscElement {
         return;
       }
       this._positionMenu();
-      this._focusMenu('first');
+      this._focusMenu(focus);
     });
   }
 
@@ -838,6 +920,10 @@ export class VscodeRibbon extends VscElement {
     return {left, top, maxHeight};
   }
 
+  private _menuItems(): RibbonItemModel[] {
+    return this._menuStack[this._menuStack.length - 1]?.items ?? [];
+  }
+
   private _menuFocusable(): HTMLElement[] {
     return Array.from(
       this._menuEl?.querySelectorAll<HTMLElement>(
@@ -900,6 +986,16 @@ export class VscodeRibbon extends VscElement {
       this._popMenu();
       return;
     }
+    if (event.key === 'ArrowRight') {
+      const active = this.shadowRoot?.activeElement as HTMLElement | null;
+      const key = active?.getAttribute('data-item-key') ?? '';
+      const item = this._menuItems().find((entry) => entry.key === key);
+      if (item?.menu) {
+        event.preventDefault();
+        this._pushMenu(item);
+      }
+      return;
+    }
     if (options.length === 0) {
       return;
     }
@@ -936,15 +1032,46 @@ export class VscodeRibbon extends VscElement {
     this._closeMenu(false);
   }
 
-  private _toggleGroup(group: RibbonGroupModel, anchor: HTMLElement): void {
+  private _toggleGroup(
+    group: RibbonGroupModel,
+    anchor: HTMLElement,
+    focus: 'first' | 'last' = 'first'
+  ): void {
     if (this._isGroupOpen(group)) {
       this._closeGroup(true);
       return;
     }
-    this._openGroupMenu(group, anchor);
+    this._openGroupMenu(group, anchor, focus);
   }
 
-  private _openGroupMenu(group: RibbonGroupModel, anchor: HTMLElement): void {
+  private _onGroupTriggerKeyDown(
+    event: KeyboardEvent,
+    group: RibbonGroupModel,
+    anchor: HTMLElement
+  ): void {
+    if (
+      event.altKey ||
+      event.ctrlKey ||
+      event.metaKey ||
+      event.shiftKey ||
+      (event.key !== 'ArrowDown' && event.key !== 'ArrowUp')
+    ) {
+      return;
+    }
+    event.preventDefault();
+    const focus = event.key === 'ArrowUp' ? 'last' : 'first';
+    if (this._isGroupOpen(group)) {
+      this._focusGroup(focus);
+      return;
+    }
+    this._openGroupMenu(group, anchor, focus);
+  }
+
+  private _openGroupMenu(
+    group: RibbonGroupModel,
+    anchor: HTMLElement,
+    focus: 'first' | 'last' = 'first'
+  ): void {
     this._closeMenu(false);
     this._openGroup = {group, anchor};
     this._groupPosition = null;
@@ -953,7 +1080,7 @@ export class VscodeRibbon extends VscElement {
         return;
       }
       this._positionGroup();
-      this._focusGroup();
+      this._focusGroup(focus);
     });
   }
 
@@ -999,13 +1126,15 @@ export class VscodeRibbon extends VscElement {
     });
   }
 
-  private _focusGroup(): void {
+  private _focusGroup(position: 'first' | 'last' = 'first'): void {
     requestAnimationFrame(() => {
       const options = Array.from(
         this._groupEl?.querySelectorAll<HTMLElement>('button:not(:disabled)') ??
           []
       ).filter((element) => element.getClientRects().length > 0);
-      options[0]?.focus();
+      const target =
+        position === 'last' ? options[options.length - 1] : options[0];
+      target?.focus();
     });
   }
 
@@ -1178,6 +1307,12 @@ export class VscodeRibbon extends VscElement {
           aria-pressed=${ifDefined(item.pressed)}
           ?disabled=${item.disabled}
           @click=${() => this._runPrimary(item, context)}
+          @keydown=${(event: KeyboardEvent) =>
+            this._onTriggerKeyDown(
+              event,
+              item,
+              event.currentTarget as HTMLElement
+            )}
         >
           ${this._renderIcon(item.icon)}
           ${this._renderLabel(item, {iconOnly, lines: level.size === 'third' ? 1 : 2})}
@@ -1191,6 +1326,12 @@ export class VscodeRibbon extends VscElement {
           aria-expanded=${open ? 'true' : 'false'}
           ?disabled=${item.disabled}
           @click=${(event: Event) => this._toggleMenu(item, anchorEvent(event))}
+          @keydown=${(event: KeyboardEvent) =>
+            this._onTriggerKeyDown(
+              event,
+              item,
+              event.currentTarget as HTMLElement
+            )}
         >
           <span
             class="codicon codicon-chevron-down ribbon-chevron"
@@ -1214,6 +1355,15 @@ export class VscodeRibbon extends VscElement {
           this._toggleMenu(item, anchorEvent(event));
         } else {
           this._activateItem(item, anchorEvent(event), context);
+        }
+      }}
+      @keydown=${(event: KeyboardEvent) => {
+        if (isDropdown) {
+          this._onTriggerKeyDown(
+            event,
+            item,
+            event.currentTarget as HTMLElement
+          );
         }
       }}
     >
@@ -1243,6 +1393,7 @@ export class VscodeRibbon extends VscElement {
           role="menuitem"
           title=${title}
           aria-label=${item.title}
+          data-item-key=${item.key}
           ?disabled=${item.disabled}
           @click=${() => {
             this._closeMenu(false);
@@ -1258,6 +1409,7 @@ export class VscodeRibbon extends VscElement {
           title=${`${this.openMenuLabel}：${item.title}`}
           aria-label=${`${this.openMenuLabel}：${item.title}`}
           aria-haspopup="menu"
+          data-item-key=${item.key}
           ?disabled=${item.disabled}
           @click=${() => this._pushMenu(item)}
         >
@@ -1276,6 +1428,7 @@ export class VscodeRibbon extends VscElement {
       title=${title}
       aria-label=${item.title}
       aria-haspopup=${ifDefined(hasMenu ? 'menu' : undefined)}
+      data-item-key=${item.key}
       ?disabled=${item.disabled}
       @click=${(event: Event) => {
         if (hasMenu) {
@@ -1310,6 +1463,7 @@ export class VscodeRibbon extends VscElement {
       title=${this._buttonTitle(item)}
       aria-label=${item.title}
       aria-haspopup=${ifDefined(hasMenu ? 'menu' : undefined)}
+      data-item-key=${item.key}
       ?disabled=${item.disabled}
       @click=${(event: Event) => {
         if (hasMenu) {
@@ -1477,6 +1631,12 @@ export class VscodeRibbon extends VscElement {
         aria-expanded=${open ? 'true' : 'false'}
         @click=${(event: Event) =>
           this._toggleGroup(group, event.currentTarget as HTMLElement)}
+        @keydown=${(event: KeyboardEvent) =>
+          this._onGroupTriggerKeyDown(
+            event,
+            group,
+            event.currentTarget as HTMLElement
+          )}
       >
         ${this._renderIcon(icon, 'ribbon-group-icon')}
         ${this._renderLabel(
@@ -1535,23 +1695,27 @@ export class VscodeRibbon extends VscElement {
           )}
         </div>
         <slot name="tabs-end"></slot>
-        <button
-          type="button"
-          class="ribbon-collapse"
-          title=${this.collapsed ? this.expandLabel : this.collapseLabel}
-          aria-label=${this.collapsed ? this.expandLabel : this.collapseLabel}
-          aria-expanded=${this.collapsed ? 'false' : 'true'}
-          @click=${this._toggleCollapse}
-        >
-          <span
-            class=${classMap({
-              codicon: true,
-              'codicon-chevron-up': !this.collapsed,
-              'codicon-chevron-down': this.collapsed,
-            })}
-            aria-hidden="true"
-          ></span>
-        </button>
+        ${
+          this.collapsible
+            ? html`<button
+                type="button"
+                class="ribbon-collapse"
+                title=${this.collapsed ? this.expandLabel : this.collapseLabel}
+                aria-label=${this.collapsed ? this.expandLabel : this.collapseLabel}
+                aria-expanded=${this.collapsed ? 'false' : 'true'}
+                @click=${this._toggleCollapse}
+              >
+                <span
+                  class=${classMap({
+                    codicon: true,
+                    'codicon-chevron-up': !this.collapsed,
+                    'codicon-chevron-down': this.collapsed,
+                  })}
+                  aria-hidden="true"
+                ></span>
+              </button>`
+            : nothing
+        }
       </div>
       <div
         class=${classMap({

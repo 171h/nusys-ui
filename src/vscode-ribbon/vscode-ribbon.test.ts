@@ -548,6 +548,124 @@ describe('vscode-ribbon', () => {
     localStorage.removeItem(key);
   });
 
+  it('ArrowDown 可打开下拉菜单并聚焦首项', async () => {
+    const el = await createRibbon();
+    Array.from(el.shadowRoot!.querySelectorAll<HTMLElement>('[role="tab"]'))
+      .find((tab) => tab.textContent?.trim() === '插入')!
+      .click();
+    await el.updateComplete;
+    await aTimeout(24);
+    const trigger = shadowButton(el, '模板菜单')!;
+    trigger.focus();
+    trigger.dispatchEvent(
+      new KeyboardEvent('keydown', {
+        key: 'ArrowDown',
+        bubbles: true,
+        composed: true,
+      })
+    );
+    await waitFor(
+      () => el.shadowRoot?.querySelector('.ribbon-menu-popover') !== null
+    );
+    await aTimeout(32);
+    expect(el.shadowRoot!.activeElement?.textContent).to.contain('板模板');
+  });
+
+  it('ArrowDown 可从折叠分组入口打开分组弹层', async () => {
+    const tabs: VscRibbonTab[] = [
+      {
+        id: 'home',
+        title: '开始',
+        default: true,
+        groups: [
+          {
+            id: 'group',
+            title: '分组',
+            items: [
+              {
+                command: 'run',
+                title: '很长的按钮',
+                icon: 'play',
+                responsive: [{size: 'half'}, {size: 'third'}],
+              },
+            ],
+          },
+          {
+            id: 'second-group',
+            title: '第二组',
+            items: [{command: 'other', title: '另一个', icon: 'add'}],
+          },
+        ],
+      },
+    ];
+    const el = await createRibbon(tabs, 'width: 90px');
+    await waitFor(
+      () => el.shadowRoot?.querySelector('.ribbon-group.folded') !== null
+    );
+    const trigger = el.shadowRoot!.querySelector<HTMLButtonElement>(
+      '.ribbon-group.folded .ribbon-group-dropdown'
+    )!;
+    trigger.focus();
+    trigger.dispatchEvent(
+      new KeyboardEvent('keydown', {
+        key: 'ArrowDown',
+        bubbles: true,
+        composed: true,
+      })
+    );
+    await waitFor(
+      () => el.shadowRoot?.querySelector('.ribbon-group-popover') !== null
+    );
+    await aTimeout(32);
+    expect(el.shadowRoot!.activeElement).to.not.equal(null);
+    document.dispatchEvent(
+      new KeyboardEvent('keydown', {key: 'Escape', bubbles: true})
+    );
+    await el.updateComplete;
+    expect(el.shadowRoot!.querySelector('.ribbon-group-popover')).to.equal(
+      null
+    );
+    expect(el.shadowRoot!.activeElement).to.equal(trigger);
+  });
+
+  it('公开方法可切换标签、折叠状态并关闭弹层', async () => {
+    const el = await createRibbon();
+    el.selectTab('insert');
+    await el.updateComplete;
+    expect(
+      el.shadowRoot!.querySelector('[role="tab"][aria-selected="true"]')
+        ?.textContent
+    ).to.contain('插入');
+
+    el.collapse();
+    await el.updateComplete;
+    expect(el.collapsed).to.equal(true);
+    el.expand();
+    await el.updateComplete;
+    expect(el.collapsed).to.equal(false);
+    el.toggleCollapsed();
+    await el.updateComplete;
+    expect(el.collapsed).to.equal(true);
+    el.expand();
+    await el.updateComplete;
+
+    await openMenu(el, '模板菜单');
+    el.closeMenus();
+    await el.updateComplete;
+    expect(el.shadowRoot!.querySelector('.ribbon-menu-popover')).to.equal(null);
+
+    el.collapsible = false;
+    await el.updateComplete;
+    expect(el.shadowRoot!.querySelector('.ribbon-collapse')).to.equal(null);
+    el.collapse();
+    await el.updateComplete;
+    expect(el.collapsed).to.equal(false);
+    el.collapsible = true;
+    await el.updateComplete;
+    expect(el.shadowRoot!.querySelector('.ribbon-collapse')).to.not.equal(null);
+    el.refreshLayout();
+  });
+
   it('主题变更时切换浅色与深色图标', async () => {
     const tabs: VscRibbonTab[] = [
       {
