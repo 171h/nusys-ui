@@ -216,6 +216,7 @@ function buildDialogLauncher(
   return {
     title,
     icon: resolveRibbonIcon(config.icon ?? 'link-external'),
+    rotated: !config.icon,
   };
 }
 

@@ -238,10 +238,12 @@ describe('ribbon-model', () => {
     expect(tab.groups[0].dialogLauncher).toEqual({
       title: '打开“布局”对话框',
       icon: {type: 'codicon', id: 'link-external'},
+      rotated: true,
     });
     expect(tab.groups[1].dialogLauncher).toEqual({
       title: '打开版式设置',
       icon: {type: 'codicon', id: 'settings-gear'},
+      rotated: false,
     });
     expect(tab.groups[2].dialogLauncher).toBe(null);
   });

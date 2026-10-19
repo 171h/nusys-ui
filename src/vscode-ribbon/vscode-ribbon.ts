@@ -829,7 +829,10 @@ export class VscodeRibbon extends VscElement {
       aria-haspopup="dialog"
       @click=${() => this._emitDialog(group)}
     >
-      ${this._renderIcon(launcher.icon, 'ribbon-group-dialog-icon')}
+      ${this._renderIcon(
+        launcher.icon,
+        `ribbon-group-dialog-icon${launcher.rotated ? ' is-rotated' : ''}`
+      )}
     </button>`;
   }
 

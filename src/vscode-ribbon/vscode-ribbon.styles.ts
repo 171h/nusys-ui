@@ -229,6 +229,10 @@ const styles: CSSResultGroup = [
       line-height: 1;
     }
 
+    .ribbon-group-dialog .ribbon-group-dialog-icon.is-rotated {
+      transform: rotate(90deg);
+    }
+
     /* 折叠后的组入口使用弹出面板中的启动器。 */
     .ribbon-group.folded
       .ribbon-group-dialog:not(.ribbon-group-popover-dialog) {

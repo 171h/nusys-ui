@@ -180,10 +180,12 @@ Escape 关闭，执行命令后也会关闭。折叠按钮、标签双击与覆�
 
 ## 对话框启动器
 
-设置 `group.dialogLauncher: true` 后，功能组右下角会显示对话框启动器；也可以
-传入 `{title, icon}` 自定义无障碍名称与图标。启动器使用 `aria-haspopup="dialog"`，
-点击时派发 `vsc-ribbon-dialog`，由宿主打开分组对应的设置对话框。分组折叠为
-溢出下拉入口后，启动器会保留在弹层右下角，行为与行内启动器一致。
+设置 `group.dialogLauncher: true` 后，功能组右下角会显示对话框启动器；传
+`false` 或不设置则不显示。默认图标为 Codicon `link-external` 顺时针旋转 90°，
+也可以传入 `{title, icon}` 自定义无障碍名称与图标（自定义图标不旋转）。启动器
+使用 `aria-haspopup="dialog"`，点击时派发 `vsc-ribbon-dialog`，由宿主打开分组
+对应的设置对话框。分组折叠为溢出下拉入口后，启动器会保留在弹层右下角，行为与
+行内启动器一致。
 
 ```js
 {

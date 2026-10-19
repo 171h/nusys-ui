@@ -935,16 +935,36 @@ describe('vscode-ribbon', () => {
             dialogLauncher: true,
             items: [{command: 'run', title: '运行', icon: 'play'}],
           },
+          {
+            id: 'hidden',
+            title: '隐藏启动器',
+            dialogLauncher: false,
+            items: [{command: 'run', title: '运行', icon: 'play'}],
+          },
+          {
+            id: 'absent',
+            title: '未配置启动器',
+            items: [{command: 'run', title: '运行', icon: 'play'}],
+          },
         ],
       },
     ];
     const el = await createRibbon(tabs);
+    expect(
+      el.shadowRoot!.querySelectorAll('.ribbon-group-dialog')
+    ).to.have.length(1);
     const launcher = el.shadowRoot!.querySelector<HTMLButtonElement>(
       '.ribbon-group-dialog'
     )!;
     expect(launcher).to.not.equal(null);
     expect(launcher.getAttribute('aria-label')).to.equal('打开“布局”对话框');
     expect(launcher.getAttribute('aria-haspopup')).to.equal('dialog');
+    const launcherIcon = launcher.querySelector<HTMLElement>(
+      '.ribbon-group-dialog-icon'
+    )!;
+    expect(launcherIcon.className).to.contain('codicon-link-external');
+    expect(launcherIcon.className).to.contain('is-rotated');
+    expect(getComputedStyle(launcherIcon).transform).to.contain('matrix');
     let detail: VscRibbonDialogEvent['detail'] | undefined;
     el.addEventListener('vsc-ribbon-dialog', (event) => {
       detail = (event as VscRibbonDialogEvent).detail;
@@ -1045,6 +1065,9 @@ describe('vscode-ribbon', () => {
     expect(
       popoverLauncher.querySelector('.ribbon-group-dialog-icon')?.className
     ).to.contain('codicon-settings-gear');
+    expect(
+      popoverLauncher.querySelector('.ribbon-group-dialog-icon')?.className
+    ).to.not.contain('is-rotated');
 
     let called = 0;
     el.addEventListener('vsc-ribbon-dialog', () => called++);

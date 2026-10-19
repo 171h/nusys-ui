@@ -202,6 +202,8 @@ export interface RibbonItemModel {
 export interface RibbonDialogLauncherModel {
   title: string;
   icon: ResolvedRibbonIcon;
+  /** 使用默认图标时顺时针旋转 90°，贴近 Office 的扩展按钮方向。 */
+  rotated: boolean;
 }
 
 /** 归一化后的功能组。 */
