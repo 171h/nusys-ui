@@ -396,11 +396,17 @@ export async function testScenarios(page, url) {
   // 菜单分组标题不可聚焦、不参与菜单项语义。
   await frame.getByRole('button', {name: '插入图片', exact: true}).click();
   await frame.getByRole('menuitem', {name: '此设备…', exact: true}).waitFor();
-  const menuHeading = frame
-    .locator('vscode-ribbon .ribbon-menu-heading')
-    .first();
-  assert.equal((await menuHeading.textContent()).trim(), '插入图片来自');
-  assert.equal(await menuHeading.getAttribute('role'), 'presentation');
+  const menuHeadings = (
+    await frame.locator('vscode-ribbon .ribbon-menu-heading').allTextContents()
+  ).map((text) => text.trim());
+  assert.deepEqual(menuHeadings, ['插入图片来自', '最近使用']);
+  assert.equal(
+    await frame
+      .locator('vscode-ribbon .ribbon-menu-heading')
+      .first()
+      .getAttribute('role'),
+    'presentation'
+  );
   assert.equal(
     await frame
       .getByRole('menuitem', {name: '插入图片来自', exact: true})

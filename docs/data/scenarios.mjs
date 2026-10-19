@@ -621,7 +621,9 @@ ribbon.tabs = [
                 {heading: true, title: '插入图片来自', order: 5},
                 {command: 'insert-local', title: '此设备…', icon: 'folder-opened', keybinding: 'D', order: 10},
                 {command: 'insert-stock', title: '图像集…', icon: 'file-media', keybinding: 'S', order: 20},
-                {command: 'insert-online', title: '联机图片…', icon: 'globe', keybinding: 'O', order: 30}
+                {command: 'insert-online', title: '联机图片…', icon: 'globe', keybinding: 'O', order: 30},
+                {heading: true, title: '最近使用', order: 40},
+                {command: 'insert-recent', title: '最近插入的图片', icon: 'history', order: 50}
               ]
             }
           }

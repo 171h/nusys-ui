@@ -307,6 +307,13 @@ describe('vscode-ribbon', () => {
                       description: '第一行\n第二行',
                       order: 3,
                     },
+                    {heading: true, title: '最近使用', order: 4},
+                    {
+                      command: 'recent',
+                      title: '最近插入的图片',
+                      icon: 'history',
+                      order: 5,
+                    },
                   ],
                 },
               },
@@ -317,10 +324,15 @@ describe('vscode-ribbon', () => {
     ];
     const el = await createRibbon(tabs);
     const menu = await openMenu(el, '插入图片');
-    const heading = menu.querySelector<HTMLElement>('.ribbon-menu-heading')!;
-    expect(heading.textContent).to.contain('插入图片来自');
-    expect(heading.getAttribute('role')).to.equal('presentation');
-    expect(menu.querySelectorAll('[role="menuitem"]')).to.have.length(2);
+    const headings = Array.from(
+      menu.querySelectorAll<HTMLElement>('.ribbon-menu-heading')
+    );
+    expect(headings.map((item) => item.textContent?.trim())).to.deep.equal([
+      '插入图片来自',
+      '最近使用',
+    ]);
+    expect(headings[0].getAttribute('role')).to.equal('presentation');
+    expect(menu.querySelectorAll('[role="menuitem"]')).to.have.length(3);
     expect(el.shadowRoot!.activeElement?.textContent).to.contain('此设备');
     const description = menu.querySelector<HTMLElement>(
       '.ribbon-menu-description'
