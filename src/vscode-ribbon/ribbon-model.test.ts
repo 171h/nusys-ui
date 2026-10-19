@@ -194,6 +194,49 @@ describe('ribbon-model', () => {
     expect(group.items[1].size).toBe('half');
   });
 
+  it('归一化功能组对话框启动器的名称与图标', () => {
+    const [tab] = buildRibbonTabs([
+      {
+        id: 'tab',
+        title: 'Tab',
+        groups: [
+          {
+            id: 'plain',
+            title: '布局',
+            order: 10,
+            dialogLauncher: true,
+            items: [{command: 'run', title: '运行'}],
+          },
+          {
+            id: 'custom',
+            title: '版式',
+            order: 20,
+            dialogLauncher: {
+              title: '打开版式设置',
+              icon: '$(settings-gear)',
+            },
+            items: [{command: 'run', title: '运行'}],
+          },
+          {
+            id: 'none',
+            title: '无启动器',
+            order: 30,
+            items: [{command: 'run', title: '运行'}],
+          },
+        ],
+      },
+    ]);
+    expect(tab.groups[0].dialogLauncher).toEqual({
+      title: '打开“布局”对话框',
+      icon: {type: 'codicon', id: 'link-external'},
+    });
+    expect(tab.groups[1].dialogLauncher).toEqual({
+      title: '打开版式设置',
+      icon: {type: 'codicon', id: 'settings-gear'},
+    });
+    expect(tab.groups[2].dialogLauncher).toBe(null);
+  });
+
   it('计算按钮档位、布局与标题行数', () => {
     const item = buildRibbonTabs([
       {

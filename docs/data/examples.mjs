@@ -269,6 +269,7 @@ ribbon.tabs = [
       {
         id: 'file',
         title: '文件',
+        dialogLauncher: {title: '打开文件设置', icon: 'settings-gear'},
         items: [
           {command: 'open', title: '打开', icon: 'folder-opened', size: 'half'},
           {command: 'save', title: '保存', icon: 'save', size: 'half', keybinding: 'Ctrl+S'},
@@ -278,6 +279,7 @@ ribbon.tabs = [
       {
         id: 'edit',
         title: '编辑',
+        dialogLauncher: true,
         items: [
           {command: 'undo', title: '撤销', icon: 'discard', size: 'third'},
           {command: 'redo', title: '重做', icon: 'redo', size: 'third'}
@@ -328,6 +330,7 @@ ribbon.tabs = [
       {
         id: 'layout',
         title: '布局',
+        dialogLauncher: true,
         items: [
           {command: 'toggle-sidebar', title: '侧边栏', icon: 'layout-sidebar-left', size: 'half', pressed: true},
           {title: '分屏预览', icon: 'split-horizontal', size: 'half', placeholder: true}
@@ -343,6 +346,10 @@ ribbon.addEventListener('vsc-ribbon-command', (event) => {
 ribbon.addEventListener('vsc-ribbon-select', (event) => {
   document.querySelector('#ribbon-basic-output').textContent =
     '切换到标签：' + event.detail.tab.title;
+});
+ribbon.addEventListener('vsc-ribbon-dialog', (event) => {
+  document.querySelector('#ribbon-basic-output').textContent =
+    '打开对话框：' + event.detail.group.title;
 });`,
   },
   toolbar: {

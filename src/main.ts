@@ -29,6 +29,7 @@ export {VscodeRadioGroup} from './vscode-radio-group/index.js';
 export {VscodeRibbon} from './vscode-ribbon/index.js';
 export type {
   ResolvedRibbonIcon,
+  RibbonDialogLauncherModel,
   RibbonGroupModel,
   RibbonItemLayout,
   RibbonItemModel,
@@ -37,6 +38,8 @@ export type {
   VscRibbonCollapseEvent,
   VscRibbonCommandEvent,
   VscRibbonCustomContent,
+  VscRibbonDialogEvent,
+  VscRibbonDialogLauncher,
   VscRibbonGroup,
   VscRibbonIcon,
   VscRibbonIconSource,

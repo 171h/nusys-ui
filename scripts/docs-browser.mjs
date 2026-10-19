@@ -166,6 +166,13 @@ try {
 
   const ribbonExample = await open('ribbon');
   await testRibbonResize(ribbonExample, 'ribbon-basic');
+  await ribbonExample
+    .getByRole('button', {name: '打开文件设置', exact: true})
+    .click();
+  assert.match(
+    await ribbonExample.locator('#ribbon-basic-output').textContent(),
+    /打开对话框：文件/
+  );
 
   let frame = await open('button');
   const sample = page.locator('.example').first();

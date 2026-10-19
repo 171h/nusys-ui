@@ -104,6 +104,14 @@ export interface VscRibbonItem {
   separator?: boolean;
 }
 
+/** 功能组右下角的对话框启动器配置。 */
+export interface VscRibbonDialogLauncher {
+  /** 无障碍名称；默认为“打开“<分组标题>”对话框”。 */
+  title?: string;
+  /** 图标，默认为 Codicon `link-external`。 */
+  icon?: VscRibbonIcon;
+}
+
 /** Ribbon 功能组。 */
 export interface VscRibbonGroup {
   /** 分组标识；缺省时自动生成，只需在标签内唯一。 */
@@ -114,6 +122,8 @@ export interface VscRibbonGroup {
   order?: number;
   /** 分组内的按钮。 */
   items: readonly VscRibbonItem[];
+  /** 是否在分组右下角显示对话框启动器，可自定义名称与图标。 */
+  dialogLauncher?: boolean | VscRibbonDialogLauncher;
 }
 
 /** Ribbon 标签。 */
@@ -171,6 +181,12 @@ export interface RibbonItemModel {
   order: number;
 }
 
+/** 归一化后的对话框启动器。 */
+export interface RibbonDialogLauncherModel {
+  title: string;
+  icon: ResolvedRibbonIcon;
+}
+
 /** 归一化后的功能组。 */
 export interface RibbonGroupModel {
   key: string;
@@ -178,6 +194,7 @@ export interface RibbonGroupModel {
   title: string;
   order: number;
   items: RibbonItemModel[];
+  dialogLauncher: RibbonDialogLauncherModel | null;
   source: VscRibbonGroup;
 }
 
@@ -203,6 +220,14 @@ export type VscRibbonCommandEvent = CustomEvent<{
   arguments: readonly unknown[];
   item: VscRibbonItem;
   tabId: string;
+}>;
+
+/** 对话框启动器事件；由宿主打开对应的功能组对话框。 */
+export type VscRibbonDialogEvent = CustomEvent<{
+  tabId: string;
+  tab: VscRibbonTab;
+  groupId: string;
+  group: VscRibbonGroup;
 }>;
 
 /** 折叠状态变化事件。 */

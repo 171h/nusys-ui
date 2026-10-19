@@ -546,6 +546,7 @@ export const extraExamples = {
       'vsc-ribbon-command 事件与 arguments 透传',
       '按钮、菜单项与弹层控件使用 Codicon 图标',
       '菜单项文字左对齐，方向键与 Escape 可操作',
+      '分组右下角对话框启动器与 vsc-ribbon-dialog 事件',
       '可拖动 split-layout 父容器调整宽度与高度，并实时显示容器尺寸',
     ],
     `${ribbonResizeHtml('ribbon-menus', '<vscode-ribbon id="ribbon-menus" tablist-label="菜单示例"></vscode-ribbon>')}<output id="ribbon-menus-output" aria-live="polite">等待操作</output>`,
@@ -560,6 +561,7 @@ ribbon.tabs = [
       {
         id: 'file',
         title: '文件',
+        dialogLauncher: {title: '打开文件设置', icon: 'settings-gear'},
         items: [
           {
             type: 'splitButton',
@@ -599,6 +601,7 @@ ribbon.tabs = [
       {
         id: 'norms',
         title: '规范',
+        dialogLauncher: true,
         items: [
           {
             type: 'dropdown',
@@ -633,6 +636,9 @@ ribbon.addEventListener('vsc-ribbon-command', (event) => {
 });
 ribbon.addEventListener('vsc-ribbon-select', (event) => {
   output.textContent = '标签：' + event.detail.tab.title;
+});
+ribbon.addEventListener('vsc-ribbon-dialog', (event) => {
+  output.textContent = '打开对话框：' + event.detail.group.title;
 });`,
     520,
     ribbonResizeCss

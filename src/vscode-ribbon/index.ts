@@ -1,6 +1,7 @@
 export {VscodeRibbon} from './vscode-ribbon.js';
 export type {
   ResolvedRibbonIcon,
+  RibbonDialogLauncherModel,
   RibbonGroupModel,
   RibbonItemModel,
   RibbonMenuModel,
@@ -8,6 +9,8 @@ export type {
   VscRibbonCollapseEvent,
   VscRibbonCommandEvent,
   VscRibbonCustomContent,
+  VscRibbonDialogEvent,
+  VscRibbonDialogLauncher,
   VscRibbonGroup,
   VscRibbonIcon,
   VscRibbonIconSource,

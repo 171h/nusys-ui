@@ -388,6 +388,16 @@ export async function testScenarios(page, url) {
   );
   await frame.getByRole('button', {name: '关闭面板', exact: true}).click();
   await panel.waitFor({state: 'hidden'});
+  await frame.getByRole('button', {name: '打开文件设置', exact: true}).click();
+  assert.match(
+    await frame.locator('#ribbon-menus-output').textContent(),
+    /打开对话框：文件/
+  );
+  await frame.getByRole('button', {name: '打开“规范”对话框'}).click();
+  assert.match(
+    await frame.locator('#ribbon-menus-output').textContent(),
+    /打开对话框：规范/
+  );
   await testRibbonResize(frame, 'ribbon-menus');
 
   frame = await open('ribbon-responsive');

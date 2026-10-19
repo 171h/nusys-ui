@@ -28,6 +28,7 @@ import type {
   RibbonTabModel,
   VscRibbonCollapseEvent,
   VscRibbonCommandEvent,
+  VscRibbonDialogEvent,
   VscRibbonItem,
   VscRibbonSelectEvent,
   VscRibbonTab,
@@ -76,6 +77,7 @@ const POPOVER_MIN_SPACE = 160;
  * @fires {VscRibbonCommandEvent} vsc-ribbon-command - 激活带命令的按钮或菜单项时派发。
  * @fires {VscRibbonSelectEvent} vsc-ribbon-select - 活动标签变化时派发。
  * @fires {VscRibbonCollapseEvent} vsc-ribbon-collapse - 功能区展开或折叠时派发。
+ * @fires {VscRibbonDialogEvent} vsc-ribbon-dialog - 点击功能组右下角的对话框启动器时派发。
  *
  * @cssprop [--vsc-ribbon-height=130px] - 标签栏与按钮区的总高度。
  * @cssprop [--vsc-ribbon-tabs-height=32px] - 标签栏高度。
@@ -761,6 +763,54 @@ export class VscodeRibbon extends VscElement {
     if (item.command) {
       this._emitCommand(item);
     }
+  }
+
+  private _emitDialog(group: RibbonGroupModel): void {
+    const tab = this._activeTab;
+    if (!group.dialogLauncher || !tab) {
+      return;
+    }
+    this._closeMenu(false);
+    this._closeGroup(false);
+    this.dispatchEvent(
+      new CustomEvent('vsc-ribbon-dialog', {
+        detail: {
+          tabId: tab.id,
+          tab: tab.source,
+          groupId: group.id,
+          group: group.source,
+        },
+        bubbles: true,
+        composed: true,
+      }) as VscRibbonDialogEvent
+    );
+    if (this.collapsed) {
+      this._overlayOpen = false;
+    }
+  }
+
+  private _renderDialogLauncher(
+    group: RibbonGroupModel,
+    popover = false
+  ): TemplateResult | typeof nothing {
+    const launcher = group.dialogLauncher;
+    if (!launcher) {
+      return nothing;
+    }
+    return html`<button
+      type="button"
+      class=${classMap({
+        'ribbon-group-dialog': true,
+        'ribbon-group-popover-dialog': popover,
+      })}
+      part="group-dialog"
+      title=${launcher.title}
+      aria-label=${launcher.title}
+      aria-haspopup="dialog"
+      @click=${() => this._emitDialog(group)}
+    >
+      ${this._renderIcon(launcher.icon, 'ribbon-group-dialog-icon')}
+    </button>`;
   }
 
   private _toggleMenu(
@@ -1592,7 +1642,11 @@ export class VscodeRibbon extends VscElement {
     }
     const {group} = state;
     return html`<div
-      class="ribbon-popover ribbon-group-popover"
+      class=${classMap({
+        'ribbon-popover': true,
+        'ribbon-group-popover': true,
+        'has-dialog': group.dialogLauncher !== null,
+      })}
       part="group-popover"
       role="dialog"
       aria-label=${group.title}
@@ -1607,6 +1661,7 @@ export class VscodeRibbon extends VscElement {
       <div class="ribbon-items" part="items">
         ${group.items.map((item) => this._renderMainItem(item, 'group', true))}
       </div>
+      ${this._renderDialogLauncher(group, true)}
     </div>`;
   }
 
@@ -1648,6 +1703,7 @@ export class VscodeRibbon extends VscElement {
         ${group.items.map((item) => this._renderMainItem(item, 'ribbon'))}
       </div>
       <div class="ribbon-group-title" part="group-title">${group.title}</div>
+      ${this._renderDialogLauncher(group)}
     </div>`;
   }
 
@@ -1792,6 +1848,7 @@ declare global {
     'vsc-ribbon-command': VscRibbonCommandEvent;
     'vsc-ribbon-select': VscRibbonSelectEvent;
     'vsc-ribbon-collapse': VscRibbonCollapseEvent;
+    'vsc-ribbon-dialog': VscRibbonDialogEvent;
   }
 }
 

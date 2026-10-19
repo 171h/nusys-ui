@@ -7,7 +7,11 @@ import {
   html,
   waitUntil,
 } from '../includes/testing.js';
-import type {VscRibbonCommandEvent, VscRibbonTab} from './ribbon-types.js';
+import type {
+  VscRibbonCommandEvent,
+  VscRibbonDialogEvent,
+  VscRibbonTab,
+} from './ribbon-types.js';
 import {VscodeRibbon} from './index.js';
 
 const basicTabs = (): VscRibbonTab[] => [
@@ -581,6 +585,98 @@ describe('vscode-ribbon', () => {
     // 弹层恢复声明时的完整布局，而不是折叠前的 half/third 降级布局。
     expect(popoverItem.className).to.contain('ribbon-item-full');
     expect(popoverItem.className).to.contain('ribbon-item-vertical');
+  });
+
+  it('功能组对话框启动器派发 vsc-ribbon-dialog', async () => {
+    const tabs: VscRibbonTab[] = [
+      {
+        id: 'home',
+        title: '开始',
+        default: true,
+        groups: [
+          {
+            id: 'layout',
+            title: '布局',
+            dialogLauncher: true,
+            items: [{command: 'run', title: '运行', icon: 'play'}],
+          },
+        ],
+      },
+    ];
+    const el = await createRibbon(tabs);
+    const launcher = el.shadowRoot!.querySelector<HTMLButtonElement>(
+      '.ribbon-group-dialog'
+    )!;
+    expect(launcher).to.not.equal(null);
+    expect(launcher.getAttribute('aria-label')).to.equal('打开“布局”对话框');
+    expect(launcher.getAttribute('aria-haspopup')).to.equal('dialog');
+    let detail: VscRibbonDialogEvent['detail'] | undefined;
+    el.addEventListener('vsc-ribbon-dialog', (event) => {
+      detail = (event as VscRibbonDialogEvent).detail;
+    });
+    launcher.click();
+    await el.updateComplete;
+    expect(detail?.tabId).to.equal('home');
+    expect(detail?.groupId).to.equal('layout');
+    expect(detail?.group.title).to.equal('布局');
+  });
+
+  it('折叠分组在弹层中保留自定义对话框启动器', async () => {
+    const tabs: VscRibbonTab[] = [
+      {
+        id: 'home',
+        title: '开始',
+        default: true,
+        groups: [
+          {
+            id: 'group',
+            title: '分组',
+            dialogLauncher: {title: '打开分组设置', icon: 'settings-gear'},
+            items: [
+              {
+                command: 'run',
+                title: '很长的按钮',
+                icon: 'play',
+                responsive: [{size: 'half'}, {size: 'third'}],
+              },
+            ],
+          },
+        ],
+      },
+    ];
+    const el = await createRibbon(tabs, 'width: 40px');
+    await waitFor(
+      () => el.shadowRoot?.querySelector('.ribbon-group.folded') !== null
+    );
+    const inlineLauncher = el.shadowRoot!.querySelector<HTMLButtonElement>(
+      '.ribbon-group-dialog:not(.ribbon-group-popover-dialog)'
+    )!;
+    expect(inlineLauncher.getClientRects().length).to.equal(0);
+
+    el.shadowRoot!.querySelector<HTMLButtonElement>(
+      '.ribbon-group.folded .ribbon-group-dropdown'
+    )!.click();
+    await waitFor(
+      () => el.shadowRoot?.querySelector('.ribbon-group-popover') !== null
+    );
+    await aTimeout(32);
+    const popoverLauncher = el.shadowRoot!.querySelector<HTMLButtonElement>(
+      '.ribbon-group-popover-dialog'
+    )!;
+    expect(popoverLauncher).to.not.equal(null);
+    expect(popoverLauncher.getAttribute('aria-label')).to.equal('打开分组设置');
+    expect(
+      popoverLauncher.querySelector('.ribbon-group-dialog-icon')?.className
+    ).to.contain('codicon-settings-gear');
+
+    let called = 0;
+    el.addEventListener('vsc-ribbon-dialog', () => called++);
+    popoverLauncher.click();
+    await el.updateComplete;
+    expect(called).to.equal(1);
+    expect(el.shadowRoot!.querySelector('.ribbon-group-popover')).to.equal(
+      null
+    );
   });
 
   it('可持久化折叠状态与活动标签', async () => {

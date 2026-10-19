@@ -82,11 +82,12 @@ ArrowDown / ArrowUp 打开菜单并聚焦首项或末项。
 | `default` | `boolean`          | 是否作为初始标签，没有声明时使用第一个标签 |
 | `groups`  | `VscRibbonGroup[]` | 标签内的功能组                             |
 
-| 字段    | 类型              | 说明                                       |
-| ------- | ----------------- | ------------------------------------------ |
-| `id`    | `string`          | 分组标识，只需在标签内唯一；缺省时自动生成 |
-| `title` | `string`          | 分组标题，同时作为分组折叠入口的名称       |
-| `items` | `VscRibbonItem[]` | 分组内的按钮                               |
+| 字段             | 类型                         | 说明                                       |
+| ---------------- | ---------------------------- | ------------------------------------------ |
+| `id`             | `string`                     | 分组标识，只需在标签内唯一；缺省时自动生成 |
+| `title`          | `string`                     | 分组标题，同时作为分组折叠入口的名称       |
+| `items`          | `VscRibbonItem[]`            | 分组内的按钮                               |
+| `dialogLauncher` | `boolean \| {title?, icon?}` | 右下角对话框启动器；点击派发对话框事件     |
 
 | 字段          | 类型                                             | 说明                                         |
 | ------------- | ------------------------------------------------ | -------------------------------------------- |
@@ -160,6 +161,22 @@ Escape 关闭，执行命令后也会关闭。折叠按钮、标签双击与覆�
 
 菜单选项文字默认左对齐，快捷键与子菜单箭头靠右，长标题单行截断。
 
+## 对话框启动器
+
+设置 `group.dialogLauncher: true` 后，功能组右下角会显示对话框启动器；也可以
+传入 `{title, icon}` 自定义无障碍名称与图标。启动器使用 `aria-haspopup="dialog"`，
+点击时派发 `vsc-ribbon-dialog`，由宿主打开分组对应的设置对话框。分组折叠为
+溢出下拉入口后，启动器会保留在弹层右下角，行为与行内启动器一致。
+
+```js
+{
+  id: 'layout',
+  title: '布局',
+  dialogLauncher: {title: '打开页面设置', icon: 'settings-gear'},
+  items: [{command: 'margins', title: '页边距', icon: 'layout'}],
+}
+```
+
 ## 事件与方法
 
 | 事件                  | 说明                                                                       |
@@ -167,6 +184,7 @@ Escape 关闭，执行命令后也会关闭。折叠按钮、标签双击与覆�
 | `vsc-ribbon-command`  | 激活带命令的按钮或菜单项；详情包含 `command`、`arguments`、`item`、`tabId` |
 | `vsc-ribbon-select`   | 活动标签变化；详情包含 `tabId`、`tab`                                      |
 | `vsc-ribbon-collapse` | 功能区折叠或展开；详情包含 `collapsed`                                     |
+| `vsc-ribbon-dialog`   | 点击分组对话框启动器；详情包含 `tabId`、`tab`、`groupId`、`group`          |
 
 | 方法 / 属性                                     | 说明                                                           |
 | ----------------------------------------------- | -------------------------------------------------------------- |
@@ -186,6 +204,7 @@ Escape 关闭，执行命令后也会关闭。折叠按钮、标签双击与覆�
 - 菜单支持 ArrowDown / ArrowUp / Home / End 导航，ArrowRight 进入子菜单，
   ArrowLeft 返回上一层，Escape 关闭并恢复触发按钮焦点；
 - 折叠分组入口支持 ArrowDown 打开分组弹层，Escape 关闭并恢复焦点；
+- 对话框启动器通过标题提供无障碍名称，并声明 `aria-haspopup="dialog"`；
 - 图标按钮通过 `label` 或标题提供无障碍名称，占位项输出禁用的可访问状态。
 
 ## CSS 部件
@@ -193,7 +212,7 @@ Escape 关闭，执行命令后也会关闭。折叠按钮、标签双击与覆�
 | 部件                                                                                | 说明                                                 |
 | ----------------------------------------------------------------------------------- | ---------------------------------------------------- |
 | `base` / `tabs` / `tab` / `content`                                                 | 功能区根容器、标签栏、标签与内容区                   |
-| `group` / `group-title` / `items` / `group-button`                                  | 功能组、分组标题、六轨网格与折叠入口                 |
+| `group` / `group-title` / `items` / `group-button` / `group-dialog`                 | 功能组、分组标题、六轨网格、折叠入口与对话框启动器   |
 | `item` / `item-primary` / `item-trigger`                                            | 普通按钮与分割按钮的主命令、菜单触发区               |
 | `menu` / `menu-items` / `menu-item` / `menu-separator` / `menu-split` / `menu-back` | 下拉菜单容器、列表、菜单项、分隔线、分割行与返回入口 |
 | `panel-header` / `panel-close` / `panel-body` / `panel-grid` / `panel-item`         | 面板标题栏、关闭按钮、内容区、格子网格与格子         |

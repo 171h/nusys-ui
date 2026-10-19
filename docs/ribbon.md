@@ -39,6 +39,7 @@ ribbon.addEventListener('vsc-ribbon-command', (event) => {
 | `size` / `style` / `responsive`               | 同名字段；`style` 取 `iconAndLabel` 或 `icon`                                            |
 | `responsiveMenu`                              | 不再支持：溢出时改为整组折叠，在溢出弹层中按原始布局完整呈现分组                         |
 | `placeholder`                                 | 同名字段；渲染为禁用项并提示“功能尚未实现”                                               |
+| 分组右下角的扩展按钮                          | `group.dialogLauncher`，点击派发 `vsc-ribbon-dialog`，由宿主打开对话框                   |
 | `localStorage` 中的折叠与活动标签             | `persist-state` + `storage-key`，默认不写入存储                                          |
 | `when` / 命令 `enablement`                    | 组件不读取 Context Key；在传入 `tabs` 前过滤或设置 `disabled`                            |
 | `arguments`                                   | 同名字段，原样放入事件详情                                                               |
@@ -72,6 +73,8 @@ ribbon.addEventListener('vsc-ribbon-command', async (event) => {
 
 - `vsc-ribbon-select`：活动标签变化，详情为 `{tabId, tab}`；
 - `vsc-ribbon-collapse`：折叠状态变化，详情为 `{collapsed}`；
+- `vsc-ribbon-dialog`：点击分组右下角对话框启动器，详情为
+  `{tabId, tab, groupId, group}`，由宿主打开对应对话框；
 - 组件在折叠覆盖层中执行命令后会关闭覆盖层，折叠按钮与标签双击也会派发折叠事件。
 
 需要程序控制时使用 `selectTab(tabId)`、`collapse()`、`expand()`、

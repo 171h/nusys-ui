@@ -177,12 +177,57 @@ const styles: CSSResultGroup = [
     }
 
     .ribbon-group {
+      position: relative;
       display: flex;
       flex: none;
       flex-direction: column;
       padding: 0 6px;
       border-right: 1px solid var(--vscode-panel-border, #454545);
       box-sizing: border-box;
+    }
+
+    /* 分组右下角的对话框启动器，对应 Office 功能组的扩展按钮。 */
+    .ribbon-group-dialog {
+      position: absolute;
+      right: 1px;
+      bottom: 1px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 16px;
+      height: 16px;
+      padding: 0;
+      border: 0;
+      border-radius: 2px;
+      background: transparent;
+      color: var(--vscode-descriptionForeground, #9d9d9d);
+      cursor: pointer;
+    }
+
+    .ribbon-group-dialog:hover {
+      background: var(
+        --vscode-toolbar-hoverBackground,
+        rgba(127, 127, 127, 0.16)
+      );
+      color: var(--vscode-foreground, #cccccc);
+    }
+
+    .ribbon-group-dialog:focus-visible {
+      outline: 1px solid var(--vscode-focusBorder, #0078d4);
+      outline-offset: -1px;
+    }
+
+    .ribbon-group-dialog-icon {
+      width: 12px;
+      height: 12px;
+      font-size: 12px;
+      line-height: 1;
+    }
+
+    /* 折叠后的组入口使用弹出面板中的启动器。 */
+    .ribbon-group.folded
+      .ribbon-group-dialog:not(.ribbon-group-popover-dialog) {
+      display: none;
     }
 
     /* 六轨网格：full / half / third 三种行高可在同一分组内混排。 */
@@ -870,6 +915,15 @@ const styles: CSSResultGroup = [
 
     .ribbon-group-popover {
       padding: 6px;
+    }
+
+    .ribbon-group-popover.has-dialog {
+      padding-bottom: 22px;
+    }
+
+    .ribbon-group-popover-dialog {
+      right: 3px;
+      bottom: 3px;
     }
 
     .ribbon-group-popover .ribbon-items {

@@ -1,5 +1,6 @@
 import type {
   ResolvedRibbonIcon,
+  RibbonDialogLauncherModel,
   RibbonGroupModel,
   RibbonItemModel,
   RibbonMenuModel,
@@ -181,6 +182,25 @@ function byOrderThen<T>(
     readTitle(left).localeCompare(readTitle(right), 'zh-CN');
 }
 
+/** 归一化分组右下角的对话框启动器。 */
+function buildDialogLauncher(
+  group: VscRibbonGroup
+): RibbonDialogLauncherModel | null {
+  const value = group.dialogLauncher;
+  if (!value) {
+    return null;
+  }
+  const config = value === true ? {} : value;
+  const title = config.title?.trim()
+    ? config.title
+    : `打开“${group.title}”对话框`;
+
+  return {
+    title,
+    icon: resolveRibbonIcon(config.icon ?? 'link-external'),
+  };
+}
+
 function buildGroup(
   group: VscRibbonGroup,
   index: number,
@@ -203,6 +223,7 @@ function buildGroup(
     title: group.title,
     order: group.order ?? 0,
     items,
+    dialogLauncher: buildDialogLauncher(group),
     source: group,
   };
 }
