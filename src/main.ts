@@ -26,6 +26,33 @@ export {VscodeProgressRing} from './vscode-progress-ring/index.js';
 export {VscodeProgressBar} from './vscode-progress-bar/index.js';
 export {VscodeRadio} from './vscode-radio/index.js';
 export {VscodeRadioGroup} from './vscode-radio-group/index.js';
+export {VscodeRibbon} from './vscode-ribbon/index.js';
+export type {
+  ResolvedRibbonIcon,
+  RibbonGroupModel,
+  RibbonItemLayout,
+  RibbonItemModel,
+  RibbonMenuModel,
+  RibbonTabModel,
+  VscRibbonCollapseEvent,
+  VscRibbonCommandEvent,
+  VscRibbonCustomContent,
+  VscRibbonGroup,
+  VscRibbonIcon,
+  VscRibbonIconSource,
+  VscRibbonItem,
+  VscRibbonItemSize,
+  VscRibbonItemStyle,
+  VscRibbonItemType,
+  VscRibbonMenu,
+  VscRibbonMenuLayout,
+  VscRibbonResponsiveMenu,
+  VscRibbonResponsiveStep,
+  VscRibbonSelectEvent,
+  VscRibbonTab,
+  VscRibbonThemedIcon,
+  VscRibbonTheme,
+} from './vscode-ribbon/index.js';
 export {VscodeSingleSelect} from './vscode-single-select/index.js';
 export {VscodeScrollable} from './vscode-scrollable/index.js';
 export {VscodeSplitLayout} from './vscode-split-layout/index.js';
