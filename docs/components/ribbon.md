@@ -116,6 +116,7 @@ ArrowDown / ArrowUp 打开菜单并聚焦首项或末项。
 | `title`   | `string`                        | 面板标题                  |
 | `columns` | `number`                        | 面板列数，限制在 1–8      |
 | `custom`  | `{html, css?, width?, height?}` | 沙箱 iframe 中的静态内容  |
+| `footer`  | `VscRibbonItem[]`               | 面板底部操作区条目        |
 
 ## 响应式与折叠
 
@@ -158,6 +159,7 @@ Escape 关闭，执行命令后也会关闭。折叠按钮、标签双击与覆�
   触发区展开菜单，两者都支持键盘；
 - 菜单支持递归子菜单、返回导航、快捷键文字、分隔线与禁用占位项；
 - `menu.layout: 'panel'` 渲染带标题栏与关闭按钮的面板，`columns` 控制列数；
+- `menu.footer` 在面板底部渲染整行操作区，支持图标、快捷键与命令，参与键盘导航；
 - `menu.custom` 的 HTML 在无脚本、禁止网络的沙箱 iframe 中渲染，图片仅允许
   `data:` URI，适合放置静态说明或图例，不要依赖脚本或外部请求。
 
@@ -222,6 +224,7 @@ Escape 关闭，执行命令后也会关闭。折叠按钮、标签双击与覆�
 | `item` / `item-primary` / `item-trigger`                                                                                  | 普通按钮与分割按钮的主命令、菜单触发区                                   |
 | `menu` / `menu-items` / `menu-item` / `menu-separator` / `menu-split` / `menu-back` / `menu-heading` / `menu-description` | 下拉菜单容器、列表、菜单项、分隔线、分割行、返回入口、分组标题与说明文字 |
 | `panel-header` / `panel-close` / `panel-body` / `panel-grid` / `panel-item` / `panel-heading` / `panel-description`       | 面板标题栏、关闭按钮、内容区、格子网格、格子、面板分组标题与说明文字     |
+| `panel-footer` / `panel-footer-item`                                                                                      | 面板底部操作区与整行操作项                                               |
 | `group-popover` / `scroll-button` / `custom-content`                                                                      | 折叠分组弹层、悬浮滚动按钮与沙箱内容 iframe                              |
 
 ## 功能场景

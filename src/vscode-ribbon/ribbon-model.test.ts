@@ -139,6 +139,9 @@ describe('ribbon-model', () => {
                     width: 10,
                     height: 2000,
                   },
+                  footer: [
+                    {command: 'custom', title: '自定义选项', keybinding: 'C'},
+                  ],
                 },
               },
             ],
@@ -157,6 +160,12 @@ describe('ribbon-model', () => {
       height: 800,
     });
     expect(item.menu?.items[0].menu?.items[0].command).toBe('nested');
+    expect(item.menu?.footer).toHaveLength(1);
+    expect(item.menu?.footer[0]).toMatchObject({
+      command: 'custom',
+      title: '自定义选项',
+      keybinding: 'C',
+    });
   });
 
   it('保留分组内按钮的声明顺序与响应式配置', () => {

@@ -666,6 +666,14 @@ ribbon.tabs = [
                   command: 'margin-wide', title: '宽', order: 6, icon: 'layout',
                   description: '上：2.54 厘米　下：2.54 厘米\\n左：5.08 厘米　右：5.08 厘米'
                 }
+              ],
+              footer: [
+                {
+                  command: 'custom-margins',
+                  title: '自定义页边距(A)…',
+                  icon: 'settings-gear',
+                  keybinding: 'A'
+                }
               ]
             }
           }

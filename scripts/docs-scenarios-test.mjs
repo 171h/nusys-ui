@@ -425,6 +425,20 @@ export async function testScenarios(page, url) {
   assert.equal(marginDescriptions.length, 4);
   assert.match(marginDescriptions[0], /上：2\.5 厘米/);
   assert.match(marginDescriptions[0], /左：2\.5 厘米/);
+  // 面板底部操作区可执行命令并关闭面板。
+  assert.equal(
+    await frame.locator('vscode-ribbon .ribbon-panel-footer').count(),
+    1
+  );
+  await frame
+    .getByRole('button', {name: '自定义页边距(A)…', exact: true})
+    .click();
+  assert.match(
+    await frame.locator('#ribbon-menus-output').textContent(),
+    /custom-margins/
+  );
+  await frame.getByRole('button', {name: '页边距', exact: true}).click();
+  await frame.getByRole('dialog').waitFor();
   await frame.getByRole('button', {name: '窄', exact: true}).click();
   assert.match(
     await frame.locator('#ribbon-menus-output').textContent(),

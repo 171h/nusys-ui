@@ -394,6 +394,77 @@ describe('vscode-ribbon', () => {
     expect(getComputedStyle(descriptions[0]).whiteSpace).to.equal('pre-line');
   });
 
+  it('面板底部操作区支持键盘导航与命令执行', async () => {
+    const tabs: VscRibbonTab[] = [
+      {
+        id: 'home',
+        title: '开始',
+        default: true,
+        groups: [
+          {
+            id: 'layout',
+            title: '布局',
+            items: [
+              {
+                command: 'margins',
+                title: '页边距',
+                icon: 'layout',
+                menu: {
+                  layout: 'panel',
+                  title: '页边距',
+                  columns: 1,
+                  items: [
+                    {heading: true, title: '预设页边距', order: 1},
+                    {
+                      command: 'normal',
+                      title: '常规',
+                      icon: 'layout',
+                      order: 2,
+                    },
+                  ],
+                  footer: [
+                    {
+                      command: 'custom-margin',
+                      title: '自定义页边距',
+                      icon: 'settings-gear',
+                      keybinding: 'A',
+                    },
+                  ],
+                },
+              },
+            ],
+          },
+        ],
+      },
+    ];
+    const el = await createRibbon(tabs);
+    const menu = await openMenu(el, '页边距');
+    const footer = menu.querySelector<HTMLElement>('.ribbon-panel-footer')!;
+    expect(footer).to.not.equal(null);
+    expect(footer.getAttribute('part')).to.equal('panel-footer');
+    const footerItem = footer.querySelector<HTMLButtonElement>(
+      '.ribbon-panel-footer-item'
+    )!;
+    expect(footerItem.getAttribute('aria-label')).to.equal('自定义页边距');
+    expect(
+      footerItem.querySelector('.ribbon-menu-keybinding')?.textContent
+    ).to.equal('A');
+
+    menu.dispatchEvent(
+      new KeyboardEvent('keydown', {
+        key: 'End',
+        bubbles: true,
+        composed: true,
+      })
+    );
+    expect(el.shadowRoot!.activeElement).to.equal(footerItem);
+
+    footerItem.click();
+    await el.updateComplete;
+    expect(el.dataset.lastCommand).to.equal('custom-margin');
+    expect(el.shadowRoot!.querySelector('.ribbon-menu-popover')).to.equal(null);
+  });
+
   it('支持递归子菜单与返回导航', async () => {
     const el = await createRibbon();
     Array.from(el.shadowRoot!.querySelectorAll<HTMLElement>('[role="tab"]'))

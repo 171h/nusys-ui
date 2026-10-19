@@ -66,6 +66,8 @@ export interface VscRibbonMenu {
   columns?: number;
   /** 面板或菜单中的沙箱静态内容。 */
   custom?: VscRibbonCustomContent;
+  /** 面板底部的操作区条目，渲染在内容之后。 */
+  footer?: readonly VscRibbonItem[];
 }
 
 /** Ribbon 按钮、菜单项或面板格子。 */
@@ -155,6 +157,7 @@ export interface RibbonCustomContentModel {
 /** 归一化后的下拉菜单。 */
 export interface RibbonMenuModel {
   items: RibbonItemModel[];
+  footer: RibbonItemModel[];
   layout: VscRibbonMenuLayout;
   title: string | null;
   columns: number;

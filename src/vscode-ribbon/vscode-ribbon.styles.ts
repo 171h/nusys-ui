@@ -115,7 +115,9 @@ const styles: CSSResultGroup = [
     .ribbon-menu-item:focus-visible,
     .ribbon-menu-back:focus-visible,
     .ribbon-panel-close:focus-visible,
-    .ribbon-panel-item:focus-visible {
+    .ribbon-panel-item:focus-visible,
+    .ribbon-panel-footer-item:focus-visible,
+    .ribbon-group-dialog:focus-visible {
       outline: 1px solid var(--vscode-focusBorder, #0078d4);
       outline-offset: -1px;
     }
@@ -956,6 +958,64 @@ const styles: CSSResultGroup = [
     .ribbon-panel-item .ribbon-label {
       font-size: 11px;
       line-height: 14px;
+    }
+
+    /* 面板底部操作区：整行列表项，与面板内容以分隔线区分。 */
+    .ribbon-panel-footer {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+      padding: 4px;
+      border-top: 1px solid var(--vscode-panel-border, #454545);
+    }
+
+    .ribbon-panel-footer-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+      min-height: 30px;
+      padding: 4px 8px;
+      border: 0;
+      border-radius: 3px;
+      background: transparent;
+      color: inherit;
+      font: inherit;
+      font-size: 12px;
+      text-align: left;
+      cursor: pointer;
+    }
+
+    .ribbon-panel-footer-item .ribbon-icon {
+      width: 22px;
+      height: 22px;
+      font-size: 22px;
+    }
+
+    .ribbon-panel-footer-item:hover:not(:disabled),
+    .ribbon-panel-footer-item:focus-visible {
+      background: var(
+        --vscode-menu-selectionBackground,
+        var(--vscode-list-activeSelectionBackground, #0078d4)
+      );
+      color: var(
+        --vscode-menu-selectionForeground,
+        var(--vscode-list-activeSelectionForeground, #ffffff)
+      );
+      outline: none;
+    }
+
+    .ribbon-panel-footer-item:disabled {
+      opacity: 0.45;
+      cursor: default;
+    }
+
+    .ribbon-panel-footer .ribbon-menu-heading {
+      padding: 4px 8px 2px;
+    }
+
+    .ribbon-panel-footer .ribbon-menu-separator {
+      margin: 2px 4px;
     }
 
     .ribbon-custom-content {

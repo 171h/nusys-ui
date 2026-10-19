@@ -134,8 +134,17 @@ function buildMenu(menu: VscRibbonMenu, path: string): RibbonMenuModel {
         (item) => item.title
       )
     );
+  const footer = (menu.footer ?? [])
+    .map((item, index) => buildItem(item, `${path}/footer/${index}`))
+    .sort(
+      byOrderThen(
+        (item) => item.order,
+        (item) => item.title
+      )
+    );
   return {
     items,
+    footer,
     layout: menu.layout === 'panel' ? 'panel' : 'menu',
     title: menu.title?.trim() ? menu.title : null,
     columns: clamp(menu.columns ?? 3, PANEL_COLUMNS_RANGE),

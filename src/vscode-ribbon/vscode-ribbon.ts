@@ -1564,6 +1564,71 @@ export class VscodeRibbon extends VscElement {
     </button>`;
   }
 
+  private _renderMenuFooter(
+    menu: RibbonMenuModel
+  ): TemplateResult | typeof nothing {
+    if (menu.footer.length === 0) {
+      return nothing;
+    }
+    return html`<div class="ribbon-panel-footer" part="panel-footer">
+      ${menu.footer.map((item) => this._renderPanelFooterEntry(item))}
+    </div>`;
+  }
+
+  private _renderPanelFooterEntry(item: RibbonItemModel): TemplateResult {
+    if (item.separator) {
+      return html`<div
+        class="ribbon-menu-separator"
+        part="menu-separator"
+        role="separator"
+      ></div>`;
+    }
+    if (item.heading) {
+      return html`<div class="ribbon-menu-heading" part="menu-heading">
+        ${item.title}
+      </div>`;
+    }
+    const hasMenu = item.menu !== null;
+    return html`<button
+      type="button"
+      class="ribbon-panel-footer-item"
+      part="panel-footer-item"
+      title=${this._buttonTitle(item)}
+      aria-label=${item.title}
+      aria-haspopup=${ifDefined(
+        hasMenu
+          ? item.menu?.layout === 'panel'
+            ? 'dialog'
+            : 'menu'
+          : undefined
+      )}
+      data-item-key=${item.key}
+      ?disabled=${item.disabled}
+      @click=${(event: Event) => {
+        if (hasMenu) {
+          this._pushMenu(item);
+        } else {
+          this._activateItem(item, event.currentTarget as HTMLElement, 'panel');
+        }
+      }}
+    >
+      ${this._renderIcon(item.icon)} ${this._renderMenuText(item)}
+      ${
+        item.keybinding
+          ? html`<span class="ribbon-menu-keybinding">${item.keybinding}</span>`
+          : nothing
+      }
+      ${
+        hasMenu
+          ? html`<span
+              class="codicon codicon-chevron-right ribbon-chevron"
+              aria-hidden="true"
+            ></span>`
+          : nothing
+      }
+    </button>`;
+  }
+
   private _renderMenu(): TemplateResult | typeof nothing {
     const menu = this._menuStack[this._menuStack.length - 1];
     const state = this._openMenu;
@@ -1647,6 +1712,7 @@ export class VscodeRibbon extends VscElement {
               </div>
               ${this._renderCustomContent(menu)}`
       }
+      ${this._renderMenuFooter(menu)}
     </div>`;
   }
 
