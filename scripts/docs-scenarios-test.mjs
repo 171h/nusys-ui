@@ -322,6 +322,24 @@ export async function testScenarios(page, url) {
   assert.equal(await frame.locator('output').textContent(), '打开 1');
 
   frame = await open('ribbon-menus');
+  const codiconHref = await frame
+    .locator('#ribbon-menus')
+    .evaluate((ribbon) =>
+      ribbon.shadowRoot
+        .querySelector('link[rel="stylesheet"]')
+        ?.getAttribute('href')
+    );
+  assert.match(codiconHref, /codicon\.css/);
+  await frame.waitForFunction(() => {
+    const icon = document
+      .querySelector('#ribbon-menus')
+      ?.shadowRoot?.querySelector('.ribbon-item .ribbon-icon');
+    return (
+      icon !== null &&
+      icon !== undefined &&
+      getComputedStyle(icon, '::before').content !== 'none'
+    );
+  });
   await frame.getByRole('button', {name: '保存', exact: true}).click();
   assert.match(
     await frame.locator('#ribbon-menus-output').textContent(),
@@ -369,12 +387,11 @@ export async function testScenarios(page, url) {
   await panel.waitFor({state: 'hidden'});
 
   frame = await open('ribbon-responsive');
-  const setRibbonWidth = (width) =>
-    frame.locator('#ribbon-width').evaluate((element, value) => {
-      element.value = String(value);
-      element.dispatchEvent(new Event('input', {bubbles: true}));
-    }, width);
-  await setRibbonWidth(120);
+  const setSplitPosition = (selector, position) =>
+    frame.locator(selector).evaluate((element, value) => {
+      element.handlePosition = `${value}px`;
+    }, position);
+  await setSplitPosition('#ribbon-width-split', 120);
   await frame.waitForFunction(() => {
     const ribbon = document.querySelector('#ribbon-responsive');
     return (
@@ -382,13 +399,20 @@ export async function testScenarios(page, url) {
       ribbon.shadowRoot.querySelector('button[aria-label="基坑计算"]') !== null
     );
   });
-  await setRibbonWidth(960);
+  await setSplitPosition('#ribbon-width-split', 1600);
   await frame.waitForFunction(() => {
     const ribbon = document.querySelector('#ribbon-responsive');
     return (
       ribbon.shadowRoot.querySelector('.ribbon-group.folded') === null &&
       ribbon.shadowRoot.querySelector('button[aria-label="基坑计算"]') === null
     );
+  });
+  await setSplitPosition('#ribbon-height-split', 180);
+  await frame.waitForFunction(() => {
+    const wrapper = document.querySelector('#ribbon-responsive-wrapper');
+    const height = Math.round(wrapper.getBoundingClientRect().height);
+    const size = document.querySelector('#ribbon-size-output').textContent;
+    return height > 160 && height < 200 && size.includes(height + ' px');
   });
   await frame.getByRole('button', {name: '单位换算', exact: true}).click();
   assert.match(

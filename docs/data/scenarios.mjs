@@ -533,6 +533,7 @@ export const extraExamples = {
       '递归子菜单与返回导航、快捷键文字和分隔线',
       'Word 风格面板、列数、自定义沙箱内容',
       'vsc-ribbon-command 事件与 arguments 透传',
+      '按钮、菜单项与弹层控件使用 Codicon 图标',
       '菜单项文字左对齐，方向键与 Escape 可操作',
     ],
     '<vscode-ribbon id="ribbon-menus" tablist-label="菜单示例"></vscode-ribbon><output id="ribbon-menus-output" aria-live="polite">等待操作</output>',
@@ -554,8 +555,8 @@ ribbon.tabs = [
             title: '保存',
             icon: 'save',
             menu: {items: [
-              {command: 'save-as', title: '另存为', keybinding: 'Ctrl+Shift+S'},
-              {command: 'export-pdf', title: '导出 PDF'}
+              {command: 'save-as', title: '另存为', icon: 'save-as', keybinding: 'Ctrl+Shift+S'},
+              {command: 'export-pdf', title: '导出 PDF', icon: 'file-pdf'}
             ]}
           },
           {
@@ -570,10 +571,11 @@ ribbon.tabs = [
                 {command: 'slab-wall', title: '墙模板', icon: 'layout', order: 30},
                 {
                   title: '更多体系',
+                  icon: 'ellipsis',
                   order: 40,
                   menu: {items: [
-                    {command: 'slab-portal', title: '门式脚手架'},
-                    {title: '爬模（未实现）', placeholder: true}
+                    {command: 'slab-portal', title: '门式脚手架', icon: 'layers'},
+                    {title: '爬模（未实现）', icon: 'circle-slash', placeholder: true}
                   ]}
                 }
               ]
@@ -629,12 +631,18 @@ ribbon.addEventListener('vsc-ribbon-select', (event) => {
       'responsiveMenu 将同 id 按钮合并为下拉入口',
       '宽度不足时从右向左折叠功能组，分组入口保留原内容',
       '全部折叠后两端显示悬浮滚动按钮',
-      '拖动宽度滑块即可观察完整降级链',
+      '用嵌套 vscode-split-layout 作为可拖动父容器：右侧分隔条调宽度，下方分隔条调高度',
+      '实时显示功能区容器尺寸，双击分隔条恢复初始值',
     ],
-    `<label for="ribbon-width">功能区宽度 <output id="ribbon-width-value">640px</output></label><input id="ribbon-width" type="range" min="120" max="960" step="20" value="640"><div id="ribbon-responsive-wrapper"><vscode-ribbon id="ribbon-responsive" tablist-label="响应式功能区"></vscode-ribbon></div><output id="ribbon-responsive-output" aria-live="polite">选择命令后在这里显示结果。</output>`,
-    `const width = document.querySelector('#ribbon-width');
-const value = document.querySelector('#ribbon-width-value');
-const wrapper = document.querySelector('#ribbon-responsive-wrapper');
+    `<p class="ribbon-resize-tip">拖动分隔条调整功能区父容器：右侧分隔条改变宽度，下方分隔条改变高度，双击恢复初始尺寸。</p><vscode-split-layout id="ribbon-height-split" split="horizontal" handle-size="8" initial-handle-position="44%" min-start="132px" min-end="48px" reset-on-dbl-click style="height:300px"><vscode-split-layout slot="start" id="ribbon-width-split" split="vertical" handle-size="8" initial-handle-position="82%" min-start="120px" min-end="88px" reset-on-dbl-click><div slot="start" id="ribbon-responsive-wrapper"><vscode-ribbon id="ribbon-responsive" tablist-label="响应式功能区"></vscode-ribbon></div><div slot="end" class="ribbon-resize-hint">左右拖动改变宽度</div></vscode-split-layout><div slot="end" class="ribbon-resize-hint">上下拖动改变高度</div></vscode-split-layout><p class="ribbon-size-readout">功能区容器：<output id="ribbon-size-output">—</output></p><output id="ribbon-responsive-output" aria-live="polite">选择命令后在这里显示结果。</output>`,
+    `const wrapper = document.querySelector('#ribbon-responsive-wrapper');
+const sizeOutput = document.querySelector('#ribbon-size-output');
+const reportSize = () => {
+  const rect = wrapper.getBoundingClientRect();
+  sizeOutput.textContent = Math.round(rect.width) + ' × ' + Math.round(rect.height) + ' px';
+};
+new ResizeObserver(reportSize).observe(wrapper);
+reportSize();
 const ribbon = document.querySelector('#ribbon-responsive');
 ribbon.tabs = [
   {
@@ -697,18 +705,12 @@ ribbon.tabs = [
     ]
   }
 ];
-const updateWidth = () => {
-  wrapper.style.width = width.value + 'px';
-  value.value = width.value + 'px';
-};
-width.addEventListener('input', updateWidth);
-updateWidth();
 ribbon.addEventListener('vsc-ribbon-command', (event) => {
   document.querySelector('#ribbon-responsive-output').textContent =
     '执行命令：' + event.detail.command + '（' + event.detail.item.title + '）';
 });`,
-    420,
-    '#ribbon-width{display:block;width:100%;max-width:640px;margin:8px 0 16px} #ribbon-width-value{display:inline;margin:0} #ribbon-responsive-wrapper{max-width:100%} #ribbon-responsive{margin-bottom:12px}'
+    480,
+    '.ribbon-resize-tip{margin:0 0 8px;color:var(--vscode-descriptionForeground,#8b8b8b)} .ribbon-resize-hint{display:flex;align-items:center;justify-content:center;height:100%;padding:8px;color:var(--vscode-descriptionForeground,#8b8b8b);font-size:12px;text-align:center} #ribbon-height-split{margin-bottom:12px} #ribbon-responsive-wrapper{outline:1px dashed var(--vscode-panel-border,#454545);outline-offset:-1px} #ribbon-responsive{margin-bottom:12px} .ribbon-size-readout{margin:0 0 4px} .ribbon-size-readout output{display:inline;margin:0} #ribbon-responsive-output{margin-top:8px}'
   ),
   'ribbon-state': demo(
     '折叠、选中与切换状态',

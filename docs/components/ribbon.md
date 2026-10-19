@@ -58,6 +58,11 @@ ribbon.addEventListener('vsc-ribbon-command', (event) => {
 命令按钮获得焦点后按 Enter 或空格即可触发；带有菜单的按钮还可以按
 ArrowDown / ArrowUp 打开菜单并聚焦首项或末项。
 
+按钮、菜单项以及折叠、滚动、关闭等控件都使用 Codicon 图标。宿主页面需要按
+[主题与图标](../guide/theming) 的说明，以固定 id `vscode-codicon-stylesheet`
+引入 `codicons.css`；组件会把该样式表链接与 nonce 复制到影子根。缺少样式表、
+字体文件或 CSP 授权时图标不会显示。
+
 ## 交互示例
 
 使用右上角导航栏的全站主题和尺寸选择，使用鼠标或键盘操作。代码视图包含此预览实际执行的 HTML、CSS 与 JavaScript。
@@ -119,6 +124,10 @@ ArrowDown / ArrowUp 打开菜单并聚焦首项或末项。
 4. 全部折叠后仍溢出时，内容区两端显示悬浮滚动按钮，原生横向滚动条始终隐藏。
 
 未声明 `responsive` / `responsiveMenu` 的按钮保持原布局，只参与整组折叠。
+
+组件页的响应式场景用两个嵌套的 `vscode-split-layout` 包住功能区：右侧分隔条
+调整宽度，下方分隔条调整高度，双击分隔条恢复初始尺寸，并实时显示容器尺寸。
+宽度变化会触发上述降级链，高度只决定容器可视区域。
 
 `full` 按钮固定为“上图标、下标题”，忽略 `style`；`half` 与 `third` 可按
 `style` 显示横向图文或纯图标。`third` 标题最多一行，`full` 与 `half` 最多两行。

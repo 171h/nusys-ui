@@ -84,6 +84,10 @@ ribbon.addEventListener('vsc-ribbon-command', async (event) => {
 `ResizeObserver` 会在尺寸变化后重新测量。若数据就地修改，调用
 `refreshLayout()` 重新评估。
 
+文档站的响应式场景用嵌套 `vscode-split-layout` 同时提供宽度与高度拖动：拖动
+右侧分隔条改变宽度，拖动下方分隔条改变高度，双击分隔条恢复初始值并实时显示
+容器尺寸。高度只决定容器可视区域，不触发降级。
+
 降级顺序固定为：逐批紧凑 → `responsiveMenu` 合并 → 从右向左折叠分组 →
 两端悬浮滚动按钮。未声明 `responsive` / `responsiveMenu` 的按钮只参与整组折叠。
 
@@ -104,7 +108,8 @@ ribbon.addEventListener('vsc-ribbon-command', async (event) => {
 `vscode-high-contrast` 类名自动切换。
 
 Codicon 字体需要页面加载 `@vscode/codicons/dist/codicon.css`，并用固定 id
-`vscode-codicon-stylesheet` 引入，详见 [主题与图标](./guide/theming)。
+`vscode-codicon-stylesheet` 引入，详见 [主题与图标](./guide/theming)。组件会把
+该链接与 nonce 插入自身影子根，按钮、菜单与折叠控件的图标才会显示。
 
 ## 沙箱自定义内容与 CSP
 

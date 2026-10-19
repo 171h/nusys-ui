@@ -297,8 +297,9 @@ ribbon.tabs = [
                 {command: 'slab-coupler', title: '扣件式', icon: 'layers'},
                 {
                   title: '更多体系',
+                  icon: 'ellipsis',
                   order: 30,
-                  menu: {items: [{command: 'slab-portal', title: '门式（占位）', placeholder: true}]}
+                  menu: {items: [{command: 'slab-portal', title: '门式（占位）', icon: 'layers', placeholder: true}]}
                 }
               ]
             }
@@ -308,7 +309,7 @@ ribbon.tabs = [
             command: 'open-wall',
             title: '墙模板',
             icon: 'layout',
-            menu: {items: [{command: 'open-wall-single', title: '单侧墙模板'}]}
+            menu: {items: [{command: 'open-wall-single', title: '单侧墙模板', icon: 'layout'}]}
           }
         ]
       }

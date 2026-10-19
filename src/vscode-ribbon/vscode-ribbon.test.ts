@@ -669,6 +669,29 @@ describe('vscode-ribbon', () => {
     el.refreshLayout();
   });
 
+  it('把宿主页面的 Codicon 样式表链接引入影子根', async () => {
+    const link = document.createElement('link');
+    link.id = 'vscode-codicon-stylesheet';
+    link.rel = 'stylesheet';
+    link.href = '/assets/codicon.css';
+    document.head.append(link);
+    try {
+      const el = await createRibbon();
+      const shadowLink = el.shadowRoot!.querySelector('link[rel="stylesheet"]');
+      expect(shadowLink).to.not.equal(null);
+      expect(shadowLink!.getAttribute('href')).to.equal('/assets/codicon.css');
+    } finally {
+      link.remove();
+    }
+  });
+
+  it('缺少 Codicon 样式表时不输出图标字体链接', async () => {
+    document.getElementById('vscode-codicon-stylesheet')?.remove();
+    const el = await createRibbon();
+    const shadowLink = el.shadowRoot!.querySelector('link[rel="stylesheet"]');
+    expect(shadowLink?.hasAttribute('href')).to.equal(false);
+  });
+
   it('主题变更时切换浅色与深色图标', async () => {
     const tabs: VscRibbonTab[] = [
       {

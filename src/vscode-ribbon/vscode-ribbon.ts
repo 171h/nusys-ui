@@ -3,6 +3,11 @@ import {property, query, state} from 'lit/decorators.js';
 import {classMap} from 'lit/directives/class-map.js';
 import {ifDefined} from 'lit/directives/if-defined.js';
 import {customElement, VscElement} from '../includes/VscElement.js';
+import {
+  CODICON_STYLESHEET_WARNING,
+  getCodiconStylesheetConfig,
+  type CodiconStylesheetConfig,
+} from '../includes/codicon-stylesheet.js';
 import {stylePropertyMap} from '../includes/style-property-map.js';
 import uniqueId from '../includes/uniqueId.js';
 import {buildRibbonCustomContentSource} from './ribbon-custom-content.js';
@@ -225,6 +230,7 @@ export class VscodeRibbon extends VscElement {
   private _menuFocusFrame?: number;
   private _instanceId = uniqueId('ribbon-');
   private _panelId = `${this._instanceId}-panel`;
+  private _codiconStylesheet: CodiconStylesheetConfig = {};
 
   constructor() {
     super();
@@ -232,6 +238,10 @@ export class VscodeRibbon extends VscElement {
 
   override connectedCallback(): void {
     super.connectedCallback();
+    this._codiconStylesheet = getCodiconStylesheetConfig();
+    if (!this._codiconStylesheet.href && typeof document !== 'undefined') {
+      this.warn(CODICON_STYLESHEET_WARNING);
+    }
     this._storedState = this._readStoredState();
     this._syncTheme();
     this._observeTheme();
@@ -1702,6 +1712,11 @@ export class VscodeRibbon extends VscElement {
       part="base"
       aria-label=${this.tablistLabel}
     >
+      <link
+        rel="stylesheet"
+        href=${ifDefined(this._codiconStylesheet.href)}
+        nonce=${ifDefined(this._codiconStylesheet.nonce)}
+      />
       <div class="ribbon-tabs" part="tabs">
         <slot name="tabs-start"></slot>
         <div
