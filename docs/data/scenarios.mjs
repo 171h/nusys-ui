@@ -1,3 +1,9 @@
+import {
+  ribbonResizeCss,
+  ribbonResizeHtml,
+  ribbonResizeScript,
+} from './ribbon-resizable.mjs';
+
 // 每个场景明确列出覆盖的公开功能；组合组件共用可运行场景。
 const demo = (title, features, html, js = '', height = 340, css = '') => ({
   title,
@@ -535,9 +541,11 @@ export const extraExamples = {
       'vsc-ribbon-command 事件与 arguments 透传',
       '按钮、菜单项与弹层控件使用 Codicon 图标',
       '菜单项文字左对齐，方向键与 Escape 可操作',
+      '可拖动 split-layout 父容器调整宽度与高度，并实时显示容器尺寸',
     ],
-    '<vscode-ribbon id="ribbon-menus" tablist-label="菜单示例"></vscode-ribbon><output id="ribbon-menus-output" aria-live="polite">等待操作</output>',
-    `const ribbon = document.querySelector('#ribbon-menus');
+    `${ribbonResizeHtml('ribbon-menus', '<vscode-ribbon id="ribbon-menus" tablist-label="菜单示例"></vscode-ribbon>')}<output id="ribbon-menus-output" aria-live="polite">等待操作</output>`,
+    `${ribbonResizeScript('ribbon-menus')}
+const ribbon = document.querySelector('#ribbon-menus');
 ribbon.tabs = [
   {
     id: 'home',
@@ -622,7 +630,7 @@ ribbon.addEventListener('vsc-ribbon-select', (event) => {
   output.textContent = '标签：' + event.detail.tab.title;
 });`,
     520,
-    '#ribbon-menus{margin-bottom:12px}'
+    ribbonResizeCss
   ),
   'ribbon-responsive': demo(
     '响应式降级、合并与分组折叠',
@@ -634,15 +642,8 @@ ribbon.addEventListener('vsc-ribbon-select', (event) => {
       '用嵌套 vscode-split-layout 作为可拖动父容器：右侧分隔条调宽度，下方分隔条调高度',
       '实时显示功能区容器尺寸，双击分隔条恢复初始值',
     ],
-    `<p class="ribbon-resize-tip">拖动分隔条调整功能区父容器：右侧分隔条改变宽度，下方分隔条改变高度，双击恢复初始尺寸。</p><vscode-split-layout id="ribbon-height-split" split="horizontal" handle-size="8" initial-handle-position="44%" min-start="132px" min-end="48px" reset-on-dbl-click style="height:300px"><vscode-split-layout slot="start" id="ribbon-width-split" split="vertical" handle-size="8" initial-handle-position="82%" min-start="120px" min-end="88px" reset-on-dbl-click><div slot="start" id="ribbon-responsive-wrapper"><vscode-ribbon id="ribbon-responsive" tablist-label="响应式功能区"></vscode-ribbon></div><div slot="end" class="ribbon-resize-hint">左右拖动改变宽度</div></vscode-split-layout><div slot="end" class="ribbon-resize-hint">上下拖动改变高度</div></vscode-split-layout><p class="ribbon-size-readout">功能区容器：<output id="ribbon-size-output">—</output></p><output id="ribbon-responsive-output" aria-live="polite">选择命令后在这里显示结果。</output>`,
-    `const wrapper = document.querySelector('#ribbon-responsive-wrapper');
-const sizeOutput = document.querySelector('#ribbon-size-output');
-const reportSize = () => {
-  const rect = wrapper.getBoundingClientRect();
-  sizeOutput.textContent = Math.round(rect.width) + ' × ' + Math.round(rect.height) + ' px';
-};
-new ResizeObserver(reportSize).observe(wrapper);
-reportSize();
+    `${ribbonResizeHtml('ribbon-responsive', '<vscode-ribbon id="ribbon-responsive" tablist-label="响应式功能区"></vscode-ribbon>')}<output id="ribbon-responsive-output" aria-live="polite">选择命令后在这里显示结果。</output>`,
+    `${ribbonResizeScript('ribbon-responsive')}
 const ribbon = document.querySelector('#ribbon-responsive');
 ribbon.tabs = [
   {
@@ -710,7 +711,7 @@ ribbon.addEventListener('vsc-ribbon-command', (event) => {
     '执行命令：' + event.detail.command + '（' + event.detail.item.title + '）';
 });`,
     480,
-    '.ribbon-resize-tip{margin:0 0 8px;color:var(--vscode-descriptionForeground,#8b8b8b)} .ribbon-resize-hint{display:flex;align-items:center;justify-content:center;height:100%;padding:8px;color:var(--vscode-descriptionForeground,#8b8b8b);font-size:12px;text-align:center} #ribbon-height-split{margin-bottom:12px} #ribbon-responsive-wrapper{outline:1px dashed var(--vscode-panel-border,#454545);outline-offset:-1px} #ribbon-responsive{margin-bottom:12px} .ribbon-size-readout{margin:0 0 4px} .ribbon-size-readout output{display:inline;margin:0} #ribbon-responsive-output{margin-top:8px}'
+    ribbonResizeCss
   ),
   'ribbon-state': demo(
     '折叠、选中与切换状态',
@@ -719,9 +720,11 @@ ribbon.addEventListener('vsc-ribbon-command', (event) => {
       'vsc-ribbon-collapse、vsc-ribbon-select 事件',
       'pressed 切换状态、disabled 与 placeholder 禁用项',
       'persist-state + storage-key 可跨刷新记忆折叠与活动标签',
+      '可拖动 split-layout 父容器调整宽度与高度，并实时显示容器尺寸',
     ],
-    '<vscode-ribbon id="ribbon-state" persist-state storage-key="docs-ribbon-state" tablist-label="状态示例"></vscode-ribbon><output id="ribbon-state-output" aria-live="polite">等待操作</output>',
-    `const ribbon = document.querySelector('#ribbon-state');
+    `${ribbonResizeHtml('ribbon-state', '<vscode-ribbon id="ribbon-state" persist-state storage-key="docs-ribbon-state" tablist-label="状态示例"></vscode-ribbon>')}<output id="ribbon-state-output" aria-live="polite">等待操作</output>`,
+    `${ribbonResizeScript('ribbon-state')}
+const ribbon = document.querySelector('#ribbon-state');
 const output = document.querySelector('#ribbon-state-output');
 ribbon.tabs = [
   {
@@ -753,7 +756,7 @@ ribbon.addEventListener('vsc-ribbon-select', (event) => {
 ribbon.addEventListener('vsc-ribbon-collapse', (event) => {
   output.textContent = event.detail.collapsed ? '功能区已折叠' : '功能区已展开';
 });`,
-    300,
-    '#ribbon-state{margin-bottom:12px}'
+    520,
+    ribbonResizeCss
   ),
 };

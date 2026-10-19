@@ -1,4 +1,9 @@
 import {extraExamples} from './scenarios.mjs';
+import {
+  ribbonResizeCss,
+  ribbonResizeHtml,
+  ribbonResizeScript,
+} from './ribbon-resizable.mjs';
 export const examples = {
   tooltip: {
     height: 230,
@@ -249,11 +254,12 @@ export const examples = {
     css: '.groups {display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px} vscode-tabs-group {min-height: 200px} @media(max-width: 500px) {.groups {grid-template-columns: 1fr}}',
   },
   ribbon: {
-    height: 300,
+    height: 470,
     title: '标签、分组与下拉菜单',
-    html: '<vscode-ribbon id="ribbon-basic" tablist-label="示例功能区"></vscode-ribbon><output id="ribbon-basic-output" aria-live="polite">选择命令后在这里显示结果。</output>',
-    css: '#ribbon-basic {margin-bottom: 12px}',
-    js: `const ribbon = document.querySelector('#ribbon-basic');
+    html: `${ribbonResizeHtml('ribbon-basic', '<vscode-ribbon id="ribbon-basic" tablist-label="示例功能区"></vscode-ribbon>')}<output id="ribbon-basic-output" aria-live="polite">选择命令后在这里显示结果。</output>`,
+    css: ribbonResizeCss,
+    js: `${ribbonResizeScript('ribbon-basic')}
+const ribbon = document.querySelector('#ribbon-basic');
 ribbon.tabs = [
   {
     id: 'home',

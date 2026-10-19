@@ -7,6 +7,7 @@ import {chromium} from 'playwright';
 import {components} from '../docs/data/components.mjs';
 import {componentScenarios} from '../docs/data/scenarios.mjs';
 import {testScenarios} from './docs-scenarios-test.mjs';
+import {testRibbonResize} from './docs-ribbon-resize-test.mjs';
 import {testShowcase} from './docs-showcase-test.mjs';
 import {testFieldsetThemes} from './docs-fieldset-test.mjs';
 
@@ -162,6 +163,9 @@ try {
     );
     assert.equal(response.status(), 200, `${component.id} API 未构建`);
   }
+
+  const ribbonExample = await open('ribbon');
+  await testRibbonResize(ribbonExample, 'ribbon-basic');
 
   let frame = await open('button');
   const sample = page.locator('.example').first();

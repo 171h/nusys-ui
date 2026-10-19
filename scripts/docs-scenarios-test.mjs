@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import {componentScenarios} from '../docs/data/scenarios.mjs';
+import {testRibbonResize} from './docs-ribbon-resize-test.mjs';
 import {testSelectHover} from './docs-select-hover-test.mjs';
 
 export async function testResponsiveTable(frame) {
@@ -321,6 +322,8 @@ export async function testScenarios(page, url) {
   await frame.getByRole('button', {name: '打开 1', exact: true}).click();
   assert.equal(await frame.locator('output').textContent(), '打开 1');
 
+  // 功能区示例使用可拖动父容器，需要足够宽的视口验证完整布局与降级链。
+  await page.setViewportSize({width: 1440, height: 1000});
   frame = await open('ribbon-menus');
   const codiconHref = await frame
     .locator('#ribbon-menus')
@@ -385,13 +388,14 @@ export async function testScenarios(page, url) {
   );
   await frame.getByRole('button', {name: '关闭面板', exact: true}).click();
   await panel.waitFor({state: 'hidden'});
+  await testRibbonResize(frame, 'ribbon-menus');
 
   frame = await open('ribbon-responsive');
   const setSplitPosition = (selector, position) =>
     frame.locator(selector).evaluate((element, value) => {
       element.handlePosition = `${value}px`;
     }, position);
-  await setSplitPosition('#ribbon-width-split', 120);
+  await setSplitPosition('#ribbon-responsive-width-split', 120);
   await frame.waitForFunction(() => {
     const ribbon = document.querySelector('#ribbon-responsive');
     return (
@@ -399,7 +403,7 @@ export async function testScenarios(page, url) {
       ribbon.shadowRoot.querySelector('button[aria-label="基坑计算"]') !== null
     );
   });
-  await setSplitPosition('#ribbon-width-split', 1600);
+  await setSplitPosition('#ribbon-responsive-width-split', 1600);
   await frame.waitForFunction(() => {
     const ribbon = document.querySelector('#ribbon-responsive');
     return (
@@ -407,11 +411,13 @@ export async function testScenarios(page, url) {
       ribbon.shadowRoot.querySelector('button[aria-label="基坑计算"]') === null
     );
   });
-  await setSplitPosition('#ribbon-height-split', 180);
+  await setSplitPosition('#ribbon-responsive-height-split', 180);
   await frame.waitForFunction(() => {
-    const wrapper = document.querySelector('#ribbon-responsive-wrapper');
+    const wrapper = document.querySelector('#ribbon-responsive-resize-wrapper');
     const height = Math.round(wrapper.getBoundingClientRect().height);
-    const size = document.querySelector('#ribbon-size-output').textContent;
+    const size = document.querySelector(
+      '#ribbon-responsive-size-output'
+    ).textContent;
     return height > 160 && height < 200 && size.includes(height + ' px');
   });
   await frame.getByRole('button', {name: '单位换算', exact: true}).click();
@@ -436,8 +442,8 @@ export async function testScenarios(page, url) {
     await frame.locator('#ribbon-state-output').textContent(),
     '功能区已展开'
   );
+  await testRibbonResize(frame, 'ribbon-state');
 
-  await page.setViewportSize({width: 1440, height: 1000});
   frame = await open('table-responsive');
   await testResponsiveTable(frame);
 
