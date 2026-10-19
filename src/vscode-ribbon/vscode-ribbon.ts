@@ -238,6 +238,7 @@ export class VscodeRibbon extends VscElement {
     document.addEventListener('pointerdown', this._onDocumentPointerDown, true);
     document.addEventListener('keydown', this._onDocumentKeyDown);
     window.addEventListener('resize', this._onWindowResize);
+    window.addEventListener('scroll', this._onWindowScroll, true);
     this._resizeObserver = new ResizeObserver(() => this._scheduleLayout());
     this._resizeObserver.observe(this);
     this._scheduleLayout();
@@ -251,6 +252,7 @@ export class VscodeRibbon extends VscElement {
     );
     document.removeEventListener('keydown', this._onDocumentKeyDown);
     window.removeEventListener('resize', this._onWindowResize);
+    window.removeEventListener('scroll', this._onWindowScroll, true);
     this._resizeObserver?.disconnect();
     this._themeObserver?.disconnect();
     clearTimeout(this._layoutTimer);
@@ -277,6 +279,10 @@ export class VscodeRibbon extends VscElement {
 
   protected override updated(changed: PropertyValues): void {
     super.updated(changed);
+    if (changed.has('persistState') || changed.has('storageKey')) {
+      this._storedState = this._readStoredState();
+      this._restored = this._storedState === null;
+    }
     if (!this._restored) {
       this._restoreState();
     }
@@ -1206,6 +1212,15 @@ export class VscodeRibbon extends VscElement {
     this._scheduleLayout();
   };
 
+  private _onWindowScroll = (event: Event): void => {
+    const target = event.composedPath()[0];
+    if (target instanceof Node && this._menuEl?.contains(target)) {
+      return;
+    }
+    this._closeMenu(false);
+    this._closeGroup(false);
+  };
+
   private _renderIcon(
     icon: ResolvedRibbonIcon,
     className = 'ribbon-icon'
@@ -1277,6 +1292,7 @@ export class VscodeRibbon extends VscElement {
     const isSplit = item.type === 'splitButton' && hasMenu;
     const isDropdown = hasMenu && !isSplit;
     const open = this._isMenuOpen(item);
+    const hasPopup = item.menu?.layout === 'panel' ? 'dialog' : 'menu';
     const classes = {
       'ribbon-item': true,
       [`ribbon-item-${level.size}`]: true,
@@ -1296,12 +1312,14 @@ export class VscodeRibbon extends VscElement {
           [`ribbon-item-${level.size}`]: true,
           [`ribbon-item-${layout}`]: true,
         })}
+        part="item"
         role="group"
         aria-label=${item.title}
       >
         <button
           type="button"
           class="ribbon-item-primary"
+          part="item-primary"
           title=${title}
           aria-label=${item.title}
           aria-pressed=${ifDefined(item.pressed)}
@@ -1320,9 +1338,10 @@ export class VscodeRibbon extends VscElement {
         <button
           type="button"
           class="ribbon-split-trigger"
+          part="item-trigger"
           title=${`${this.openMenuLabel}：${item.title}`}
           aria-label=${`${this.openMenuLabel}：${item.title}`}
-          aria-haspopup="menu"
+          aria-haspopup=${hasPopup}
           aria-expanded=${open ? 'true' : 'false'}
           ?disabled=${item.disabled}
           @click=${(event: Event) => this._toggleMenu(item, anchorEvent(event))}
@@ -1344,9 +1363,10 @@ export class VscodeRibbon extends VscElement {
     return html`<button
       type="button"
       class=${classMap(classes)}
+      part="item"
       title=${title}
       aria-label=${item.title}
-      aria-haspopup=${ifDefined(isDropdown ? 'menu' : undefined)}
+      aria-haspopup=${ifDefined(isDropdown ? hasPopup : undefined)}
       aria-expanded=${ifDefined(isDropdown ? (open ? 'true' : 'false') : undefined)}
       aria-pressed=${ifDefined(item.pressed)}
       ?disabled=${item.disabled}
@@ -1378,7 +1398,11 @@ export class VscodeRibbon extends VscElement {
 
   private _renderMenuEntry(item: RibbonItemModel): TemplateResult {
     if (item.separator) {
-      return html`<div class="ribbon-menu-separator" role="separator"></div>`;
+      return html`<div
+        class="ribbon-menu-separator"
+        part="menu-separator"
+        role="separator"
+      ></div>`;
     }
     const hasMenu = item.menu !== null;
     const isSplit = item.type === 'splitButton' && hasMenu && !!item.command;
@@ -1386,10 +1410,11 @@ export class VscodeRibbon extends VscElement {
     const anchorEvent = (event: Event) => event.currentTarget as HTMLElement;
 
     if (isSplit) {
-      return html`<div class="ribbon-menu-split" role="none">
+      return html`<div class="ribbon-menu-split" part="menu-split" role="none">
         <button
           type="button"
           class="ribbon-menu-item"
+          part="menu-item"
           role="menuitem"
           title=${title}
           aria-label=${item.title}
@@ -1405,6 +1430,7 @@ export class VscodeRibbon extends VscElement {
         <button
           type="button"
           class="ribbon-menu-item ribbon-menu-split-trigger"
+          part="menu-item"
           role="menuitem"
           title=${`${this.openMenuLabel}：${item.title}`}
           aria-label=${`${this.openMenuLabel}：${item.title}`}
@@ -1424,6 +1450,7 @@ export class VscodeRibbon extends VscElement {
     return html`<button
       type="button"
       class="ribbon-menu-item"
+      part="menu-item"
       role="menuitem"
       title=${title}
       aria-label=${item.title}
@@ -1460,6 +1487,7 @@ export class VscodeRibbon extends VscElement {
     return html`<button
       type="button"
       class="ribbon-panel-item"
+      part="panel-item"
       title=${this._buttonTitle(item)}
       aria-label=${item.title}
       aria-haspopup=${ifDefined(hasMenu ? 'menu' : undefined)}
@@ -1499,6 +1527,7 @@ export class VscodeRibbon extends VscElement {
         'ribbon-menu-popover': true,
         'is-panel': isPanel,
       })}
+      part="menu"
       role=${isPanel ? 'dialog' : 'menu'}
       aria-label=${isPanel ? (menu.title ?? state.item.title) : state.item.title}
       .style=${stylePropertyMap({
@@ -1515,7 +1544,8 @@ export class VscodeRibbon extends VscElement {
           ? html`<button
               type="button"
               class="ribbon-menu-back"
-              role="menuitem"
+              part="menu-back"
+              role=${ifDefined(isPanel ? undefined : 'menuitem')}
               aria-label=${this.backLabel}
               @click=${this._popMenu}
             >
@@ -1529,13 +1559,14 @@ export class VscodeRibbon extends VscElement {
       }
       ${
         isPanel
-          ? html`<div class="ribbon-panel-header">
+          ? html`<div class="ribbon-panel-header" part="panel-header">
                 <span class="ribbon-panel-title"
                   >${menu.title ?? state.item.title}</span
                 >
                 <button
                   type="button"
                   class="ribbon-panel-close"
+                  part="panel-close"
                   title=${this.closePanelLabel}
                   aria-label=${this.closePanelLabel}
                   @click=${() => this._closeMenu(true)}
@@ -1543,11 +1574,12 @@ export class VscodeRibbon extends VscElement {
                   <span class="codicon codicon-close" aria-hidden="true"></span>
                 </button>
               </div>
-              <div class="ribbon-panel-body">
+              <div class="ribbon-panel-body" part="panel-body">
                 ${
                   menu.items.length > 0
                     ? html`<div
                         class="ribbon-panel-grid"
+                        part="panel-grid"
                         .style=${stylePropertyMap({
                           '--vsc-ribbon-panel-columns': String(menu.columns),
                         })}
@@ -1560,7 +1592,7 @@ export class VscodeRibbon extends VscElement {
                 }
                 ${this._renderCustomContent(menu)}
               </div>`
-          : html`<div class="ribbon-menu-items" role="none">
+          : html`<div class="ribbon-menu-items" part="menu-items" role="none">
                 ${menu.items.map((item) => this._renderMenuEntry(item))}
               </div>
               ${this._renderCustomContent(menu)}`
@@ -1576,6 +1608,7 @@ export class VscodeRibbon extends VscElement {
     }
     return html`<iframe
       class="ribbon-custom-content"
+      part="custom-content"
       sandbox=""
       title=${this.customContentLabel}
       .srcdoc=${buildRibbonCustomContentSource(menu.custom)}
@@ -1594,6 +1627,7 @@ export class VscodeRibbon extends VscElement {
     const {group} = state;
     return html`<div
       class="ribbon-popover ribbon-group-popover"
+      part="group-popover"
       role="dialog"
       aria-label=${group.title}
       .style=${stylePropertyMap({
@@ -1604,7 +1638,7 @@ export class VscodeRibbon extends VscElement {
       })}
       @focusout=${this._onGroupFocusOut}
     >
-      <div class="ribbon-items">
+      <div class="ribbon-items" part="items">
         ${this._entries(group)
           .filter((entry) => this._isEntryVisible(group, entry))
           .map((entry) => this._renderMainItem(entry.item, 'group'))}
@@ -1618,6 +1652,7 @@ export class VscodeRibbon extends VscElement {
     const icon = this._groupIcon(group);
     return html`<div
       class=${classMap({'ribbon-group': true, folded})}
+      part="group"
       role="group"
       aria-label=${group.title}
       data-group=${group.id}
@@ -1625,6 +1660,7 @@ export class VscodeRibbon extends VscElement {
       <button
         type="button"
         class="ribbon-group-dropdown"
+        part="group-button"
         title=${`${this.openGroupLabel}：${group.title}`}
         aria-label=${`${this.openGroupLabel}：${group.title}`}
         aria-haspopup="dialog"
@@ -1644,12 +1680,12 @@ export class VscodeRibbon extends VscElement {
           {chevron: true, centered: true}
         )}
       </button>
-      <div class="ribbon-items">
+      <div class="ribbon-items" part="items">
         ${this._entries(group)
           .filter((entry) => this._isEntryVisible(group, entry))
           .map((entry) => this._renderMainItem(entry.item, 'ribbon'))}
       </div>
-      <div class="ribbon-group-title">${group.title}</div>
+      <div class="ribbon-group-title" part="group-title">${group.title}</div>
     </div>`;
   }
 
@@ -1663,9 +1699,10 @@ export class VscodeRibbon extends VscElement {
         'is-collapsed': this.collapsed,
         'is-overlay-open': this._overlayOpen,
       })}
+      part="base"
       aria-label=${this.tablistLabel}
     >
-      <div class="ribbon-tabs">
+      <div class="ribbon-tabs" part="tabs">
         <slot name="tabs-start"></slot>
         <div
           class="ribbon-tabs-list"
@@ -1683,6 +1720,7 @@ export class VscodeRibbon extends VscElement {
                   'ribbon-tab': true,
                   'is-active': model.id === tab?.id,
                 })}
+                part="tab"
                 data-tab-id=${model.id}
                 aria-controls=${this._panelId}
                 aria-selected=${model.id === tab?.id ? 'true' : 'false'}
@@ -1722,6 +1760,7 @@ export class VscodeRibbon extends VscElement {
           'ribbon-content': true,
           'is-overlay': this.collapsed,
         })}
+        part="content"
         id=${this._panelId}
         role="tabpanel"
         aria-label=${tab?.title ?? ''}
@@ -1742,6 +1781,7 @@ export class VscodeRibbon extends VscElement {
             ? html`<button
                 type="button"
                 class="ribbon-scroll-button left"
+                part="scroll-button"
                 title=${this.scrollLeftLabel}
                 aria-label=${this.scrollLeftLabel}
                 @click=${() => this._scrollRibbon(-1)}
@@ -1758,6 +1798,7 @@ export class VscodeRibbon extends VscElement {
             ? html`<button
                 type="button"
                 class="ribbon-scroll-button right"
+                part="scroll-button"
                 title=${this.scrollRightLabel}
                 aria-label=${this.scrollRightLabel}
                 @click=${() => this._scrollRibbon(1)}

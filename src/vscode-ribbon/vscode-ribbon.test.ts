@@ -350,6 +350,9 @@ describe('vscode-ribbon', () => {
       },
     ];
     const el = await createRibbon(tabs);
+    expect(shadowButton(el, '板模板')?.getAttribute('aria-haspopup')).to.equal(
+      'dialog'
+    );
     const menu = await openMenu(el, '板模板');
     expect(menu.getAttribute('role')).to.equal('dialog');
     expect(menu.querySelector('.ribbon-panel-title')?.textContent).to.contain(

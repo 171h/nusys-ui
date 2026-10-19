@@ -179,6 +179,17 @@ Escape 关闭，执行命令后也会关闭。折叠按钮、标签双击与覆�
 - 折叠分组入口支持 ArrowDown 打开分组弹层，Escape 关闭并恢复焦点；
 - 图标按钮通过 `label` 或标题提供无障碍名称，占位项输出禁用的可访问状态。
 
+## CSS 部件
+
+| 部件                                                                                | 说明                                                 |
+| ----------------------------------------------------------------------------------- | ---------------------------------------------------- |
+| `base` / `tabs` / `tab` / `content`                                                 | 功能区根容器、标签栏、标签与内容区                   |
+| `group` / `group-title` / `items` / `group-button`                                  | 功能组、分组标题、六轨网格与折叠入口                 |
+| `item` / `item-primary` / `item-trigger`                                            | 普通按钮与分割按钮的主命令、菜单触发区               |
+| `menu` / `menu-items` / `menu-item` / `menu-separator` / `menu-split` / `menu-back` | 下拉菜单容器、列表、菜单项、分隔线、分割行与返回入口 |
+| `panel-header` / `panel-close` / `panel-body` / `panel-grid` / `panel-item`         | 面板标题栏、关闭按钮、内容区、格子网格与格子         |
+| `group-popover` / `scroll-button` / `custom-content`                                | 折叠分组弹层、悬浮滚动按钮与沙箱内容 iframe          |
+
 ## 功能场景
 
 下列场景补充状态、组合约束、数据操作和交互边界。每项列出覆盖的公开功能，代码视图可直接查阅实际运行代码。
