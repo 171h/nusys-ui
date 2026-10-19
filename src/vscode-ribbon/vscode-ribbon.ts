@@ -1686,7 +1686,7 @@ export class VscodeRibbon extends VscElement {
         <button
           type="button"
           class="ribbon-menu-item ribbon-menu-split-trigger"
-          part="menu-item"
+          part="menu-item menu-split-trigger"
           role="menuitem"
           title=${`${this.openMenuLabel}：${item.title}`}
           aria-label=${`${this.openMenuLabel}：${item.title}`}
@@ -2276,6 +2276,7 @@ export class VscodeRibbon extends VscElement {
         <slot name="tabs-start"></slot>
         <div
           class="ribbon-tabs-list"
+          part="tabs-list"
           role="tablist"
           aria-label=${this.tablistLabel}
           @keydown=${this._onTabsKeyDown}
@@ -2308,6 +2309,7 @@ export class VscodeRibbon extends VscElement {
             ? html`<button
                 type="button"
                 class="ribbon-collapse"
+                part="collapse-button"
                 title=${this.collapsed ? this.expandLabel : this.collapseLabel}
                 aria-label=${this.collapsed ? this.expandLabel : this.collapseLabel}
                 aria-expanded=${this.collapsed ? 'false' : 'true'}
@@ -2341,8 +2343,12 @@ export class VscodeRibbon extends VscElement {
         )}
         ?hidden=${!contentVisible}
       >
-        <div class="ribbon-scroll-viewport" @scroll=${this._onViewportScroll}>
-          <div class="ribbon-groups">
+        <div
+          class="ribbon-scroll-viewport"
+          part="scroll-viewport"
+          @scroll=${this._onViewportScroll}
+        >
+          <div class="ribbon-groups" part="groups">
             ${tab ? tab.groups.map((group) => this._renderGroup(group)) : nothing}
           </div>
         </div>
