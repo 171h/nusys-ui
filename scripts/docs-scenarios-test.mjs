@@ -321,6 +321,98 @@ export async function testScenarios(page, url) {
   await frame.getByRole('button', {name: '打开 1', exact: true}).click();
   assert.equal(await frame.locator('output').textContent(), '打开 1');
 
+  frame = await open('ribbon-menus');
+  await frame.getByRole('button', {name: '保存', exact: true}).click();
+  assert.match(
+    await frame.locator('#ribbon-menus-output').textContent(),
+    /save/
+  );
+  await frame.getByRole('button', {name: '板模板', exact: true}).click();
+  const menuItem = frame.getByRole('menuitem', {name: '盘扣式', exact: true});
+  await menuItem.waitFor();
+  assert.equal(
+    await frame
+      .locator('vscode-ribbon .ribbon-menu-item')
+      .first()
+      .evaluate((element) => getComputedStyle(element).textAlign),
+    'left'
+  );
+  await frame.getByRole('menuitem', {name: '更多体系', exact: true}).click();
+  await frame.getByRole('menuitem', {name: '返回', exact: true}).waitFor();
+  await frame
+    .getByRole('menuitem', {name: '门式脚手架', exact: true})
+    .waitFor();
+  await frame.getByRole('menuitem', {name: '返回', exact: true}).click();
+  await frame.getByRole('menuitem', {name: '盘扣式', exact: true}).click();
+  assert.match(
+    await frame.locator('#ribbon-menus-output').textContent(),
+    /slab-ringlock/
+  );
+  await frame.getByRole('button', {name: '板模板', exact: true}).click();
+  await frame.getByRole('menuitem', {name: '盘扣式', exact: true}).waitFor();
+  await page.keyboard.press('Escape');
+  await menuItem.waitFor({state: 'hidden'});
+  await frame.getByRole('button', {name: '脚手架规范', exact: true}).click();
+  const panel = frame.getByRole('dialog');
+  await panel.waitFor();
+  const customFrame = await (
+    await panel.locator('iframe.ribbon-custom-content').elementHandle()
+  ).contentFrame();
+  await customFrame
+    .getByText('面板下方可放置规范说明', {exact: false})
+    .waitFor();
+  assert.equal(
+    await frame.locator('vscode-ribbon .ribbon-panel-item').count(),
+    4
+  );
+  await frame.getByRole('button', {name: '关闭面板', exact: true}).click();
+  await panel.waitFor({state: 'hidden'});
+
+  frame = await open('ribbon-responsive');
+  const setRibbonWidth = (width) =>
+    frame.locator('#ribbon-width').evaluate((element, value) => {
+      element.value = String(value);
+      element.dispatchEvent(new Event('input', {bubbles: true}));
+    }, width);
+  await setRibbonWidth(120);
+  await frame.waitForFunction(() => {
+    const ribbon = document.querySelector('#ribbon-responsive');
+    return (
+      ribbon.shadowRoot.querySelector('.ribbon-group.folded') !== null ||
+      ribbon.shadowRoot.querySelector('button[aria-label="基坑计算"]') !== null
+    );
+  });
+  await setRibbonWidth(960);
+  await frame.waitForFunction(() => {
+    const ribbon = document.querySelector('#ribbon-responsive');
+    return (
+      ribbon.shadowRoot.querySelector('.ribbon-group.folded') === null &&
+      ribbon.shadowRoot.querySelector('button[aria-label="基坑计算"]') === null
+    );
+  });
+  await frame.getByRole('button', {name: '单位换算', exact: true}).click();
+  assert.match(
+    await frame.locator('#ribbon-responsive-output').textContent(),
+    /unit/
+  );
+
+  frame = await open('ribbon-state');
+  await frame.getByRole('button', {name: '侧边栏', exact: true}).click();
+  assert.equal(
+    await frame.locator('#ribbon-state-output').textContent(),
+    '命令：toggle-sidebar'
+  );
+  await frame.getByRole('button', {name: '折叠功能区', exact: true}).click();
+  assert.equal(
+    await frame.locator('#ribbon-state-output').textContent(),
+    '功能区已折叠'
+  );
+  await frame.getByRole('button', {name: '展开功能区', exact: true}).click();
+  assert.equal(
+    await frame.locator('#ribbon-state-output').textContent(),
+    '功能区已展开'
+  );
+
   await page.setViewportSize({width: 1440, height: 1000});
   frame = await open('table-responsive');
   await testResponsiveTable(frame);
@@ -331,6 +423,6 @@ export async function testScenarios(page, url) {
   await frame.getByRole('button', {name: '定位 README'}).click();
   assert.match(await frame.locator('output').textContent(), /\[0,1\]/);
   console.log(
-    '已验证新增场景的表单重置、菜单、进度、文件读取、动态选项、多选提交、修改标记、分区回调、滚动、分栏、标签页、表格和树操作。'
+    '已验证新增场景的表单重置、菜单、功能区、进度、文件读取、动态选项、多选提交、修改标记、分区回调、滚动、分栏、标签页、表格和树操作。'
   );
 }

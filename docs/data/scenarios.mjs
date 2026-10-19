@@ -67,6 +67,7 @@ export const componentScenarios = {
   'tab-header': ['tabs-panel', 'tabs-group-views'],
   'tab-panel': ['tabs-panel', 'tabs-group-views'],
   'tabs-group': ['tabs-group-views'],
+  ribbon: ['ribbon-menus', 'ribbon-responsive', 'ribbon-state'],
   'toolbar-button': ['toolbar-states'],
   'toolbar-container': ['toolbar-states'],
   table: ['table-variants', 'table-responsive'],
@@ -524,5 +525,233 @@ export const extraExamples = {
     `<form><vscode-radio-group><vscode-radio name="mode" value="auto" label="自动" checked default-checked required></vscode-radio><vscode-radio name="mode" value="manual" label="手动"></vscode-radio><vscode-radio name="mode" value="locked" label="禁用" disabled></vscode-radio></vscode-radio-group><vscode-button type="submit">提交</vscode-button> <vscode-button type="reset" secondary>恢复默认</vscode-button></form><output aria-live="polite"></output>`,
     formScript,
     240
+  ),
+  'ribbon-menus': demo(
+    '下拉、子菜单、面板与命令事件',
+    [
+      'button / splitButton / dropdown 三种按钮类型',
+      '递归子菜单与返回导航、快捷键文字和分隔线',
+      'Word 风格面板、列数、自定义沙箱内容',
+      'vsc-ribbon-command 事件与 arguments 透传',
+      '菜单项文字左对齐，方向键与 Escape 可操作',
+    ],
+    '<vscode-ribbon id="ribbon-menus" tablist-label="菜单示例"></vscode-ribbon><output id="ribbon-menus-output" aria-live="polite">等待操作</output>',
+    `const ribbon = document.querySelector('#ribbon-menus');
+ribbon.tabs = [
+  {
+    id: 'home',
+    title: '开始',
+    default: true,
+    groups: [
+      {
+        id: 'file',
+        title: '文件',
+        items: [
+          {
+            type: 'splitButton',
+            command: 'save',
+            arguments: ['current'],
+            title: '保存',
+            icon: 'save',
+            menu: {items: [
+              {command: 'save-as', title: '另存为', keybinding: 'Ctrl+Shift+S'},
+              {command: 'export-pdf', title: '导出 PDF'}
+            ]}
+          },
+          {
+            type: 'dropdown',
+            title: '板模板',
+            icon: 'symbol-class',
+            menu: {
+              items: [
+                {command: 'slab-ringlock', title: '盘扣式', icon: 'layers'},
+                {command: 'slab-coupler', title: '扣件式', icon: 'layers', order: 20},
+                {separator: true, title: '', order: 25},
+                {command: 'slab-wall', title: '墙模板', icon: 'layout', order: 30},
+                {
+                  title: '更多体系',
+                  order: 40,
+                  menu: {items: [
+                    {command: 'slab-portal', title: '门式脚手架'},
+                    {title: '爬模（未实现）', placeholder: true}
+                  ]}
+                }
+              ]
+            }
+          }
+        ]
+      },
+      {
+        id: 'norms',
+        title: '规范',
+        items: [
+          {
+            type: 'dropdown',
+            title: '脚手架规范',
+            icon: 'library',
+            menu: {
+              layout: 'panel',
+              title: '选择脚手架体系',
+              columns: 3,
+              items: [
+                {command: 'jgjt231', title: '盘扣式', icon: 'layers'},
+                {command: 'jgj130', title: '扣件式', icon: 'library'},
+                {command: 'jgj166', title: '碗扣式', icon: 'layers'},
+                {command: 'jgj164', title: '木脚手架', icon: 'symbol-class'}
+              ],
+              custom: {
+                html: '<p>面板下方可放置规范说明或图标图例，沙箱禁止脚本与网络请求。</p>',
+                css: 'p{margin:0;color:var(--vscode-descriptionForeground,#999)}',
+                width: 420,
+                height: 56
+              }
+            }
+          }
+        ]
+      }
+    ]
+  }
+];
+const output = document.querySelector('#ribbon-menus-output');
+ribbon.addEventListener('vsc-ribbon-command', (event) => {
+  output.textContent = '执行：' + event.detail.command + '，参数：' + JSON.stringify(event.detail.arguments);
+});
+ribbon.addEventListener('vsc-ribbon-select', (event) => {
+  output.textContent = '标签：' + event.detail.tab.title;
+});`,
+    520,
+    '#ribbon-menus{margin-bottom:12px}'
+  ),
+  'ribbon-responsive': demo(
+    '响应式降级、合并与分组折叠',
+    [
+      'responsive 尺寸链按批降档：full → half → third → 纯图标',
+      'responsiveMenu 将同 id 按钮合并为下拉入口',
+      '宽度不足时从右向左折叠功能组，分组入口保留原内容',
+      '全部折叠后两端显示悬浮滚动按钮',
+      '拖动宽度滑块即可观察完整降级链',
+    ],
+    `<label for="ribbon-width">功能区宽度 <output id="ribbon-width-value">640px</output></label><input id="ribbon-width" type="range" min="120" max="960" step="20" value="640"><div id="ribbon-responsive-wrapper"><vscode-ribbon id="ribbon-responsive" tablist-label="响应式功能区"></vscode-ribbon></div><output id="ribbon-responsive-output" aria-live="polite">选择命令后在这里显示结果。</output>`,
+    `const width = document.querySelector('#ribbon-width');
+const value = document.querySelector('#ribbon-width-value');
+const wrapper = document.querySelector('#ribbon-responsive-wrapper');
+const ribbon = document.querySelector('#ribbon-responsive');
+ribbon.tabs = [
+  {
+    id: 'calc',
+    title: '计算',
+    default: true,
+    groups: [
+      {
+        id: 'pit',
+        title: '基坑与边坡',
+        items: [
+          {
+            command: 'slope', title: '边坡稳定', icon: 'layers', size: 'full',
+            responsive: [{size: 'half'}, {size: 'third'}, {size: 'third', style: 'icon'}],
+            responsiveMenu: {id: 'pit', title: '基坑计算', icon: 'layers'}
+          },
+          {
+            command: 'support', title: '围护支撑', icon: 'layers', size: 'full',
+            responsive: [{size: 'half'}, {size: 'third'}, {size: 'third', style: 'icon'}],
+            responsiveMenu: {id: 'pit', title: '基坑计算', icon: 'layers'}
+          },
+          {
+            command: 'anchor', title: '加固锚固', icon: 'layers', size: 'full',
+            responsive: [{size: 'half'}, {size: 'third'}, {size: 'third', style: 'icon'}],
+            responsiveMenu: {id: 'pit', title: '基坑计算', icon: 'layers'}
+          },
+          {
+            command: 'pile', title: '人工挖孔桩', icon: 'layers', size: 'full',
+            responsive: [{size: 'half'}, {size: 'third'}, {size: 'third', style: 'icon'}],
+            responsiveMenu: {id: 'pit', title: '基坑计算', icon: 'layers'}
+          }
+        ]
+      },
+      {
+        id: 'tools',
+        title: '工具',
+        items: [
+          {command: 'unit', title: '单位换算', icon: 'symbol-unit', size: 'half',
+            responsive: [{size: 'third'}, {size: 'third', style: 'icon'}]},
+          {command: 'density', title: '材料密度', icon: 'database', size: 'half',
+            responsive: [{size: 'third'}, {size: 'third', style: 'icon'}]}
+        ]
+      }
+    ]
+  },
+  {
+    id: 'project',
+    title: '项目',
+    groups: [
+      {
+        id: 'files',
+        title: '文件',
+        items: [
+          {command: 'open', title: '打开', icon: 'folder-opened', size: 'half',
+            responsive: [{size: 'third'}, {size: 'third', style: 'icon'}]},
+          {command: 'save', title: '保存', icon: 'save', size: 'half',
+            responsive: [{size: 'third'}, {size: 'third', style: 'icon'}]}
+        ]
+      }
+    ]
+  }
+];
+const updateWidth = () => {
+  wrapper.style.width = width.value + 'px';
+  value.value = width.value + 'px';
+};
+width.addEventListener('input', updateWidth);
+updateWidth();
+ribbon.addEventListener('vsc-ribbon-command', (event) => {
+  document.querySelector('#ribbon-responsive-output').textContent =
+    '执行命令：' + event.detail.command + '（' + event.detail.item.title + '）';
+});`,
+    420,
+    '#ribbon-width{display:block;width:100%;max-width:640px;margin:8px 0 16px} #ribbon-width-value{display:inline;margin:0} #ribbon-responsive-wrapper{max-width:100%} #ribbon-responsive{margin-bottom:12px}'
+  ),
+  'ribbon-state': demo(
+    '折叠、选中与切换状态',
+    [
+      'collapsed / collapsible 与折叠按钮、双击标签折叠',
+      'vsc-ribbon-collapse、vsc-ribbon-select 事件',
+      'pressed 切换状态、disabled 与 placeholder 禁用项',
+      'persist-state + storage-key 可跨刷新记忆折叠与活动标签',
+    ],
+    '<vscode-ribbon id="ribbon-state" persist-state storage-key="docs-ribbon-state" tablist-label="状态示例"></vscode-ribbon><output id="ribbon-state-output" aria-live="polite">等待操作</output>',
+    `const ribbon = document.querySelector('#ribbon-state');
+const output = document.querySelector('#ribbon-state-output');
+ribbon.tabs = [
+  {
+    id: 'home',
+    title: '开始',
+    default: true,
+    groups: [
+      {
+        id: 'toggle', title: '切换', items: [
+          {command: 'toggle-sidebar', title: '侧边栏', icon: 'layout-sidebar-left', size: 'half', pressed: true},
+          {command: 'toggle-terminal', title: '终端', icon: 'terminal', size: 'half', pressed: false}
+        ]
+      },
+      {
+        id: 'states', title: '状态', items: [
+          {command: 'locked', title: '不可用', icon: 'lock', size: 'half', disabled: true},
+          {title: '未实现', icon: 'circle-slash', size: 'half', placeholder: true}
+        ]
+      }
+    ]
+  }
+];
+ribbon.addEventListener('vsc-ribbon-command', (event) => {
+  output.textContent = '命令：' + event.detail.command;
+});
+ribbon.addEventListener('vsc-ribbon-select', (event) => {
+  output.textContent = '选中标签：' + event.detail.tab.title;
+});
+ribbon.addEventListener('vsc-ribbon-collapse', (event) => {
+  output.textContent = event.detail.collapsed ? '功能区已折叠' : '功能区已展开';
+});`,
+    300,
+    '#ribbon-state{margin-bottom:12px}'
   ),
 };
