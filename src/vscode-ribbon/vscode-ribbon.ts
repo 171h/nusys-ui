@@ -1636,11 +1636,13 @@ export class VscodeRibbon extends VscElement {
       return nothing;
     }
     const isPanel = menu.layout === 'panel';
+    const isGallery = menu.layout === 'gallery';
     return html`<div
       class=${classMap({
         'ribbon-popover': true,
         'ribbon-menu-popover': true,
         'is-panel': isPanel,
+        'is-gallery': isGallery,
       })}
       part="menu"
       role=${isPanel ? 'dialog' : 'menu'}
@@ -1707,13 +1709,83 @@ export class VscodeRibbon extends VscElement {
                 }
                 ${this._renderCustomContent(menu)}
               </div>`
-          : html`<div class="ribbon-menu-items" part="menu-items" role="none">
-                ${menu.items.map((item) => this._renderMenuEntry(item))}
-              </div>
-              ${this._renderCustomContent(menu)}`
+          : isGallery
+            ? html`<div
+                  class="ribbon-gallery"
+                  part="gallery"
+                  role="none"
+                  .style=${stylePropertyMap({
+                    '--vsc-ribbon-gallery-columns': String(menu.columns),
+                  })}
+                >
+                  ${menu.items
+                    .filter((item) => !item.separator)
+                    .map((item) => this._renderGalleryEntry(item))}
+                </div>
+                ${this._renderCustomContent(menu)}`
+            : html`<div class="ribbon-menu-items" part="menu-items" role="none">
+                  ${menu.items.map((item) => this._renderMenuEntry(item))}
+                </div>
+                ${this._renderCustomContent(menu)}`
       }
       ${this._renderMenuFooter(menu)}
     </div>`;
+  }
+
+  private _renderGalleryEntry(item: RibbonItemModel): TemplateResult {
+    if (item.heading) {
+      return html`<div class="ribbon-gallery-heading" part="gallery-heading">
+        ${item.title}
+      </div>`;
+    }
+    const hasMenu = item.menu !== null;
+    return html`<button
+      type="button"
+      class="ribbon-gallery-item"
+      part="gallery-item"
+      role="menuitem"
+      title=${this._buttonTitle(item)}
+      aria-label=${item.title}
+      aria-haspopup=${ifDefined(hasMenu ? 'menu' : undefined)}
+      data-item-key=${item.key}
+      ?disabled=${item.disabled}
+      @click=${(event: Event) => {
+        if (hasMenu) {
+          this._pushMenu(item);
+        } else {
+          this._activateItem(item, event.currentTarget as HTMLElement, 'menu');
+        }
+      }}
+    >
+      <span class="ribbon-gallery-preview" part="gallery-preview">
+        ${
+          item.preview
+            ? html`<img
+                class="ribbon-gallery-image"
+                src=${item.preview}
+                alt=""
+                loading="lazy"
+              />`
+            : this._renderIcon(item.icon, 'ribbon-gallery-icon')
+        }
+      </span>
+      <span class="ribbon-gallery-label">${item.title}</span>
+      ${
+        item.description
+          ? html`<span class="ribbon-gallery-description"
+              >${item.description}</span
+            >`
+          : nothing
+      }
+      ${
+        hasMenu
+          ? html`<span
+              class="codicon codicon-chevron-down ribbon-chevron"
+              aria-hidden="true"
+            ></span>`
+          : nothing
+      }
+    </button>`;
   }
 
   private _renderCustomContent(

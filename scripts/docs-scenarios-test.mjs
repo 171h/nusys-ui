@@ -445,6 +445,32 @@ export async function testScenarios(page, url) {
     /margin-narrow/
   );
 
+  // 图库式下拉面板：预览图 + 标题 + 说明。
+  await frame.getByRole('button', {name: '样式库', exact: true}).click();
+  await frame.locator('vscode-ribbon .ribbon-gallery').waitFor();
+  assert.equal(
+    await frame.locator('vscode-ribbon .ribbon-gallery-item').count(),
+    4
+  );
+  assert.equal(
+    await frame.locator('vscode-ribbon .ribbon-gallery-image').count(),
+    4
+  );
+  assert.equal(
+    (
+      await frame
+        .locator('vscode-ribbon .ribbon-gallery-heading')
+        .first()
+        .textContent()
+    ).trim(),
+    '内置样式'
+  );
+  await frame.getByRole('menuitem', {name: '标题 1', exact: true}).click();
+  assert.match(
+    await frame.locator('#ribbon-menus-output').textContent(),
+    /style-heading-1/
+  );
+
   await frame.getByRole('button', {name: '打开文件设置', exact: true}).click();
   assert.match(
     await frame.locator('#ribbon-menus-output').textContent(),

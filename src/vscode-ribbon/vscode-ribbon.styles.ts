@@ -114,6 +114,7 @@ const styles: CSSResultGroup = [
     .ribbon-split-trigger:focus-visible,
     .ribbon-menu-item:focus-visible,
     .ribbon-menu-back:focus-visible,
+    .ribbon-gallery-item:focus-visible,
     .ribbon-panel-close:focus-visible,
     .ribbon-panel-item:focus-visible,
     .ribbon-panel-footer-item:focus-visible,
@@ -652,6 +653,107 @@ const styles: CSSResultGroup = [
     .ribbon-menu-popover {
       min-width: 180px;
       max-width: min(1200px, calc(100vw - 16px));
+    }
+
+    .ribbon-menu-popover.is-gallery {
+      min-width: 240px;
+    }
+
+    /* 图库式下拉面板：大尺寸预览格子。 */
+    .ribbon-gallery {
+      display: grid;
+      grid-template-columns: repeat(
+        var(--vsc-ribbon-gallery-columns, 4),
+        minmax(84px, 1fr)
+      );
+      gap: 4px;
+      padding: 6px;
+    }
+
+    .ribbon-gallery-heading {
+      grid-column: 1 / -1;
+      overflow: hidden;
+      padding: 2px 4px 0;
+      color: var(--vscode-descriptionForeground, #9d9d9d);
+      font-size: 11px;
+      font-weight: 600;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .ribbon-gallery-item {
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 3px;
+      min-width: 0;
+      padding: 3px;
+      border: 1px solid transparent;
+      border-radius: 4px;
+      background: transparent;
+      color: inherit;
+      font: inherit;
+      font-size: 11px;
+      text-align: center;
+      cursor: pointer;
+    }
+
+    .ribbon-gallery-item:hover:not(:disabled),
+    .ribbon-gallery-item:focus-visible {
+      border-color: var(--vscode-focusBorder, #0078d4);
+      background: var(--vscode-list-hoverBackground, rgba(127, 127, 127, 0.16));
+      outline: none;
+    }
+
+    .ribbon-gallery-item:disabled {
+      opacity: 0.45;
+      cursor: default;
+    }
+
+    .ribbon-gallery-preview {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 54px;
+      overflow: hidden;
+      border: 1px solid var(--vscode-panel-border, #454545);
+      border-radius: 2px;
+      background: var(--vscode-editor-background, #1f1f1f);
+    }
+
+    .ribbon-gallery-image {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .ribbon-gallery-icon {
+      width: 32px;
+      height: 32px;
+      color: var(--vscode-icon-foreground, #cccccc);
+      font-size: 32px;
+      line-height: 1;
+    }
+
+    .ribbon-gallery-label {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .ribbon-gallery-description {
+      overflow: hidden;
+      color: var(--vscode-descriptionForeground, #9d9d9d);
+      font-size: 10px;
+      line-height: 13px;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .ribbon-gallery-item .ribbon-chevron {
+      align-self: center;
+      font-size: 12px;
     }
 
     .ribbon-menu-items {

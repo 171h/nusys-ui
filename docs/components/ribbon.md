@@ -106,17 +106,18 @@ ArrowDown / ArrowUp 打开菜单并聚焦首项或末项。
 | `keybinding`  | `string`                                         | 菜单项右侧的快捷键文字                       |
 | `heading`     | `boolean`                                        | 在菜单或面板中渲染为不可交互的分组标题       |
 | `description` | `string`                                         | 菜单项、面板项的补充说明，支持多行文本       |
+| `preview`     | `string`                                         | 图库项预览图地址，推荐 `data:` URI           |
 | `separator`   | `boolean`                                        | 在菜单中渲染为分隔线                         |
 | `tooltip`     | `string`                                         | 鼠标悬停提示，默认使用标题                   |
 
-| 菜单字段  | 类型                            | 说明                      |
-| --------- | ------------------------------- | ------------------------- |
-| `items`   | `VscRibbonItem[]`               | 菜单项，可继续嵌套 `menu` |
-| `layout`  | `'menu' \| 'panel'`             | 竖排菜单或 Word 风格面板  |
-| `title`   | `string`                        | 面板标题                  |
-| `columns` | `number`                        | 面板列数，限制在 1–8      |
-| `custom`  | `{html, css?, width?, height?}` | 沙箱 iframe 中的静态内容  |
-| `footer`  | `VscRibbonItem[]`               | 面板底部操作区条目        |
+| 菜单字段  | 类型                             | 说明                                |
+| --------- | -------------------------------- | ----------------------------------- |
+| `items`   | `VscRibbonItem[]`                | 菜单项，可继续嵌套 `menu`           |
+| `layout`  | `'menu' \| 'panel' \| 'gallery'` | 竖排菜单、Word 风格面板或图库式面板 |
+| `title`   | `string`                         | 面板标题                            |
+| `columns` | `number`                         | 面板或图库列数，限制在 1–8          |
+| `custom`  | `{html, css?, width?, height?}`  | 沙箱 iframe 中的静态内容            |
+| `footer`  | `VscRibbonItem[]`                | 面板底部操作区条目                  |
 
 ## 响应式与折叠
 
@@ -159,6 +160,8 @@ Escape 关闭，执行命令后也会关闭。折叠按钮、标签双击与覆�
   触发区展开菜单，两者都支持键盘；
 - 菜单支持递归子菜单、返回导航、快捷键文字、分隔线与禁用占位项；
 - `menu.layout: 'panel'` 渲染带标题栏与关闭按钮的面板，`columns` 控制列数；
+- `menu.layout: 'gallery'` 渲染图库式面板：每个条目由 `preview` 预览图（或图标）、
+  标题与说明组成大尺寸格子，适合样式库、艺术字等可视化选项；
 - `menu.footer` 在面板底部渲染整行操作区，支持图标、快捷键与命令，参与键盘导航；
 - `menu.custom` 的 HTML 在无脚本、禁止网络的沙箱 iframe 中渲染，图片仅允许
   `data:` URI，适合放置静态说明或图例，不要依赖脚本或外部请求。
@@ -225,6 +228,7 @@ Escape 关闭，执行命令后也会关闭。折叠按钮、标签双击与覆�
 | `menu` / `menu-items` / `menu-item` / `menu-separator` / `menu-split` / `menu-back` / `menu-heading` / `menu-description` | 下拉菜单容器、列表、菜单项、分隔线、分割行、返回入口、分组标题与说明文字 |
 | `panel-header` / `panel-close` / `panel-body` / `panel-grid` / `panel-item` / `panel-heading` / `panel-description`       | 面板标题栏、关闭按钮、内容区、格子网格、格子、面板分组标题与说明文字     |
 | `panel-footer` / `panel-footer-item`                                                                                      | 面板底部操作区与整行操作项                                               |
+| `gallery` / `gallery-item` / `gallery-preview` / `gallery-heading` / `gallery-description`                                | 图库网格、图库格子、预览区、分组标题与说明文字                           |
 | `group-popover` / `scroll-button` / `custom-content`                                                                      | 折叠分组弹层、悬浮滚动按钮与沙箱内容 iframe                              |
 
 ## 功能场景

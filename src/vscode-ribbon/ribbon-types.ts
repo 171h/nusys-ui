@@ -8,7 +8,7 @@ export type VscRibbonItemStyle = 'iconAndLabel' | 'icon';
 export type VscRibbonItemType = 'button' | 'splitButton' | 'dropdown';
 
 /** 下拉浮层的布局。 */
-export type VscRibbonMenuLayout = 'menu' | 'panel';
+export type VscRibbonMenuLayout = 'menu' | 'panel' | 'gallery';
 
 /** Ribbon 图标主题；`auto` 跟随宿主页面的明暗主题。 */
 export type VscRibbonTheme = 'auto' | 'light' | 'dark';
@@ -96,6 +96,8 @@ export interface VscRibbonItem {
   heading?: boolean;
   /** 菜单项、面板项或图库项的补充说明，显示在标题下方。 */
   description?: string;
+  /** 图库项预览图地址，推荐使用 `data:` URI；未设置时回退为图标。 */
+  preview?: string;
   /** 占位项：可见但不可执行，默认提示“功能尚未实现”。 */
   placeholder?: boolean;
   /** 禁用项：可见但不可操作。 */
@@ -187,6 +189,7 @@ export interface RibbonItemModel {
   separator: boolean;
   heading: boolean;
   description: string;
+  preview: string;
   order: number;
 }
 

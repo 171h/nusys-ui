@@ -546,6 +546,7 @@ export const extraExamples = {
       'vsc-ribbon-command 事件与 arguments 透传',
       '按钮、菜单项与弹层控件使用 Codicon 图标',
       '菜单分组标题与说明文字（箭头菜单与面板）',
+      '图库式下拉面板：预览图、标题与说明组成的大尺寸格子',
       '菜单项文字左对齐，方向键与 Escape 可操作',
       '分组右下角对话框启动器与 vsc-ribbon-dialog 事件',
       '可拖动 split-layout 父容器调整宽度与高度，并实时显示容器尺寸',
@@ -553,6 +554,11 @@ export const extraExamples = {
     `${ribbonResizeHtml('ribbon-menus', '<vscode-ribbon id="ribbon-menus" tablist-label="菜单示例"></vscode-ribbon>')}<output id="ribbon-menus-output" aria-live="polite">等待操作</output>`,
     `${ribbonResizeScript('ribbon-menus')}
 const ribbon = document.querySelector('#ribbon-menus');
+const galleryPreview = (label, accent) =>
+  'data:image/svg+xml;utf8,' +
+  encodeURIComponent(
+    '<svg xmlns="http://www.w3.org/2000/svg" width="96" height="60"><rect width="96" height="60" fill="#ffffff"/><rect x="8" y="8" width="80" height="5" fill="' + accent + '"/><rect x="8" y="20" width="64" height="4" fill="#d0d0d0"/><rect x="8" y="30" width="72" height="4" fill="#dcdcdc"/><rect x="8" y="40" width="56" height="4" fill="#e4e4e4"/><text x="8" y="55" font-family="sans-serif" font-size="8" fill="#666666">' + label + '</text></svg>'
+  );
 ribbon.tabs = [
   {
     id: 'home',
@@ -673,6 +679,42 @@ ribbon.tabs = [
                   title: '自定义页边距(A)…',
                   icon: 'settings-gear',
                   keybinding: 'A'
+                }
+              ]
+            }
+          }
+        ]
+      },
+      {
+        id: 'styles',
+        title: '样式',
+        dialogLauncher: true,
+        items: [
+          {
+            type: 'dropdown',
+            title: '样式库',
+            icon: 'symbol-color',
+            menu: {
+              layout: 'gallery',
+              title: '样式',
+              columns: 4,
+              items: [
+                {heading: true, title: '内置样式', order: 1},
+                {
+                  command: 'style-normal', title: '正文', order: 2,
+                  preview: galleryPreview('正文', '#2f6fb3')
+                },
+                {
+                  command: 'style-heading-1', title: '标题 1', order: 3,
+                  preview: galleryPreview('标题 1', '#1e7a4f')
+                },
+                {
+                  command: 'style-heading-2', title: '标题 2', order: 4,
+                  preview: galleryPreview('标题 2', '#8a5b00')
+                },
+                {
+                  command: 'style-title', title: '标题', order: 5,
+                  preview: galleryPreview('标题', '#7a2f8f')
                 }
               ]
             }

@@ -145,7 +145,12 @@ function buildMenu(menu: VscRibbonMenu, path: string): RibbonMenuModel {
   return {
     items,
     footer,
-    layout: menu.layout === 'panel' ? 'panel' : 'menu',
+    layout:
+      menu.layout === 'panel'
+        ? 'panel'
+        : menu.layout === 'gallery'
+          ? 'gallery'
+          : 'menu',
     title: menu.title?.trim() ? menu.title : null,
     columns: clamp(menu.columns ?? 3, PANEL_COLUMNS_RANGE),
     custom: buildCustomContent(menu.custom),
@@ -181,6 +186,7 @@ function buildItem(item: VscRibbonItem, path: string): RibbonItemModel {
     separator,
     heading: item.heading === true,
     description,
+    preview: item.preview?.trim() ?? '',
     order: item.order ?? 0,
   };
 }

@@ -465,6 +465,83 @@ describe('vscode-ribbon', () => {
     expect(el.shadowRoot!.querySelector('.ribbon-menu-popover')).to.equal(null);
   });
 
+  it('图库式面板按列渲染预览格子并执行命令', async () => {
+    const tabs: VscRibbonTab[] = [
+      {
+        id: 'home',
+        title: '开始',
+        default: true,
+        groups: [
+          {
+            id: 'styles',
+            title: '样式',
+            items: [
+              {
+                type: 'dropdown',
+                title: '样式库',
+                icon: 'symbol-color',
+                menu: {
+                  layout: 'gallery',
+                  title: '样式库',
+                  columns: 4,
+                  items: [
+                    {heading: true, title: '内置样式', order: 1},
+                    {
+                      command: 'normal',
+                      title: '正文',
+                      preview: 'data:image/svg+xml;utf8,<svg/>',
+                      order: 2,
+                    },
+                    {
+                      command: 'heading-1',
+                      title: '标题 1',
+                      description: '标题样式',
+                      order: 3,
+                    },
+                    {
+                      command: 'heading-2',
+                      title: '标题 2',
+                      icon: 'symbol-color',
+                      order: 4,
+                    },
+                  ],
+                },
+              },
+            ],
+          },
+        ],
+      },
+    ];
+    const el = await createRibbon(tabs);
+    const menu = await openMenu(el, '样式库');
+    const gallery = menu.querySelector<HTMLElement>('.ribbon-gallery')!;
+    expect(gallery).to.not.equal(null);
+    expect(gallery.getAttribute('part')).to.equal('gallery');
+    expect(
+      gallery.style.getPropertyValue('--vsc-ribbon-gallery-columns')
+    ).to.equal('4');
+    expect(
+      gallery.querySelector('.ribbon-gallery-heading')?.textContent
+    ).to.contain('内置样式');
+    const items = Array.from(
+      gallery.querySelectorAll<HTMLButtonElement>('.ribbon-gallery-item')
+    );
+    expect(items).to.have.length(3);
+    expect(items[0].querySelector('.ribbon-gallery-image')).to.not.equal(null);
+    expect(
+      items[1].querySelector('.ribbon-gallery-description')?.textContent
+    ).to.contain('标题样式');
+    expect(
+      items[2].querySelector('.ribbon-gallery-icon')?.className
+    ).to.contain('codicon-symbol-color');
+    expect(items[0].getAttribute('role')).to.equal('menuitem');
+
+    items[1].click();
+    await el.updateComplete;
+    expect(el.dataset.lastCommand).to.equal('heading-1');
+    expect(el.shadowRoot!.querySelector('.ribbon-menu-popover')).to.equal(null);
+  });
+
   it('支持递归子菜单与返回导航', async () => {
     const el = await createRibbon();
     Array.from(el.shadowRoot!.querySelectorAll<HTMLElement>('[role="tab"]'))
