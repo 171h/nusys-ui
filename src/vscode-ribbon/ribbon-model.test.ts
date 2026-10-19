@@ -71,7 +71,6 @@ describe('ribbon-model', () => {
       style: 'iconAndLabel',
       placeholder: false,
       disabled: false,
-      mergedMenuId: null,
     });
     expect(built[1].groups[0].items[2].placeholder).toBe(true);
     expect(built[1].groups[0].items[2].disabled).toBe(true);
@@ -160,7 +159,7 @@ describe('ribbon-model', () => {
     expect(item.menu?.items[0].menu?.items[0].command).toBe('nested');
   });
 
-  it('合成 responsiveMenu 并保留源按钮作为菜单项', () => {
+  it('保留分组内按钮的声明顺序与响应式配置', () => {
     const [tab] = buildRibbonTabs([
       {
         id: 'tab',
@@ -173,12 +172,12 @@ describe('ribbon-model', () => {
               {
                 command: 'slope',
                 title: '边坡',
-                responsiveMenu: {id: 'pit', title: '基坑', icon: '$(layers)'},
+                responsive: [{size: 'third'}],
               },
               {
                 command: 'support',
                 title: '围护',
-                responsiveMenu: {id: 'pit', title: '基坑', icon: '$(layers)'},
+                size: 'half',
               },
             ],
           },
@@ -186,16 +185,13 @@ describe('ribbon-model', () => {
       },
     ]);
     const group = tab.groups[0];
-    expect(group.mergedMenus).toHaveLength(1);
-    expect(group.mergedMenus[0]).toMatchObject({
-      type: 'dropdown',
-      title: '基坑',
-      mergedMenuId: 'pit',
-      command: null,
-    });
-    expect(
-      group.mergedMenus[0].menu?.items.map((item) => item.command).sort()
-    ).toEqual(['slope', 'support']);
+    expect(group.items).toHaveLength(2);
+    expect(group.items.map((item) => item.command)).toEqual([
+      'slope',
+      'support',
+    ]);
+    expect(group.items[0].responsive).toEqual([{size: 'third'}]);
+    expect(group.items[1].size).toBe('half');
   });
 
   it('计算按钮档位、布局与标题行数', () => {

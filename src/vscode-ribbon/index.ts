@@ -17,7 +17,6 @@ export type {
   VscRibbonItemType,
   VscRibbonMenu,
   VscRibbonMenuLayout,
-  VscRibbonResponsiveMenu,
   VscRibbonResponsiveStep,
   VscRibbonSelectEvent,
   VscRibbonTab,

@@ -149,13 +149,6 @@ function buildItem(item: VscRibbonItem, path: string): RibbonItemModel {
   const placeholder =
     item.placeholder === true || (!command && !menu && !separator);
   const title = item.title ?? '';
-  const responsiveMenu = item.responsiveMenu
-    ? {
-        id: item.responsiveMenu.id,
-        title: item.responsiveMenu.title,
-        icon: resolveRibbonIcon(item.responsiveMenu.icon),
-      }
-    : null;
 
   return {
     key: path,
@@ -169,8 +162,6 @@ function buildItem(item: VscRibbonItem, path: string): RibbonItemModel {
     size: item.size ?? 'full',
     style: item.style ?? 'iconAndLabel',
     responsive: item.responsive ?? [],
-    responsiveMenu,
-    mergedMenuId: null,
     placeholder,
     disabled: item.disabled === true || placeholder,
     pressed: typeof item.pressed === 'boolean' ? item.pressed : undefined,
@@ -212,65 +203,8 @@ function buildGroup(
     title: group.title,
     order: group.order ?? 0,
     items,
-    mergedMenus: buildMergedMenus(items, path),
     source: group,
   };
-}
-
-/**
- * 由 `responsiveMenu` 声明合成合并下拉入口。相同 `id` 的按钮按原顺序成为
- * 菜单项，菜单入口本身不再参与响应式降级。
- */
-function buildMergedMenus(
-  items: readonly RibbonItemModel[],
-  path: string
-): RibbonItemModel[] {
-  const ids: string[] = [];
-  for (const item of items) {
-    if (item.responsiveMenu && !ids.includes(item.responsiveMenu.id)) {
-      ids.push(item.responsiveMenu.id);
-    }
-  }
-
-  return ids.flatMap((id) => {
-    const sources = items.filter((item) => item.responsiveMenu?.id === id);
-    const definition = sources[0]?.responsiveMenu;
-    if (!definition) {
-      return [];
-    }
-    const merged: RibbonItemModel = {
-      key: `${path}/merged/${id}`,
-      source: {
-        type: 'dropdown',
-        title: definition.title,
-        icon: definition.icon,
-      },
-      type: 'dropdown',
-      command: null,
-      arguments: [],
-      title: definition.title,
-      icon: definition.icon,
-      menu: {
-        items: sources,
-        layout: 'menu',
-        title: null,
-        columns: 3,
-        custom: null,
-      },
-      size: 'full',
-      style: 'iconAndLabel',
-      responsive: [],
-      responsiveMenu: null,
-      mergedMenuId: id,
-      placeholder: false,
-      disabled: false,
-      tooltip: definition.title,
-      keybinding: '',
-      separator: false,
-      order: sources[0]?.order ?? 0,
-    };
-    return [merged];
-  });
 }
 
 /**

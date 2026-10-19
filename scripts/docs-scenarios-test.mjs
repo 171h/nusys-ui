@@ -399,8 +399,48 @@ export async function testScenarios(page, url) {
   await frame.waitForFunction(() => {
     const ribbon = document.querySelector('#ribbon-responsive');
     return (
-      ribbon.shadowRoot.querySelector('.ribbon-group.folded') !== null ||
-      ribbon.shadowRoot.querySelector('button[aria-label="基坑计算"]') !== null
+      ribbon.shadowRoot.querySelector(
+        '.ribbon-group[data-group="pit"].folded'
+      ) !== null &&
+      ribbon.shadowRoot.querySelector('.ribbon-menu-popover') === null
+    );
+  });
+  // 折叠分组的溢出弹层恢复声明的原始布局，而不是合并成单个下拉菜单。
+  await frame.locator('#ribbon-responsive').evaluate((ribbon) => {
+    ribbon.shadowRoot
+      .querySelector('.ribbon-group[data-group="pit"] .ribbon-group-dropdown')
+      .click();
+  });
+  await frame.waitForFunction(() => {
+    const ribbon = document.querySelector('#ribbon-responsive');
+    return ribbon.shadowRoot.querySelector('.ribbon-group-popover') !== null;
+  });
+  const responsivePopover = await frame.evaluate(() => {
+    const popover = document
+      .querySelector('#ribbon-responsive')
+      .shadowRoot.querySelector('.ribbon-group-popover');
+    return {
+      label: popover.getAttribute('aria-label'),
+      labels: [...popover.querySelectorAll('.ribbon-item')].map((item) =>
+        item.getAttribute('aria-label')
+      ),
+      classes: [...popover.querySelectorAll('.ribbon-item')].map(
+        (item) => item.className
+      ),
+    };
+  });
+  assert.equal(responsivePopover.label, '基坑与边坡');
+  assert.deepEqual(
+    [...responsivePopover.labels].sort(),
+    ['人工挖孔桩', '围护支撑', '加固锚固', '边坡稳定'].sort()
+  );
+  for (const className of responsivePopover.classes) {
+    assert.match(className, /ribbon-item-full/);
+    assert.doesNotMatch(className, /icon-only|ribbon-item-third/);
+  }
+  await frame.evaluate(() => {
+    document.dispatchEvent(
+      new KeyboardEvent('keydown', {key: 'Escape', bubbles: true})
     );
   });
   await setSplitPosition('#ribbon-responsive-width-split', 1600);
@@ -408,7 +448,7 @@ export async function testScenarios(page, url) {
     const ribbon = document.querySelector('#ribbon-responsive');
     return (
       ribbon.shadowRoot.querySelector('.ribbon-group.folded') === null &&
-      ribbon.shadowRoot.querySelector('button[aria-label="基坑计算"]') === null
+      ribbon.shadowRoot.querySelector('.ribbon-group-popover') === null
     );
   });
   await setSplitPosition('#ribbon-responsive-height-split', 180);
@@ -425,6 +465,100 @@ export async function testScenarios(page, url) {
     await frame.locator('#ribbon-responsive-output').textContent(),
     /unit/
   );
+
+  frame = await open('ribbon-overflow');
+  const ribbonOverflowState = () =>
+    frame.evaluate(() => {
+      const root = document.querySelector('#ribbon-overflow').shadowRoot;
+      return {
+        folded: [...root.querySelectorAll('.ribbon-group.folded')].map(
+          (group) => group.getAttribute('data-group')
+        ),
+        visibleItems: [
+          ...root.querySelectorAll('.ribbon-group:not(.folded) .ribbon-item'),
+        ].filter((item) => item.getClientRects().length > 0).length,
+      };
+    });
+  let overflowState = await ribbonOverflowState();
+  assert.deepEqual(overflowState.folded, [], '宽容器下应完整显示全部功能组');
+  assert.equal(overflowState.visibleItems, 7);
+  assert.equal(
+    await frame
+      .locator('#ribbon-overflow')
+      .evaluate(
+        (ribbon) =>
+          ribbon.shadowRoot.querySelectorAll('.ribbon-item.is-dropdown').length
+      ),
+    0,
+    '普通按钮不应被合并为下拉入口'
+  );
+  await setSplitPosition('#ribbon-overflow-width-split', 120);
+  await frame.waitForFunction(() => {
+    const root = document.querySelector('#ribbon-overflow').shadowRoot;
+    return root.querySelectorAll('.ribbon-group.folded').length === 3;
+  });
+  // 打开最右侧折叠分组，弹层按原始布局完整渲染该组按钮。
+  await frame.locator('#ribbon-overflow').evaluate((ribbon) => {
+    ribbon.shadowRoot
+      .querySelector('.ribbon-group[data-group="view"] .ribbon-group-dropdown')
+      .click();
+  });
+  await frame.waitForFunction(() => {
+    const root = document.querySelector('#ribbon-overflow').shadowRoot;
+    return root.querySelector('.ribbon-group-popover') !== null;
+  });
+  const overflowPopover = await frame.evaluate(() => {
+    const root = document.querySelector('#ribbon-overflow').shadowRoot;
+    const popover = root.querySelector('.ribbon-group-popover');
+    return {
+      label: popover.getAttribute('aria-label'),
+      items: [...popover.querySelectorAll('.ribbon-item')].map((item) => ({
+        label: item.getAttribute('aria-label'),
+        className: item.className,
+        icon: item.querySelector('.ribbon-icon')?.className ?? '',
+      })),
+    };
+  });
+  assert.equal(overflowPopover.label, '视图');
+  assert.deepEqual(
+    [...overflowPopover.items.map((item) => item.label)].sort(),
+    ['侧边栏', '终端'].sort()
+  );
+  for (const item of overflowPopover.items) {
+    assert.match(item.className, /ribbon-item-half/);
+    assert.doesNotMatch(item.className, /icon-only|ribbon-item-third/);
+  }
+  const sidebarItem = overflowPopover.items.find(
+    (item) => item.label === '侧边栏'
+  );
+  assert.match(sidebarItem.icon, /codicon-layout-sidebar-left/);
+  await frame.locator('#ribbon-overflow').evaluate((ribbon) => {
+    ribbon.shadowRoot
+      .querySelector('.ribbon-group-popover .ribbon-item[aria-label="侧边栏"]')
+      .click();
+  });
+  assert.match(
+    await frame.locator('#ribbon-overflow-output').textContent(),
+    /toggle-sidebar/
+  );
+  assert.equal(
+    await frame.evaluate(
+      () =>
+        document
+          .querySelector('#ribbon-overflow')
+          .shadowRoot.querySelector('.ribbon-group-popover') === null
+    ),
+    true,
+    '执行命令后溢出弹层应关闭'
+  );
+  await setSplitPosition('#ribbon-overflow-width-split', 1600);
+  await frame.waitForFunction(() => {
+    const root = document.querySelector('#ribbon-overflow').shadowRoot;
+    return root.querySelectorAll('.ribbon-group.folded').length === 0;
+  });
+  overflowState = await ribbonOverflowState();
+  assert.equal(overflowState.visibleItems, 7, '拉宽后应恢复完整布局');
+  await testRibbonResize(frame, 'ribbon-overflow');
 
   frame = await open('ribbon-state');
   await frame.getByRole('button', {name: '侧边栏', exact: true}).click();

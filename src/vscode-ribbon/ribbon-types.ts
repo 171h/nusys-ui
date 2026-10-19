@@ -68,14 +68,6 @@ export interface VscRibbonMenu {
   custom?: VscRibbonCustomContent;
 }
 
-/** 响应式合并菜单声明。 */
-export interface VscRibbonResponsiveMenu {
-  /** 同一分组内相同 id 的按钮会合并为同一个下拉入口。 */
-  id: string;
-  title: string;
-  icon?: VscRibbonIcon;
-}
-
 /** Ribbon 按钮、菜单项或面板格子。 */
 export interface VscRibbonItem {
   /** 按钮类型，默认为 `button`；有菜单时通常使用 `dropdown` 或 `splitButton`。 */
@@ -96,8 +88,6 @@ export interface VscRibbonItem {
   style?: VscRibbonItemStyle;
   /** 宽度不足时依次尝试的尺寸与样式。 */
   responsive?: readonly VscRibbonResponsiveStep[];
-  /** 宽度不足时与同 id 按钮合并为下拉入口。 */
-  responsiveMenu?: VscRibbonResponsiveMenu;
   /** 排序值，较小者在前。 */
   order?: number;
   /** 占位项：可见但不可执行，默认提示“功能尚未实现”。 */
@@ -172,13 +162,6 @@ export interface RibbonItemModel {
   size: VscRibbonItemSize;
   style: VscRibbonItemStyle;
   responsive: readonly VscRibbonResponsiveStep[];
-  responsiveMenu: {
-    id: string;
-    title: string;
-    icon: ResolvedRibbonIcon;
-  } | null;
-  /** 由响应式合并生成的下拉入口所对应的声明 id；普通条目为 `null`。 */
-  mergedMenuId: string | null;
   placeholder: boolean;
   disabled: boolean;
   pressed?: boolean;
@@ -195,8 +178,6 @@ export interface RibbonGroupModel {
   title: string;
   order: number;
   items: RibbonItemModel[];
-  /** 由 `responsiveMenu` 合成的下拉入口。 */
-  mergedMenus: RibbonItemModel[];
   source: VscRibbonGroup;
 }
 

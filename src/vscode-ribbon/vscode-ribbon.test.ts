@@ -63,6 +63,38 @@ const basicTabs = (): VscRibbonTab[] => [
   },
 ];
 
+const overflowTabs = (): VscRibbonTab[] => [
+  {
+    id: 'home',
+    title: '开始',
+    default: true,
+    groups: [
+      {
+        id: 'file',
+        title: '文件',
+        items: [
+          {command: 'open', title: '打开', icon: 'folder-opened'},
+          {command: 'save', title: '保存', icon: 'save'},
+          {
+            command: 'save-all',
+            title: '全部保存',
+            icon: 'save-all',
+            size: 'half',
+          },
+        ],
+      },
+      {
+        id: 'edit',
+        title: '编辑',
+        items: [
+          {command: 'undo', title: '撤销', icon: 'discard'},
+          {command: 'redo', title: '重做', icon: 'redo', size: 'half'},
+        ],
+      },
+    ],
+  },
+];
+
 async function createRibbon(tabs: VscRibbonTab[] = basicTabs(), style = '') {
   const el = await fixture<VscodeRibbon>(html`
     <vscode-ribbon
@@ -416,73 +448,92 @@ describe('vscode-ribbon', () => {
     expect(content.hidden).to.equal(true);
   });
 
-  it('响应式降级可合并同 id 按钮', async () => {
-    const tabs: VscRibbonTab[] = [
-      {
-        id: 'home',
-        title: '开始',
-        default: true,
-        groups: [
-          {
-            id: 'group',
-            title: '基坑',
-            items: [
-              {
-                command: 'slope',
-                title: '边坡稳定',
-                icon: 'layers',
-                responsive: [
-                  {size: 'half'},
-                  {size: 'third'},
-                  {size: 'third', style: 'icon'},
-                ],
-                responsiveMenu: {
-                  id: 'pit',
-                  title: '基坑计算',
-                  icon: 'layers',
-                },
-              },
-              {
-                command: 'support',
-                title: '围护支撑',
-                icon: 'layers',
-                responsive: [
-                  {size: 'half'},
-                  {size: 'third'},
-                  {size: 'third', style: 'icon'},
-                ],
-                responsiveMenu: {
-                  id: 'pit',
-                  title: '基坑计算',
-                  icon: 'layers',
-                },
-              },
-              {
-                command: 'anchor',
-                title: '加固锚固',
-                icon: 'layers',
-                responsive: [
-                  {size: 'half'},
-                  {size: 'third'},
-                  {size: 'third', style: 'icon'},
-                ],
-                responsiveMenu: {
-                  id: 'pit',
-                  title: '基坑计算',
-                  icon: 'layers',
-                },
-              },
-            ],
-          },
-        ],
-      },
-    ];
-    const el = await createRibbon(tabs, 'width: 40px');
-    await waitFor(() => shadowButton(el, '基坑计算') !== undefined);
-    expect(
-      shadowButton(el, '基坑计算')?.getAttribute('aria-haspopup')
-    ).to.equal('menu');
-    expect(shadowButton(el, '边坡稳定')).to.equal(undefined);
+  it('宽度不足时将整组折叠为溢出下拉入口', async () => {
+    const el = await createRibbon(overflowTabs(), 'width: 140px');
+    await waitFor(
+      () => el.shadowRoot?.querySelector('.ribbon-group.folded') !== null
+    );
+    const foldedGroups = Array.from(
+      el.shadowRoot!.querySelectorAll('.ribbon-group.folded')
+    );
+    expect(foldedGroups.length).to.be.greaterThan(0);
+    const trigger = foldedGroups[foldedGroups.length - 1].querySelector(
+      '.ribbon-group-dropdown'
+    );
+    expect(trigger).to.not.equal(null);
+    expect(trigger!.getAttribute('aria-haspopup')).to.equal('dialog');
+    expect((trigger as HTMLElement).getClientRects().length).to.be.greaterThan(
+      0
+    );
+    // 普通按钮不会合并成单个下拉入口。
+    expect(el.shadowRoot!.querySelector('.ribbon-menu-popover')).to.equal(null);
+    expect(shadowButton(el, '基坑计算')).to.equal(undefined);
+  });
+
+  it('溢出下拉弹层按原始布局完整呈现分组按钮', async () => {
+    const el = await createRibbon(overflowTabs(), 'width: 140px');
+    await waitFor(
+      () =>
+        el.shadowRoot?.querySelector(
+          '.ribbon-group[data-group="edit"].folded'
+        ) !== null
+    );
+    const trigger = el.shadowRoot!.querySelector<HTMLButtonElement>(
+      '.ribbon-group[data-group="edit"] .ribbon-group-dropdown'
+    )!;
+    trigger.click();
+    await waitFor(
+      () => el.shadowRoot?.querySelector('.ribbon-group-popover') !== null
+    );
+    await aTimeout(32);
+    const popover = el.shadowRoot!.querySelector('.ribbon-group-popover')!;
+    expect(popover.getAttribute('aria-label')).to.equal('编辑');
+    const items = Array.from(popover.querySelectorAll('.ribbon-item'));
+    expect(items.map((item) => item.getAttribute('aria-label'))).to.deep.equal([
+      '撤销',
+      '重做',
+    ]);
+    // 弹层使用声明的原始尺寸与样式，而不是折叠时的降级布局。
+    expect(items[0].className).to.contain('ribbon-item-full');
+    expect(items[0].className).to.contain('ribbon-item-vertical');
+    expect(items[1].className).to.contain('ribbon-item-half');
+    expect(items[0].querySelector('.ribbon-icon')?.className).to.contain(
+      'codicon-discard'
+    );
+    (items[0] as HTMLElement).click();
+    await el.updateComplete;
+    expect(el.dataset.lastCommand).to.equal('undo');
+    expect(el.shadowRoot!.querySelector('.ribbon-group-popover')).to.equal(
+      null
+    );
+  });
+
+  it('容器变宽后分组展开并关闭溢出弹层', async () => {
+    const el = await createRibbon(overflowTabs(), 'width: 140px');
+    await waitFor(
+      () => el.shadowRoot?.querySelector('.ribbon-group.folded') !== null
+    );
+    el.shadowRoot!.querySelector<HTMLButtonElement>(
+      '.ribbon-group.folded .ribbon-group-dropdown'
+    )!.click();
+    await waitFor(
+      () => el.shadowRoot?.querySelector('.ribbon-group-popover') !== null
+    );
+    el.style.width = '1000px';
+    el.refreshLayout();
+    await waitFor(
+      () => el.shadowRoot?.querySelector('.ribbon-group.folded') === null
+    );
+    expect(el.shadowRoot!.querySelector('.ribbon-group-popover')).to.equal(
+      null
+    );
+    const visibleItems = Array.from(
+      el.shadowRoot!.querySelectorAll(
+        '.ribbon-group[data-group="file"] .ribbon-item'
+      )
+    ).filter((item) => item.getClientRects().length > 0);
+    expect(visibleItems.length).to.equal(3);
+    expect(visibleItems[0].className).to.contain('ribbon-item-full');
   });
 
   it('宽度不足时折叠分组并保留分组入口', async () => {
@@ -519,6 +570,17 @@ describe('vscode-ribbon', () => {
     const folded = el.shadowRoot!.querySelector('.ribbon-group.folded')!;
     expect(folded.getAttribute('aria-label')).to.equal('分组');
     expect(folded.querySelector('.ribbon-group-dropdown')).to.not.equal(null);
+    (folded.querySelector('.ribbon-group-dropdown') as HTMLElement).click();
+    await waitFor(
+      () => el.shadowRoot?.querySelector('.ribbon-group-popover') !== null
+    );
+    await aTimeout(32);
+    const popoverItem = el.shadowRoot!.querySelector(
+      '.ribbon-group-popover .ribbon-item'
+    )!;
+    // 弹层恢复声明时的完整布局，而不是折叠前的 half/third 降级布局。
+    expect(popoverItem.className).to.contain('ribbon-item-full');
+    expect(popoverItem.className).to.contain('ribbon-item-vertical');
   });
 
   it('可持久化折叠状态与活动标签', async () => {

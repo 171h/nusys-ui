@@ -190,9 +190,6 @@ export class VscodeRibbon extends VscElement {
   private _responsiveSteps = new Map<RibbonItemModel, number>();
 
   @state()
-  private _activeMergedMenus = new Set<string>();
-
-  @state()
   private _foldedGroups = new Set<string>();
 
   @state()
@@ -413,7 +410,6 @@ export class VscodeRibbon extends VscElement {
     clearTimeout(this._layoutTimer);
     this._layoutTimer = undefined;
     this._responsiveSteps = new Map();
-    this._activeMergedMenus = new Set();
     this._foldedGroups = new Set();
     this._showScrollLeft = false;
     this._showScrollRight = false;
@@ -440,8 +436,9 @@ export class VscodeRibbon extends VscElement {
 
   /**
    * 响应式降级链：
-   * ① 同组相同策略整批降档 → ② `responsiveMenu` 合并为下拉 →
-   * ③ 从右向左整组折叠 → ④ 仍溢出时显示两端悬浮滚动按钮。
+   * ① 同组相同策略整批降档 → ② 从右向左整组折叠到溢出下拉入口 →
+   * ③ 仍溢出时显示两端悬浮滚动按钮。
+   * 折叠分组在弹层中始终按声明的原始布局完整渲染。
    */
   private async _evaluateLayout(): Promise<void> {
     if (this.collapsed && !this._overlayOpen) {
@@ -454,7 +451,6 @@ export class VscodeRibbon extends VscElement {
     }
 
     this._responsiveSteps = new Map();
-    this._activeMergedMenus = new Set();
     this._foldedGroups = new Set();
     viewport.scrollLeft = 0;
     await this.updateComplete;
@@ -494,27 +490,6 @@ export class VscodeRibbon extends VscElement {
       }
     }
 
-    for (const group of tab.groups) {
-      for (const merged of group.mergedMenus) {
-        if (this._fits()) {
-          break;
-        }
-        if (token !== this._layoutToken) {
-          return;
-        }
-        this._activeMergedMenus = new Set(this._activeMergedMenus).add(
-          `${group.key}:${merged.mergedMenuId}`
-        );
-        await this.updateComplete;
-        if (token !== this._layoutToken) {
-          return;
-        }
-      }
-      if (this._fits()) {
-        break;
-      }
-    }
-
     for (let index = tab.groups.length - 1; index >= 0; index--) {
       if (this._fits()) {
         break;
@@ -528,6 +503,11 @@ export class VscodeRibbon extends VscElement {
       if (token !== this._layoutToken) {
         return;
       }
+    }
+
+    // 分组重新展开后，对应的溢出弹层不再有可用的入口。
+    if (this._openGroup && !this._foldedGroups.has(this._openGroup.group.key)) {
+      this._closeGroup(false);
     }
 
     this._updateScrollButtons();
@@ -576,10 +556,10 @@ export class VscodeRibbon extends VscElement {
     this._updateScrollButtons();
   }
 
-  private _itemLevel(item: RibbonItemModel) {
+  private _itemLevel(item: RibbonItemModel, original = false) {
     return resolveRibbonItemLevel(
       item,
-      (this._responsiveSteps.get(item) ?? -1) + 1
+      original ? 0 : (this._responsiveSteps.get(item) ?? -1) + 1
     );
   }
 
@@ -591,35 +571,10 @@ export class VscodeRibbon extends VscElement {
     return this._openGroup?.group.key === group.key;
   }
 
-  private _entries(
-    group: RibbonGroupModel
-  ): Array<{item: RibbonItemModel; mergedMenuId: string | null}> {
-    return [
-      ...group.items.map((item) => ({item, mergedMenuId: null})),
-      ...group.mergedMenus.map((item) => ({
-        item,
-        mergedMenuId: item.mergedMenuId,
-      })),
-    ];
-  }
-
-  private _isEntryVisible(
-    group: RibbonGroupModel,
-    entry: {item: RibbonItemModel; mergedMenuId: string | null}
-  ): boolean {
-    const id = entry.mergedMenuId ?? entry.item.responsiveMenu?.id ?? null;
-    if (!id) {
-      return true;
-    }
-    const active = this._activeMergedMenus.has(`${group.key}:${id}`);
-    return entry.mergedMenuId ? active : !active;
-  }
-
   private _groupIcon(group: RibbonGroupModel): ResolvedRibbonIcon {
     const representative =
       group.items.find((item) => !item.placeholder && !item.disabled) ??
-      group.items[0] ??
-      group.mergedMenus[0];
+      group.items[0];
     return representative?.icon ?? {type: 'codicon', id: 'symbol-misc'};
   }
 
@@ -1293,9 +1248,10 @@ export class VscodeRibbon extends VscElement {
 
   private _renderMainItem(
     item: RibbonItemModel,
-    context: 'ribbon' | 'group'
+    context: 'ribbon' | 'group',
+    original = false
   ): TemplateResult {
-    const level = this._itemLevel(item);
+    const level = this._itemLevel(item, original);
     const layout = resolveRibbonItemLayout(level.size, level.style);
     const iconOnly = layout === 'icon-only';
     const hasMenu = item.menu !== null;
@@ -1649,9 +1605,7 @@ export class VscodeRibbon extends VscElement {
       @focusout=${this._onGroupFocusOut}
     >
       <div class="ribbon-items" part="items">
-        ${this._entries(group)
-          .filter((entry) => this._isEntryVisible(group, entry))
-          .map((entry) => this._renderMainItem(entry.item, 'group'))}
+        ${group.items.map((item) => this._renderMainItem(item, 'group', true))}
       </div>
     </div>`;
   }
@@ -1691,9 +1645,7 @@ export class VscodeRibbon extends VscElement {
         )}
       </button>
       <div class="ribbon-items" part="items">
-        ${this._entries(group)
-          .filter((entry) => this._isEntryVisible(group, entry))
-          .map((entry) => this._renderMainItem(entry.item, 'ribbon'))}
+        ${group.items.map((item) => this._renderMainItem(item, 'ribbon'))}
       </div>
       <div class="ribbon-group-title" part="group-title">${group.title}</div>
     </div>`;

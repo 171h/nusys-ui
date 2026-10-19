@@ -88,24 +88,23 @@ ArrowDown / ArrowUp 打开菜单并聚焦首项或末项。
 | `title` | `string`          | 分组标题，同时作为分组折叠入口的名称       |
 | `items` | `VscRibbonItem[]` | 分组内的按钮                               |
 
-| 字段             | 类型                                             | 说明                                         |
-| ---------------- | ------------------------------------------------ | -------------------------------------------- |
-| `type`           | `'button' \| 'splitButton' \| 'dropdown'`        | 按钮类型，默认为 `button`                    |
-| `command`        | `string`                                         | 命令标识，原样放入 `vsc-ribbon-command` 事件 |
-| `arguments`      | `unknown[]`                                      | 命令参数，原样放入事件详情                   |
-| `title`          | `string`                                         | 按钮或菜单项标题                             |
-| `icon`           | 字符串、`{light, dark}` 或 `{codicon}` / `{url}` | 图标声明                                     |
-| `menu`           | `VscRibbonMenu`                                  | 下拉菜单，支持递归子菜单                     |
-| `size`           | `'full' \| 'half' \| 'third'`                    | 主区域尺寸，默认为 `full`                    |
-| `style`          | `'iconAndLabel' \| 'icon'`                       | 紧凑样式，默认为 `iconAndLabel`              |
-| `responsive`     | `VscRibbonResponsiveStep[]`                      | 宽度不足时依次尝试的尺寸与样式               |
-| `responsiveMenu` | `{id, title, icon}`                              | 与同 id 按钮合并为下拉入口                   |
-| `pressed`        | `boolean`                                        | 切换按钮的按下状态，输出 `aria-pressed`      |
-| `disabled`       | `boolean`                                        | 禁用项                                       |
-| `placeholder`    | `boolean`                                        | 占位项，可见但不可执行                       |
-| `keybinding`     | `string`                                         | 菜单项右侧的快捷键文字                       |
-| `separator`      | `boolean`                                        | 在菜单中渲染为分隔线                         |
-| `tooltip`        | `string`                                         | 鼠标悬停提示，默认使用标题                   |
+| 字段          | 类型                                             | 说明                                         |
+| ------------- | ------------------------------------------------ | -------------------------------------------- |
+| `type`        | `'button' \| 'splitButton' \| 'dropdown'`        | 按钮类型，默认为 `button`                    |
+| `command`     | `string`                                         | 命令标识，原样放入 `vsc-ribbon-command` 事件 |
+| `arguments`   | `unknown[]`                                      | 命令参数，原样放入事件详情                   |
+| `title`       | `string`                                         | 按钮或菜单项标题                             |
+| `icon`        | 字符串、`{light, dark}` 或 `{codicon}` / `{url}` | 图标声明                                     |
+| `menu`        | `VscRibbonMenu`                                  | 下拉菜单，支持递归子菜单                     |
+| `size`        | `'full' \| 'half' \| 'third'`                    | 主区域尺寸，默认为 `full`                    |
+| `style`       | `'iconAndLabel' \| 'icon'`                       | 紧凑样式，默认为 `iconAndLabel`              |
+| `responsive`  | `VscRibbonResponsiveStep[]`                      | 宽度不足时依次尝试的尺寸与样式               |
+| `pressed`     | `boolean`                                        | 切换按钮的按下状态，输出 `aria-pressed`      |
+| `disabled`    | `boolean`                                        | 禁用项                                       |
+| `placeholder` | `boolean`                                        | 占位项，可见但不可执行                       |
+| `keybinding`  | `string`                                         | 菜单项右侧的快捷键文字                       |
+| `separator`   | `boolean`                                        | 在菜单中渲染为分隔线                         |
+| `tooltip`     | `string`                                         | 鼠标悬停提示，默认使用标题                   |
 
 | 菜单字段  | 类型                            | 说明                      |
 | --------- | ------------------------------- | ------------------------- |
@@ -119,11 +118,12 @@ ArrowDown / ArrowUp 打开菜单并聚焦首项或末项。
 
 1. 在各分组内，把初始尺寸、样式及完整 `responsive` 链相同的按钮归为一批；
    宽度不足时整批逐档降级，普通按钮、下拉与分割按钮不按类型拆批；
-2. 仍在溢出时按 `responsiveMenu.id` 将相近按钮合并为下拉入口；
-3. 仍溢出时从右向左折叠整个功能组，点击分组入口可查看该组原样内容；
-4. 全部折叠后仍溢出时，内容区两端显示悬浮滚动按钮，原生横向滚动条始终隐藏。
+2. 仍溢出时从右向左折叠整个功能组；折叠入口是带分组图标与标题的溢出下拉按钮，
+   点击后在弹层中按声明的原始布局完整呈现该组全部按钮，可直接执行命令；
+3. 全部折叠后仍溢出时，内容区两端显示悬浮滚动按钮，原生横向滚动条始终隐藏。
 
-未声明 `responsive` / `responsiveMenu` 的按钮保持原布局，只参与整组折叠。
+未声明 `responsive` 的按钮保持原布局，只参与整组折叠；折叠后的弹层不复用降级
+或紧凑布局，始终按原始尺寸与样式渲染。
 
 组件页的每个功能区示例都用两个嵌套的 `vscode-split-layout` 作为可拖动父容器：
 右侧分隔条调整宽度，下方分隔条调整高度，双击分隔条恢复初始尺寸，并实时显示

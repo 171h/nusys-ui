@@ -37,7 +37,7 @@ ribbon.addEventListener('vsc-ribbon-command', (event) => {
 | `menu.items` 递归菜单、`menu.layout: 'panel'` | 同名字段；面板支持 `title` 与 `columns`（1–8）                                           |
 | `menu.custom` 沙箱内容                        | 同名字段，无脚本 iframe 中渲染；CSP 禁止网络连接                                         |
 | `size` / `style` / `responsive`               | 同名字段；`style` 取 `iconAndLabel` 或 `icon`                                            |
-| `responsiveMenu`                              | 同名字段；同 id 按钮在压缩后合并为下拉入口                                               |
+| `responsiveMenu`                              | 不再支持：溢出时改为整组折叠，在溢出弹层中按原始布局完整呈现分组                         |
 | `placeholder`                                 | 同名字段；渲染为禁用项并提示“功能尚未实现”                                               |
 | `localStorage` 中的折叠与活动标签             | `persist-state` + `storage-key`，默认不写入存储                                          |
 | `when` / 命令 `enablement`                    | 组件不读取 Context Key；在传入 `tabs` 前过滤或设置 `disabled`                            |
@@ -88,8 +88,9 @@ ribbon.addEventListener('vsc-ribbon-command', async (event) => {
 与高度拖动：拖动右侧分隔条改变宽度，拖动下方分隔条改变高度，双击分隔条恢复
 初始值并实时显示容器尺寸。高度只决定容器可视区域，不触发降级。
 
-降级顺序固定为：逐批紧凑 → `responsiveMenu` 合并 → 从右向左折叠分组 →
-两端悬浮滚动按钮。未声明 `responsive` / `responsiveMenu` 的按钮只参与整组折叠。
+降级顺序固定为：逐批紧凑 → 从右向左折叠分组 → 两端悬浮滚动按钮。未声明
+`responsive` 的按钮只参与整组折叠。折叠分组会变成带分组图标与标题的溢出下拉
+入口，弹层内始终按声明的原始布局完整呈现该组按钮，不合并为单个下拉的菜单项。
 
 ## 折叠与持久化
 
@@ -131,7 +132,7 @@ Codicon 字体需要页面加载 `@vscode/codicons/dist/codicon.css`，并用固
 - **图标不显示**：确认 Codicon 样式表已用固定 id 引入，或图片 URL 可访问且
   允许被 CSP 加载；相对路径需先解析为 URL。
 - **命令没有执行**：组件不执行命令，必须监听 `vsc-ribbon-command`。
-- **窄容器中很多按钮被折叠**：这是预期的降级链；可调整 `responsive`
-  或 `responsiveMenu` 声明，或增大容器宽度。
+- **窄容器中很多按钮被折叠**：这是预期的降级链；折叠后的分组入口会在弹出面板中
+  按原始布局完整展示，也可调整 `responsive` 声明或增大容器宽度。
 - **状态没有记住**：确认设置了 `persist-state` 与 `storage-key`，且存储在
   当前上下文可用。

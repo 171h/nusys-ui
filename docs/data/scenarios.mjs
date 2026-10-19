@@ -73,7 +73,12 @@ export const componentScenarios = {
   'tab-header': ['tabs-panel', 'tabs-group-views'],
   'tab-panel': ['tabs-panel', 'tabs-group-views'],
   'tabs-group': ['tabs-group-views'],
-  ribbon: ['ribbon-menus', 'ribbon-responsive', 'ribbon-state'],
+  ribbon: [
+    'ribbon-menus',
+    'ribbon-responsive',
+    'ribbon-overflow',
+    'ribbon-state',
+  ],
   'toolbar-button': ['toolbar-states'],
   'toolbar-container': ['toolbar-states'],
   table: ['table-variants', 'table-responsive'],
@@ -633,11 +638,11 @@ ribbon.addEventListener('vsc-ribbon-select', (event) => {
     ribbonResizeCss
   ),
   'ribbon-responsive': demo(
-    '响应式降级、合并与分组折叠',
+    '响应式降级与分组折叠',
     [
       'responsive 尺寸链按批降档：full → half → third → 纯图标',
-      'responsiveMenu 将同 id 按钮合并为下拉入口',
       '宽度不足时从右向左折叠功能组，分组入口保留原内容',
+      '溢出弹层按原始布局完整呈现被折叠分组的按钮',
       '全部折叠后两端显示悬浮滚动按钮',
       '用嵌套 vscode-split-layout 作为可拖动父容器：右侧分隔条调宽度，下方分隔条调高度',
       '实时显示功能区容器尺寸，双击分隔条恢复初始值',
@@ -657,23 +662,19 @@ ribbon.tabs = [
         items: [
           {
             command: 'slope', title: '边坡稳定', icon: 'layers', size: 'full',
-            responsive: [{size: 'half'}, {size: 'third'}, {size: 'third', style: 'icon'}],
-            responsiveMenu: {id: 'pit', title: '基坑计算', icon: 'layers'}
+            responsive: [{size: 'half'}, {size: 'third'}, {size: 'third', style: 'icon'}]
           },
           {
             command: 'support', title: '围护支撑', icon: 'layers', size: 'full',
-            responsive: [{size: 'half'}, {size: 'third'}, {size: 'third', style: 'icon'}],
-            responsiveMenu: {id: 'pit', title: '基坑计算', icon: 'layers'}
+            responsive: [{size: 'half'}, {size: 'third'}, {size: 'third', style: 'icon'}]
           },
           {
             command: 'anchor', title: '加固锚固', icon: 'layers', size: 'full',
-            responsive: [{size: 'half'}, {size: 'third'}, {size: 'third', style: 'icon'}],
-            responsiveMenu: {id: 'pit', title: '基坑计算', icon: 'layers'}
+            responsive: [{size: 'half'}, {size: 'third'}, {size: 'third', style: 'icon'}]
           },
           {
             command: 'pile', title: '人工挖孔桩', icon: 'layers', size: 'full',
-            responsive: [{size: 'half'}, {size: 'third'}, {size: 'third', style: 'icon'}],
-            responsiveMenu: {id: 'pit', title: '基坑计算', icon: 'layers'}
+            responsive: [{size: 'half'}, {size: 'third'}, {size: 'third', style: 'icon'}]
           }
         ]
       },
@@ -711,6 +712,60 @@ ribbon.addEventListener('vsc-ribbon-command', (event) => {
     '执行命令：' + event.detail.command + '（' + event.detail.item.title + '）';
 });`,
     480,
+    ribbonResizeCss
+  ),
+  'ribbon-overflow': demo(
+    '完整布局切换为溢出下拉',
+    [
+      '仅使用普通按钮，不预置下拉、分割或响应式降级声明',
+      '宽度不足时从右向左将整个功能组折叠为溢出下拉入口',
+      '溢出入口使用分组图标与标题，弹层以 dialog 语义打开',
+      '弹层按声明的原始布局完整重新呈现该组按钮',
+      '弹层按钮保留图标、标题与尺寸，可直接执行命令',
+      '重新拉宽父容器后分组自动展开并关闭溢出弹层',
+    ],
+    `${ribbonResizeHtml('ribbon-overflow', '<vscode-ribbon id="ribbon-overflow" tablist-label="溢出示例"></vscode-ribbon>')}<output id="ribbon-overflow-output" aria-live="polite">选择命令后在这里显示结果。</output>`,
+    `${ribbonResizeScript('ribbon-overflow')}
+const ribbon = document.querySelector('#ribbon-overflow');
+ribbon.tabs = [
+  {
+    id: 'home',
+    title: '开始',
+    default: true,
+    groups: [
+      {
+        id: 'file',
+        title: '文件',
+        items: [
+          {command: 'open', title: '打开', icon: 'folder-opened'},
+          {command: 'save', title: '保存', icon: 'save'},
+          {command: 'save-as', title: '另存为', icon: 'save-as', size: 'half'}
+        ]
+      },
+      {
+        id: 'edit',
+        title: '编辑',
+        items: [
+          {command: 'undo', title: '撤销', icon: 'discard'},
+          {command: 'redo', title: '重做', icon: 'redo'}
+        ]
+      },
+      {
+        id: 'view',
+        title: '视图',
+        items: [
+          {command: 'toggle-sidebar', title: '侧边栏', icon: 'layout-sidebar-left', size: 'half'},
+          {command: 'toggle-terminal', title: '终端', icon: 'terminal', size: 'half'}
+        ]
+      }
+    ]
+  }
+];
+ribbon.addEventListener('vsc-ribbon-command', (event) => {
+  document.querySelector('#ribbon-overflow-output').textContent =
+    '执行命令：' + event.detail.command + '（' + event.detail.item.title + '）';
+});`,
+    520,
     ribbonResizeCss
   ),
   'ribbon-state': demo(
