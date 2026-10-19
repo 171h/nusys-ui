@@ -276,6 +276,34 @@ describe('ribbon-model', () => {
     expect(item.description).toBe('第一行\n第二行');
   });
 
+  it('归一化子菜单展开方式', () => {
+    const [tab] = buildRibbonTabs([
+      {
+        id: 'tab',
+        title: 'Tab',
+        groups: [
+          {
+            id: 'group',
+            title: '分组',
+            items: [
+              {
+                title: '更多',
+                submenuMode: 'flyout',
+                menu: {items: [{command: 'nested', title: '嵌套'}]},
+              },
+              {
+                title: '默认',
+                menu: {items: [{command: 'nested', title: '嵌套'}]},
+              },
+            ],
+          },
+        ],
+      },
+    ]);
+    expect(tab.groups[0].items[0].submenuMode).toBe('flyout');
+    expect(tab.groups[0].items[1].submenuMode).toBe('replace');
+  });
+
   it('归一化功能组图库布局', () => {
     const [tab] = buildRibbonTabs([
       {

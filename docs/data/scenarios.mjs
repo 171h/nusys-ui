@@ -550,6 +550,7 @@ export const extraExamples = {
     [
       'button / splitButton / dropdown 三种按钮类型',
       '递归子菜单与返回导航、快捷键文字和分隔线',
+      'flyout 子菜单在父菜单旁展开，replace 模式替换当前菜单',
       'Word 风格面板、列数、自定义沙箱内容',
       'vsc-ribbon-command 事件与 arguments 透传',
       '按钮、菜单项与弹层控件使用 Codicon 图标',
@@ -604,6 +605,7 @@ ribbon.tabs = [
                   title: '更多体系',
                   icon: 'ellipsis',
                   order: 40,
+                  submenuMode: 'flyout',
                   menu: {items: [
                     {command: 'slab-portal', title: '门式脚手架', icon: 'layers'},
                     {title: '爬模（未实现）', icon: 'circle-slash', placeholder: true}

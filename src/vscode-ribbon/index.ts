@@ -23,6 +23,7 @@ export type {
   VscRibbonMenuLayout,
   VscRibbonResponsiveStep,
   VscRibbonSelectEvent,
+  VscRibbonSubmenuMode,
   VscRibbonTab,
   VscRibbonThemedIcon,
   VscRibbonTheme,

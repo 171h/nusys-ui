@@ -175,6 +175,7 @@ function buildItem(item: VscRibbonItem, path: string): RibbonItemModel {
     title,
     icon: resolveRibbonIcon(item.icon),
     menu,
+    submenuMode: item.submenuMode === 'flyout' ? 'flyout' : 'replace',
     size: item.size ?? 'full',
     style: item.style ?? 'iconAndLabel',
     responsive: item.responsive ?? [],

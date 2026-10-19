@@ -103,6 +103,7 @@ ArrowDown / ArrowUp 打开菜单并聚焦首项或末项。
 | `title`       | `string`                                         | 按钮或菜单项标题                             |
 | `icon`        | 字符串、`{light, dark}` 或 `{codicon}` / `{url}` | 图标声明                                     |
 | `menu`        | `VscRibbonMenu`                                  | 下拉菜单，支持递归子菜单                     |
+| `submenuMode` | `'replace' \| 'flyout'`                          | 子菜单展开方式，默认为 `replace`             |
 | `size`        | `'full' \| 'half' \| 'third'`                    | 主区域尺寸，默认为 `full`                    |
 | `style`       | `'iconAndLabel' \| 'icon'`                       | 紧凑样式，默认为 `iconAndLabel`              |
 | `responsive`  | `VscRibbonResponsiveStep[]`                      | 宽度不足时依次尝试的尺寸与样式               |
@@ -168,6 +169,9 @@ Escape 关闭，执行命令后也会关闭。折叠按钮、标签双击与覆�
 - `dropdown` 整体点击展开菜单，`splitButton` 上方主按钮执行命令、下方或右侧
   触发区展开菜单，两者都支持键盘；
 - 菜单支持递归子菜单、返回导航、快捷键文字、分隔线与禁用占位项；
+- 子菜单默认以 `replace` 模式替换当前菜单，提供返回入口；设置
+  `submenuMode: 'flyout'` 时会在父菜单右侧展开子菜单（空间不足时改为左侧），
+  父菜单保持可见，ArrowLeft 或 Escape 先关闭子菜单再关闭父菜单；
 - `menu.layout: 'panel'` 渲染带标题栏与关闭按钮的面板，`columns` 控制列数；
 - `menu.layout: 'gallery'` 渲染图库式面板：每个条目由 `preview` 预览图（或图标）、
   标题与说明组成大尺寸格子，适合样式库、艺术字等可视化选项；
@@ -232,17 +236,17 @@ Escape 关闭，执行命令后也会关闭。折叠按钮、标签双击与覆�
 
 ## CSS 部件
 
-| 部件                                                                                                                      | 说明                                                                     |
-| ------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
-| `base` / `tabs` / `tab` / `content`                                                                                       | 功能区根容器、标签栏、标签与内容区                                       |
-| `group` / `group-title` / `items` / `group-button` / `group-dialog`                                                       | 功能组、分组标题、六轨网格、折叠入口与对话框启动器                       |
-| `item` / `item-primary` / `item-trigger`                                                                                  | 普通按钮与分割按钮的主命令、菜单触发区                                   |
-| `menu` / `menu-items` / `menu-item` / `menu-separator` / `menu-split` / `menu-back` / `menu-heading` / `menu-description` | 下拉菜单容器、列表、菜单项、分隔线、分割行、返回入口、分组标题与说明文字 |
-| `panel-header` / `panel-close` / `panel-body` / `panel-grid` / `panel-item` / `panel-heading` / `panel-description`       | 面板标题栏、关闭按钮、内容区、格子网格、格子、面板分组标题与说明文字     |
-| `panel-footer` / `panel-footer-item`                                                                                      | 面板底部操作区与整行操作项                                               |
-| `gallery` / `gallery-item` / `gallery-preview` / `gallery-heading` / `gallery-description`                                | 图库网格、图库格子、预览区、分组标题与说明文字                           |
-| `gallery-strip` / `gallery-viewport` / `gallery-track` / `gallery-tile` / `gallery-scroll`                                | 组内图库预览条、滚动视口与轨道、图库格子与左右滚动按钮                   |
-| `group-popover` / `scroll-button` / `custom-content`                                                                      | 折叠分组弹层、悬浮滚动按钮与沙箱内容 iframe                              |
+| 部件                                                                                                                                 | 说明                                                                                     |
+| ------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------- |
+| `base` / `tabs` / `tab` / `content`                                                                                                  | 功能区根容器、标签栏、标签与内容区                                                       |
+| `group` / `group-title` / `items` / `group-button` / `group-dialog`                                                                  | 功能组、分组标题、六轨网格、折叠入口与对话框启动器                                       |
+| `item` / `item-primary` / `item-trigger`                                                                                             | 普通按钮与分割按钮的主命令、菜单触发区                                                   |
+| `menu` / `menu-items` / `menu-item` / `menu-separator` / `menu-split` / `menu-back` / `menu-heading` / `menu-description` / `flyout` | 下拉菜单容器、列表、菜单项、分隔线、分割行、返回入口、分组标题、说明文字与 flyout 子菜单 |
+| `panel-header` / `panel-close` / `panel-body` / `panel-grid` / `panel-item` / `panel-heading` / `panel-description`                  | 面板标题栏、关闭按钮、内容区、格子网格、格子、面板分组标题与说明文字                     |
+| `panel-footer` / `panel-footer-item`                                                                                                 | 面板底部操作区与整行操作项                                                               |
+| `gallery` / `gallery-item` / `gallery-preview` / `gallery-heading` / `gallery-description`                                           | 图库网格、图库格子、预览区、分组标题与说明文字                                           |
+| `gallery-strip` / `gallery-viewport` / `gallery-track` / `gallery-tile` / `gallery-scroll`                                           | 组内图库预览条、滚动视口与轨道、图库格子与左右滚动按钮                                   |
+| `group-popover` / `scroll-button` / `custom-content`                                                                                 | 折叠分组弹层、悬浮滚动按钮与沙箱内容 iframe                                              |
 
 ## 功能场景
 

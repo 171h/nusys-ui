@@ -13,6 +13,9 @@ export type VscRibbonItemType = 'button' | 'splitButton' | 'dropdown';
 /** 下拉浮层的布局。 */
 export type VscRibbonMenuLayout = 'menu' | 'panel' | 'gallery';
 
+/** 带子菜单时的展开方式。 */
+export type VscRibbonSubmenuMode = 'replace' | 'flyout';
+
 /** Ribbon 图标主题；`auto` 跟随宿主页面的明暗主题。 */
 export type VscRibbonTheme = 'auto' | 'light' | 'dark';
 
@@ -87,6 +90,8 @@ export interface VscRibbonItem {
   icon?: VscRibbonIcon;
   /** 下拉菜单；存在时按按钮类型展开。 */
   menu?: VscRibbonMenu;
+  /** 带子菜单时的展开方式，默认为 `replace`（替换当前菜单）；`flyout` 在旁边悬浮展示。 */
+  submenuMode?: VscRibbonSubmenuMode;
   /** 主区域尺寸，默认为 `full`。 */
   size?: VscRibbonItemSize;
   /** 主区域紧凑样式，默认为 `iconAndLabel`。 */
@@ -183,6 +188,7 @@ export interface RibbonItemModel {
   title: string;
   icon: ResolvedRibbonIcon;
   menu: RibbonMenuModel | null;
+  submenuMode: VscRibbonSubmenuMode;
   size: VscRibbonItemSize;
   style: VscRibbonItemStyle;
   responsive: readonly VscRibbonResponsiveStep[];

@@ -621,6 +621,146 @@ describe('vscode-ribbon', () => {
     ).to.have.length(8);
   });
 
+  it('flyout 子菜单在父菜单旁展开并保留父菜单', async () => {
+    const tabs: VscRibbonTab[] = [
+      {
+        id: 'home',
+        title: '开始',
+        default: true,
+        groups: [
+          {
+            id: 'formwork',
+            title: '模板',
+            items: [
+              {
+                type: 'dropdown',
+                title: '板模板',
+                icon: 'symbol-class',
+                menu: {
+                  items: [
+                    {command: 'ringlock', title: '盘扣式', icon: 'layers'},
+                    {command: 'coupler', title: '扣件式', icon: 'layers'},
+                    {
+                      title: '更多体系',
+                      icon: 'ellipsis',
+                      submenuMode: 'flyout',
+                      menu: {
+                        items: [
+                          {
+                            command: 'portal',
+                            title: '门式脚手架',
+                            icon: 'layers',
+                          },
+                          {command: 'climb', title: '爬模', icon: 'layers'},
+                        ],
+                      },
+                    },
+                  ],
+                },
+              },
+            ],
+          },
+        ],
+      },
+    ];
+    const el = await createRibbon(tabs);
+    const menu = await openMenu(el, '板模板');
+    const more = Array.from(
+      menu.querySelectorAll<HTMLButtonElement>('.ribbon-menu-item')
+    ).find((item) => item.textContent?.includes('更多体系'))!;
+    more.click();
+    await waitFor(
+      () => el.shadowRoot?.querySelector('.ribbon-flyout-popover') !== null
+    );
+    await aTimeout(32);
+    // 父菜单保持打开且不显示返回按钮。
+    expect(menu.textContent).to.contain('盘扣式');
+    expect(menu.querySelector('.ribbon-menu-back')).to.equal(null);
+    const flyout = el.shadowRoot!.querySelector<HTMLElement>(
+      '.ribbon-flyout-popover'
+    )!;
+    expect(flyout.getAttribute('role')).to.equal('menu');
+    expect(flyout.textContent).to.contain('门式脚手架');
+    expect(el.shadowRoot!.activeElement?.textContent).to.contain('门式脚手架');
+
+    // Escape 先关闭 flyout，再关闭父菜单。
+    document.dispatchEvent(
+      new KeyboardEvent('keydown', {key: 'Escape', bubbles: true})
+    );
+    await el.updateComplete;
+    expect(el.shadowRoot!.querySelector('.ribbon-flyout-popover')).to.equal(
+      null
+    );
+    expect(el.shadowRoot!.querySelector('.ribbon-menu-popover')).to.not.equal(
+      null
+    );
+    document.dispatchEvent(
+      new KeyboardEvent('keydown', {key: 'Escape', bubbles: true})
+    );
+    await el.updateComplete;
+    expect(el.shadowRoot!.querySelector('.ribbon-menu-popover')).to.equal(null);
+  });
+
+  it('flyout 子菜单执行命令后关闭全部菜单', async () => {
+    const tabs: VscRibbonTab[] = [
+      {
+        id: 'home',
+        title: '开始',
+        default: true,
+        groups: [
+          {
+            id: 'formwork',
+            title: '模板',
+            items: [
+              {
+                type: 'dropdown',
+                title: '板模板',
+                icon: 'symbol-class',
+                menu: {
+                  items: [
+                    {
+                      title: '更多体系',
+                      icon: 'ellipsis',
+                      submenuMode: 'flyout',
+                      menu: {
+                        items: [
+                          {
+                            command: 'portal',
+                            title: '门式脚手架',
+                            icon: 'layers',
+                          },
+                        ],
+                      },
+                    },
+                  ],
+                },
+              },
+            ],
+          },
+        ],
+      },
+    ];
+    const el = await createRibbon(tabs);
+    await openMenu(el, '板模板');
+    const more =
+      el.shadowRoot!.querySelector<HTMLButtonElement>('.ribbon-menu-item')!;
+    more.click();
+    await waitFor(
+      () => el.shadowRoot?.querySelector('.ribbon-flyout-popover') !== null
+    );
+    await aTimeout(32);
+    const flyoutItem = el.shadowRoot!.querySelector<HTMLButtonElement>(
+      '.ribbon-flyout-popover .ribbon-menu-item'
+    )!;
+    flyoutItem.click();
+    await el.updateComplete;
+    expect(el.dataset.lastCommand).to.equal('portal');
+    expect(el.shadowRoot!.querySelector('.ribbon-menu-popover')).to.equal(null);
+    expect(el.shadowRoot!.querySelector('.ribbon-flyout-popover')).to.equal(
+      null
+    );
+  });
+
   it('支持递归子菜单与返回导航', async () => {
     const el = await createRibbon();
     Array.from(el.shadowRoot!.querySelectorAll<HTMLElement>('[role="tab"]'))

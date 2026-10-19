@@ -362,12 +362,28 @@ export async function testScenarios(page, url) {
       .evaluate((element) => getComputedStyle(element).textAlign),
     'left'
   );
+  // flyout 子菜单：父菜单保持显示，子菜单在父菜单旁展开。
   await frame.getByRole('menuitem', {name: '更多体系', exact: true}).click();
-  await frame.getByRole('menuitem', {name: '返回', exact: true}).waitFor();
-  await frame
-    .getByRole('menuitem', {name: '门式脚手架', exact: true})
-    .waitFor();
-  await frame.getByRole('menuitem', {name: '返回', exact: true}).click();
+  const flyout = frame.locator('vscode-ribbon .ribbon-flyout-popover');
+  await flyout.waitFor();
+  assert.equal(
+    await frame
+      .getByRole('menuitem', {name: '盘扣式', exact: true})
+      .isVisible(),
+    true,
+    '父菜单应保持打开'
+  );
+  assert.equal(
+    await frame.getByRole('menuitem', {name: '返回', exact: true}).count(),
+    0,
+    'flyout 子菜单不应出现返回入口'
+  );
+  await frame.getByRole('menuitem', {name: '门式脚手架', exact: true}).click();
+  assert.match(
+    await frame.locator('#ribbon-menus-output').textContent(),
+    /slab-portal/
+  );
+  await frame.getByRole('button', {name: '板模板', exact: true}).click();
   await frame.getByRole('menuitem', {name: '盘扣式', exact: true}).click();
   assert.match(
     await frame.locator('#ribbon-menus-output').textContent(),

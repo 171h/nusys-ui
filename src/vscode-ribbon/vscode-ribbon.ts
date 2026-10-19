@@ -47,6 +47,13 @@ interface OpenMenuState {
   anchor: HTMLElement;
 }
 
+interface FlyoutMenuState {
+  item: RibbonItemModel;
+  menu: RibbonMenuModel;
+  anchor: HTMLElement;
+  position: PopoverPosition | null;
+}
+
 interface OpenGroupState {
   group: RibbonGroupModel;
   anchor: HTMLElement;
@@ -202,6 +209,9 @@ export class VscodeRibbon extends VscElement {
 
   @state()
   private _menuPosition: PopoverPosition | null = null;
+
+  @state()
+  private _flyouts: FlyoutMenuState[] = [];
 
   @state()
   private _openGroup: OpenGroupState | null = null;
@@ -917,6 +927,7 @@ export class VscodeRibbon extends VscElement {
     this._openMenu = null;
     this._menuStack = [];
     this._menuPosition = null;
+    this._flyouts = [];
     cancelAnimationFrame(this._menuFocusFrame ?? 0);
     this._menuFocusFrame = undefined;
     if (restoreFocus) {
@@ -980,16 +991,24 @@ export class VscodeRibbon extends VscElement {
     return {left, top, maxHeight};
   }
 
-  private _menuItems(): RibbonItemModel[] {
-    return this._menuStack[this._menuStack.length - 1]?.items ?? [];
+  private _flyoutElements(): HTMLElement[] {
+    return Array.from(
+      this.shadowRoot?.querySelectorAll<HTMLElement>(
+        '.ribbon-flyout-popover'
+      ) ?? []
+    );
   }
 
-  private _menuFocusable(): HTMLElement[] {
+  private _focusableIn(container: HTMLElement | undefined): HTMLElement[] {
     return Array.from(
-      this._menuEl?.querySelectorAll<HTMLElement>(
+      container?.querySelectorAll<HTMLElement>(
         'button:not(:disabled), iframe'
       ) ?? []
     ).filter((element) => element.getClientRects().length > 0);
+  }
+
+  private _menuFocusable(): HTMLElement[] {
+    return this._focusableIn(this._menuEl);
   }
 
   private _focusMenu(position: 'first' | 'last' | 'index', index = 0): void {
@@ -1007,14 +1026,182 @@ export class VscodeRibbon extends VscElement {
     });
   }
 
+  private _focusFlyout(position: 'first' | 'last' = 'first'): void {
+    cancelAnimationFrame(this._menuFocusFrame ?? 0);
+    this._menuFocusFrame = requestAnimationFrame(() => {
+      this._menuFocusFrame = undefined;
+      const elements = this._flyoutElements();
+      const options = this._focusableIn(elements[elements.length - 1]);
+      const target =
+        position === 'last' ? options[options.length - 1] : options[0];
+      target?.focus();
+    });
+  }
+
+  private _modelByKey(key: string): RibbonItemModel | undefined {
+    const menus = [...this._menuStack, ...this._flyouts.map(({menu}) => menu)];
+    for (const menu of menus) {
+      const item = menu.items.find((entry) => entry.key === key);
+      if (item) {
+        return item;
+      }
+    }
+    return undefined;
+  }
+
+  private _activeMenuContainer(
+    active: HTMLElement | null
+  ): HTMLElement | undefined {
+    const container = active?.closest<HTMLElement>(
+      '.ribbon-menu-popover, .ribbon-flyout-popover'
+    );
+    return container ?? this._menuEl;
+  }
+
+  private _isInsideMenu(target: Node | null): boolean {
+    if (!target) {
+      return false;
+    }
+    if (
+      this._menuEl?.contains(target) ||
+      this._openMenu?.anchor.contains(target)
+    ) {
+      return true;
+    }
+    if (this._flyouts.some(({anchor}) => anchor.contains(target))) {
+      return true;
+    }
+    return this._flyoutElements().some((element) => element.contains(target));
+  }
+
+  private _resolveFlyoutPosition(
+    anchor: DOMRect,
+    popover: DOMRect
+  ): PopoverPosition {
+    const width = popover.width;
+    const height = popover.height;
+    const rightLeft = anchor.right + POPOVER_GAP;
+    const leftLeft = anchor.left - width - POPOVER_GAP;
+    const fitsRight = rightLeft + width + POPOVER_MARGIN <= innerWidth;
+    const fitsLeft = leftLeft >= POPOVER_MARGIN;
+    const left = Math.max(
+      POPOVER_MARGIN,
+      Math.min(
+        fitsRight || !fitsLeft ? rightLeft : leftLeft,
+        innerWidth - width - POPOVER_MARGIN
+      )
+    );
+    const top = Math.max(
+      POPOVER_MARGIN,
+      Math.min(
+        anchor.top,
+        innerHeight -
+          Math.min(height, innerHeight - POPOVER_MARGIN * 2) -
+          POPOVER_MARGIN
+      )
+    );
+    const maxHeight = Math.max(0, innerHeight - top - POPOVER_MARGIN);
+    return {left, top, maxHeight};
+  }
+
+  private _positionFlyouts(): void {
+    const elements = this._flyoutElements();
+    if (elements.length !== this._flyouts.length) {
+      return;
+    }
+    this._flyouts = this._flyouts.map((flyout, index) => ({
+      ...flyout,
+      position: this._resolveFlyoutPosition(
+        flyout.anchor.getBoundingClientRect(),
+        elements[index].getBoundingClientRect()
+      ),
+    }));
+    this.updateComplete.then(() => {
+      const measured = this._flyoutElements();
+      this._flyouts = this._flyouts.map((flyout, index) => {
+        const element = measured[index];
+        if (!element) {
+          return flyout;
+        }
+        const position = this._resolveFlyoutPosition(
+          flyout.anchor.getBoundingClientRect(),
+          element.getBoundingClientRect()
+        );
+        const current = flyout.position;
+        if (
+          current &&
+          current.left === position.left &&
+          current.top === position.top &&
+          current.maxHeight === position.maxHeight
+        ) {
+          return flyout;
+        }
+        return {...flyout, position};
+      });
+    });
+  }
+
+  private _closeFlyoutsFrom(index: number, restoreFocus = false): void {
+    const removed = this._flyouts.slice(index);
+    this._flyouts = this._flyouts.slice(0, index);
+    if (restoreFocus && removed[0]) {
+      removed[0].anchor.focus();
+    }
+  }
+
+  private _closeFlyout(restoreFocus = false): void {
+    this._closeFlyoutsFrom(this._flyouts.length - 1, restoreFocus);
+  }
+
   private _pushMenu(item: RibbonItemModel): void {
     if (!item.menu) {
       return;
     }
+    this._flyouts = [];
     this._menuStack = [...this._menuStack, item.menu];
     this.updateComplete.then(() => {
       this._positionMenu();
       this._focusMenu('first');
+    });
+  }
+
+  private _openItemSubmenu(
+    item: RibbonItemModel,
+    anchor: HTMLElement,
+    focus: 'first' | 'last' = 'first'
+  ): void {
+    if (!item.menu) {
+      return;
+    }
+    if (item.submenuMode === 'flyout') {
+      this._openFlyout(item, anchor, focus);
+    } else {
+      this._pushMenu(item);
+    }
+  }
+
+  private _openFlyout(
+    item: RibbonItemModel,
+    anchor: HTMLElement,
+    focus: 'first' | 'last' = 'first'
+  ): void {
+    if (!item.menu) {
+      return;
+    }
+    const existing = this._flyouts.findIndex(
+      (flyout) => flyout.item.key === item.key && flyout.anchor === anchor
+    );
+    if (existing >= 0) {
+      this._closeFlyoutsFrom(existing);
+      return;
+    }
+    this._flyouts = [
+      ...this._flyouts,
+      {item, menu: item.menu, anchor, position: null},
+    ];
+    this.updateComplete.then(() => {
+      this._positionFlyouts();
+      this._focusFlyout(focus);
     });
   }
 
@@ -1030,38 +1217,47 @@ export class VscodeRibbon extends VscElement {
   }
 
   private _onMenuKeyDown(event: KeyboardEvent): void {
-    const options = this._menuFocusable();
+    const active = this.shadowRoot?.activeElement as HTMLElement | null;
+    const container = this._activeMenuContainer(active);
+    const options = this._focusableIn(container);
+    const inFlyout =
+      active !== null &&
+      this._flyoutElements().some((element) => element.contains(active));
     if (event.key === 'Escape') {
       event.preventDefault();
       event.stopPropagation();
-      if (this._menuStack.length > 1) {
+      if (this._flyouts.length > 0) {
+        this._closeFlyout(true);
+      } else if (this._menuStack.length > 1) {
         this._popMenu();
       } else {
         this._closeMenu(true);
       }
       return;
     }
-    if (event.key === 'ArrowLeft' && this._menuStack.length > 1) {
-      event.preventDefault();
-      this._popMenu();
+    if (event.key === 'ArrowLeft') {
+      if (inFlyout) {
+        event.preventDefault();
+        this._closeFlyout(true);
+      } else if (this._menuStack.length > 1) {
+        event.preventDefault();
+        this._popMenu();
+      }
       return;
     }
     if (event.key === 'ArrowRight') {
-      const active = this.shadowRoot?.activeElement as HTMLElement | null;
       const key = active?.getAttribute('data-item-key') ?? '';
-      const item = this._menuItems().find((entry) => entry.key === key);
-      if (item?.menu) {
+      const item = this._modelByKey(key);
+      if (item?.menu && active) {
         event.preventDefault();
-        this._pushMenu(item);
+        this._openItemSubmenu(item, active, 'first');
       }
       return;
     }
     if (options.length === 0) {
       return;
     }
-    const currentIndex = options.indexOf(
-      (this.shadowRoot?.activeElement ?? document.activeElement) as HTMLElement
-    );
+    const currentIndex = options.indexOf(active as HTMLElement);
     let target = currentIndex;
     if (event.key === 'ArrowDown') {
       target = (currentIndex + 1) % options.length;
@@ -1083,10 +1279,7 @@ export class VscodeRibbon extends VscElement {
     if (!(related instanceof Node)) {
       return;
     }
-    if (
-      this._menuEl?.contains(related) ||
-      this._openMenu?.anchor.contains(related)
-    ) {
+    if (this._isInsideMenu(related)) {
       return;
     }
     this._closeMenu(false);
@@ -1215,10 +1408,7 @@ export class VscodeRibbon extends VscElement {
   private _onDocumentPointerDown = (event: Event): void => {
     const path = event.composedPath();
     if (this._openMenu) {
-      if (
-        !path.includes(this._menuEl ?? this) &&
-        !path.includes(this._openMenu.anchor)
-      ) {
+      if (!this._isInsideMenu((path[0] as Node | undefined) ?? null)) {
         this._closeMenu(false);
       }
     }
@@ -1242,7 +1432,9 @@ export class VscodeRibbon extends VscElement {
     if (this._openMenu) {
       event.preventDefault();
       event.stopPropagation();
-      if (this._menuStack.length > 1) {
+      if (this._flyouts.length > 0) {
+        this._closeFlyout(true);
+      } else if (this._menuStack.length > 1) {
         this._popMenu();
       } else {
         this._closeMenu(true);
@@ -1268,7 +1460,7 @@ export class VscodeRibbon extends VscElement {
 
   private _onWindowScroll = (event: Event): void => {
     const target = event.composedPath()[0];
-    if (target instanceof Node && this._menuEl?.contains(target)) {
+    if (target instanceof Node && this._isInsideMenu(target)) {
       return;
     }
     this._closeMenu(false);
@@ -1501,7 +1693,8 @@ export class VscodeRibbon extends VscElement {
           aria-haspopup="menu"
           data-item-key=${item.key}
           ?disabled=${item.disabled}
-          @click=${() => this._pushMenu(item)}
+          @click=${(event: Event) =>
+            this._openItemSubmenu(item, event.currentTarget as HTMLElement)}
         >
           <span
             class="codicon codicon-chevron-right ribbon-chevron"
@@ -1523,7 +1716,7 @@ export class VscodeRibbon extends VscElement {
       ?disabled=${item.disabled}
       @click=${(event: Event) => {
         if (hasMenu) {
-          this._pushMenu(item);
+          this._openItemSubmenu(item, event.currentTarget as HTMLElement);
         } else {
           this._activateItem(item, anchorEvent(event), 'menu');
         }
@@ -1577,7 +1770,7 @@ export class VscodeRibbon extends VscElement {
       ?disabled=${item.disabled}
       @click=${(event: Event) => {
         if (hasMenu) {
-          this._pushMenu(item);
+          this._openItemSubmenu(item, event.currentTarget as HTMLElement);
         } else {
           this._activateItem(item, event.currentTarget as HTMLElement, 'panel');
         }
@@ -1645,7 +1838,7 @@ export class VscodeRibbon extends VscElement {
       ?disabled=${item.disabled}
       @click=${(event: Event) => {
         if (hasMenu) {
-          this._pushMenu(item);
+          this._openItemSubmenu(item, event.currentTarget as HTMLElement);
         } else {
           this._activateItem(item, event.currentTarget as HTMLElement, 'panel');
         }
@@ -1666,6 +1859,33 @@ export class VscodeRibbon extends VscElement {
           : nothing
       }
     </button>`;
+  }
+
+  private _renderFlyouts(): TemplateResult | typeof nothing {
+    if (this._flyouts.length === 0) {
+      return nothing;
+    }
+    return html`${this._flyouts.map(
+      (flyout) =>
+        html`<div
+          class="ribbon-popover ribbon-menu-popover ribbon-flyout-popover"
+          part="flyout"
+          role="menu"
+          aria-label=${flyout.item.title}
+          .style=${stylePropertyMap({
+            left: `${flyout.position?.left ?? 0}px`,
+            top: `${flyout.position?.top ?? 0}px`,
+            maxHeight: `${flyout.position?.maxHeight ?? 0}px`,
+            visibility: flyout.position ? 'visible' : 'hidden',
+          })}
+          @keydown=${this._onMenuKeyDown}
+          @focusout=${this._onMenuFocusOut}
+        >
+          <div class="ribbon-menu-items" part="menu-items" role="none">
+            ${flyout.menu.items.map((item) => this._renderMenuEntry(item))}
+          </div>
+        </div>`
+    )}`;
   }
 
   private _renderMenu(): TemplateResult | typeof nothing {
@@ -1822,7 +2042,7 @@ export class VscodeRibbon extends VscElement {
       ?disabled=${item.disabled}
       @click=${(event: Event) => {
         if (hasMenu) {
-          this._pushMenu(item);
+          this._openItemSubmenu(item, event.currentTarget as HTMLElement);
         } else {
           this._activateItem(item, event.currentTarget as HTMLElement, 'menu');
         }
@@ -2160,7 +2380,8 @@ export class VscodeRibbon extends VscElement {
               </button>`
             : nothing
         }
-        ${this._renderMenu()} ${this._renderGroupPopover()}
+        ${this._renderMenu()} ${this._renderFlyouts()}
+        ${this._renderGroupPopover()}
       </div>
     </header>`;
   }
