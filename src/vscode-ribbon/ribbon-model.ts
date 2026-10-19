@@ -240,6 +240,7 @@ function buildGroup(
     id,
     title: group.title,
     order: group.order ?? 0,
+    layout: group.layout === 'gallery' ? 'gallery' : 'default',
     items,
     dialogLauncher: buildDialogLauncher(group),
     source: group,

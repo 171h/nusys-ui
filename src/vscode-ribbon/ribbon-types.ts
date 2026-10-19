@@ -1,5 +1,8 @@
-/** Ribbon 按钮的尺寸档位。 */
+/** Ribbon 按钮尺寸档位。 */
 export type VscRibbonItemSize = 'full' | 'half' | 'third';
+
+/** 功能组布局：默认六轨网格或横向图库。 */
+export type VscRibbonGroupLayout = 'default' | 'gallery';
 
 /** Ribbon 紧凑按钮的样式；`full` 按钮始终显示图标与标题。 */
 export type VscRibbonItemStyle = 'iconAndLabel' | 'icon';
@@ -130,6 +133,8 @@ export interface VscRibbonGroup {
   order?: number;
   /** 分组内的按钮。 */
   items: readonly VscRibbonItem[];
+  /** 分组布局，默认为 `default`；`gallery` 时按钮以横向图库呈现。 */
+  layout?: VscRibbonGroupLayout;
   /** 是否在分组右下角显示对话框启动器，可自定义名称与图标。 */
   dialogLauncher?: boolean | VscRibbonDialogLauncher;
 }
@@ -205,6 +210,7 @@ export interface RibbonGroupModel {
   id: string;
   title: string;
   order: number;
+  layout: VscRibbonGroupLayout;
   items: RibbonItemModel[];
   dialogLauncher: RibbonDialogLauncherModel | null;
   source: VscRibbonGroup;

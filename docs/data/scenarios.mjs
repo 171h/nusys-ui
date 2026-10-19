@@ -4,6 +4,13 @@ import {
   ribbonResizeScript,
 } from './ribbon-resizable.mjs';
 
+// 生成图库示例使用的浅色文档预览图，避免依赖外部资源。
+const galleryPreview = (label, accent) =>
+  'data:image/svg+xml;utf8,' +
+  encodeURIComponent(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="96" height="60"><rect width="96" height="60" fill="#ffffff"/><rect x="8" y="8" width="80" height="5" fill="${accent}"/><rect x="8" y="20" width="64" height="4" fill="#d0d0d0"/><rect x="8" y="30" width="72" height="4" fill="#dcdcdc"/><rect x="8" y="40" width="56" height="4" fill="#e4e4e4"/><text x="8" y="55" font-family="sans-serif" font-size="8" fill="#666666">${label}</text></svg>`
+  );
+
 // 每个场景明确列出覆盖的公开功能；组合组件共用可运行场景。
 const demo = (title, features, html, js = '', height = 340, css = '') => ({
   title,
@@ -77,6 +84,7 @@ export const componentScenarios = {
     'ribbon-menus',
     'ribbon-responsive',
     'ribbon-overflow',
+    'ribbon-gallery',
     'ribbon-state',
   ],
   'toolbar-button': ['toolbar-states'],
@@ -864,6 +872,63 @@ ribbon.tabs = [
 ribbon.addEventListener('vsc-ribbon-command', (event) => {
   document.querySelector('#ribbon-overflow-output').textContent =
     '执行命令：' + event.detail.command + '（' + event.detail.item.title + '）';
+});`,
+    520,
+    ribbonResizeCss
+  ),
+  'ribbon-gallery': demo(
+    '图库功能组与横向滚动',
+    [
+      'group.layout: gallery 将分组渲染为横向图库预览条',
+      '图库项支持 preview 预览图、标题与命令，右侧滚动按钮可横向浏览',
+      '图库分组随容器伸展，宽度不足时与其他分组一样折叠为溢出下拉入口',
+      '折叠后的图库弹层保留全部预览格子，点击可继续执行命令',
+      '对话框启动器与可拖动 split-layout 父容器同时可用',
+    ],
+    `${ribbonResizeHtml('ribbon-gallery', '<vscode-ribbon id="ribbon-gallery" tablist-label="图库示例"></vscode-ribbon>')}<output id="ribbon-gallery-output" aria-live="polite">选择命令后在这里显示结果。</output>`,
+    `${ribbonResizeScript('ribbon-gallery')}
+const ribbon = document.querySelector('#ribbon-gallery');
+ribbon.tabs = [
+  {
+    id: 'design',
+    title: '设计',
+    default: true,
+    groups: [
+      {
+        id: 'format',
+        title: '文档格式',
+        layout: 'gallery',
+        dialogLauncher: {title: '打开文档格式设置', icon: 'settings-gear'},
+        items: [
+          {command: 'format-title', title: '标题', preview: ${JSON.stringify(galleryPreview('标题', '#1e7a4f'))}},
+          {command: 'format-title-1', title: '标题 1', preview: ${JSON.stringify(galleryPreview('标题 1', '#2f6fb3'))}},
+          {command: 'format-title-2', title: '标题 2', preview: ${JSON.stringify(galleryPreview('标题 2', '#8a5b00'))}},
+          {command: 'format-subtitle', title: '副标题', preview: ${JSON.stringify(galleryPreview('副标题', '#7a2f8f'))}},
+          {command: 'format-quote', title: '引用', preview: ${JSON.stringify(galleryPreview('引用', '#4a6f6f'))}},
+          {command: 'format-list', title: '列表', preview: ${JSON.stringify(galleryPreview('列表', '#1e7a4f'))}},
+          {command: 'format-normal', title: '正文', preview: ${JSON.stringify(galleryPreview('正文', '#555555'))}},
+          {command: 'format-emphasis', title: '强调', preview: ${JSON.stringify(galleryPreview('强调', '#a33a2f'))}}
+        ]
+      },
+      {
+        id: 'theme',
+        title: '主题',
+        dialogLauncher: true,
+        items: [
+          {command: 'theme-light', title: '浅色', icon: 'color-mode', size: 'full'},
+          {command: 'theme-dark', title: '深色', icon: 'color-mode', size: 'full'}
+        ]
+      }
+    ]
+  }
+];
+ribbon.addEventListener('vsc-ribbon-command', (event) => {
+  document.querySelector('#ribbon-gallery-output').textContent =
+    '执行命令：' + event.detail.command + '（' + event.detail.item.title + '）';
+});
+ribbon.addEventListener('vsc-ribbon-dialog', (event) => {
+  document.querySelector('#ribbon-gallery-output').textContent =
+    '打开对话框：' + event.detail.group.title;
 });`,
     520,
     ribbonResizeCss

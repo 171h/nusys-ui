@@ -653,6 +653,82 @@ export async function testScenarios(page, url) {
   assert.equal(overflowState.visibleItems, 7, '拉宽后应恢复完整布局');
   await testRibbonResize(frame, 'ribbon-overflow');
 
+  frame = await open('ribbon-gallery');
+  const galleryState = () =>
+    frame.evaluate(() => {
+      const root = document.querySelector('#ribbon-gallery').shadowRoot;
+      const viewport = root.querySelector('.ribbon-gallery-viewport');
+      return {
+        tiles: root.querySelectorAll('.ribbon-gallery-tile').length,
+        images: root.querySelectorAll('.ribbon-gallery-image').length,
+        scrollLeft: viewport?.scrollLeft ?? 0,
+        scrollWidth: viewport?.scrollWidth ?? 0,
+        clientWidth: viewport?.clientWidth ?? 0,
+      };
+    });
+  let galleryStateValue = await galleryState();
+  assert.equal(galleryStateValue.tiles, 8);
+  assert.equal(galleryStateValue.images, 8);
+  assert.ok(
+    galleryStateValue.scrollWidth > galleryStateValue.clientWidth,
+    '图库内容应在分组内横向滚动'
+  );
+  await frame.locator('#ribbon-gallery').evaluate((ribbon) => {
+    ribbon.shadowRoot.querySelectorAll('.ribbon-gallery-scroll')[1].click();
+  });
+  await frame.waitForFunction(() => {
+    const viewport = document
+      .querySelector('#ribbon-gallery')
+      .shadowRoot.querySelector('.ribbon-gallery-viewport');
+    return viewport.scrollLeft > 0;
+  });
+  await frame.locator('#ribbon-gallery').evaluate((ribbon) => {
+    ribbon.shadowRoot.querySelectorAll('.ribbon-gallery-tile')[0].click();
+  });
+  assert.match(
+    await frame.locator('#ribbon-gallery-output').textContent(),
+    /format-title/
+  );
+  await setSplitPosition('#ribbon-gallery-width-split', 120);
+  await frame.waitForFunction(() => {
+    const root = document.querySelector('#ribbon-gallery').shadowRoot;
+    return root.querySelectorAll('.ribbon-group.folded').length === 2;
+  });
+  await frame.locator('#ribbon-gallery').evaluate((ribbon) => {
+    ribbon.shadowRoot
+      .querySelector(
+        '.ribbon-group[data-group="format"] .ribbon-group-dropdown'
+      )
+      .click();
+  });
+  await frame.waitForFunction(
+    () =>
+      document
+        .querySelector('#ribbon-gallery')
+        .shadowRoot.querySelector('.ribbon-gallery-popover') !== null
+  );
+  const galleryPopover = await frame.evaluate(() => {
+    const root = document.querySelector('#ribbon-gallery').shadowRoot;
+    const popover = root.querySelector('.ribbon-group-popover');
+    const gallery = popover.querySelector('.ribbon-gallery');
+    return {
+      label: popover.getAttribute('aria-label'),
+      tiles: gallery.querySelectorAll('.ribbon-gallery-tile').length,
+      images: gallery.querySelectorAll('.ribbon-gallery-image').length,
+    };
+  });
+  assert.equal(galleryPopover.label, '文档格式');
+  assert.equal(galleryPopover.tiles, 8);
+  assert.equal(galleryPopover.images, 8);
+  await setSplitPosition('#ribbon-gallery-width-split', 1600);
+  await frame.waitForFunction(() => {
+    const root = document.querySelector('#ribbon-gallery').shadowRoot;
+    return root.querySelectorAll('.ribbon-group.folded').length === 0;
+  });
+  galleryStateValue = await galleryState();
+  assert.equal(galleryStateValue.tiles, 8, '拉宽后图库分组应恢复完整展示');
+  await testRibbonResize(frame, 'ribbon-gallery');
+
   frame = await open('ribbon-state');
   await frame.getByRole('button', {name: '侧边栏', exact: true}).click();
   assert.equal(

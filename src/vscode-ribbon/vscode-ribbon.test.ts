@@ -542,6 +542,73 @@ describe('vscode-ribbon', () => {
     expect(el.shadowRoot!.querySelector('.ribbon-menu-popover')).to.equal(null);
   });
 
+  it('图库布局的功能组支持横向滚动与折叠弹层', async () => {
+    const preview = 'data:image/svg+xml;utf8,<svg/>';
+    const tabs: VscRibbonTab[] = [
+      {
+        id: 'home',
+        title: '开始',
+        default: true,
+        groups: [
+          {
+            id: 'format',
+            title: '文档格式',
+            layout: 'gallery',
+            dialogLauncher: true,
+            items: Array.from({length: 8}, (_, index) => ({
+              command: `format-${index}`,
+              title: `格式 ${index + 1}`,
+              preview,
+            })),
+          },
+        ],
+      },
+    ];
+    const el = await createRibbon(tabs, 'width: 360px');
+    await waitFor(
+      () => el.shadowRoot?.querySelectorAll('.ribbon-gallery-tile').length === 8
+    );
+    const viewport = el.shadowRoot!.querySelector<HTMLElement>(
+      '.ribbon-gallery-viewport'
+    )!;
+    expect(viewport.scrollWidth).to.be.greaterThan(viewport.clientWidth);
+    const scrollButtons = Array.from(
+      el.shadowRoot!.querySelectorAll<HTMLButtonElement>(
+        '.ribbon-gallery-scroll'
+      )
+    );
+    scrollButtons[1].click();
+    await aTimeout(32);
+    expect(viewport.scrollLeft).to.be.greaterThan(0);
+
+    let command = '';
+    el.addEventListener('vsc-ribbon-command', (event) => {
+      command = (event as VscRibbonCommandEvent).detail.command ?? '';
+    });
+    el.shadowRoot!.querySelector<HTMLElement>('.ribbon-gallery-tile')!.click();
+    await el.updateComplete;
+    expect(command).to.equal('format-0');
+
+    el.style.width = '120px';
+    el.refreshLayout();
+    await waitFor(
+      () =>
+        el.shadowRoot?.querySelector('.ribbon-group-gallery.folded') !== null
+    );
+    el.shadowRoot!.querySelector<HTMLButtonElement>(
+      '.ribbon-group.folded .ribbon-group-dropdown'
+    )!.click();
+    await waitFor(
+      () => el.shadowRoot?.querySelector('.ribbon-gallery-popover') !== null
+    );
+    await aTimeout(32);
+    expect(
+      el.shadowRoot!.querySelectorAll(
+        '.ribbon-gallery-popover .ribbon-gallery-tile'
+      )
+    ).to.have.length(8);
+  });
+
   it('支持递归子菜单与返回导航', async () => {
     const el = await createRibbon();
     Array.from(el.shadowRoot!.querySelectorAll<HTMLElement>('[role="tab"]'))

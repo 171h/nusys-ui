@@ -433,7 +433,27 @@ export class VscodeRibbon extends VscElement {
     if (!viewport || !groups) {
       return true;
     }
-    return groups.scrollWidth <= viewport.clientWidth + 1;
+    // 逐组累加可收缩宽度：图库分组按最小宽度参与测量，避免把其填充宽度当成溢出。
+    const style = getComputedStyle(groups);
+    const padding =
+      (parseFloat(style.paddingLeft) || 0) +
+      (parseFloat(style.paddingRight) || 0);
+    const contentWidth =
+      Array.from(groups.children).reduce((width, child) => {
+        const element = child as HTMLElement;
+        const rectWidth = element.getBoundingClientRect().width;
+        if (!element.classList.contains('ribbon-group-gallery')) {
+          return width + rectWidth;
+        }
+        const minWidth = parseFloat(getComputedStyle(element).minWidth);
+        return (
+          width +
+          (Number.isFinite(minWidth)
+            ? Math.min(rectWidth, minWidth)
+            : rectWidth)
+        );
+      }, 0) + padding;
+    return contentWidth <= viewport.clientWidth + 1;
   }
 
   /**
@@ -1732,32 +1752,9 @@ export class VscodeRibbon extends VscElement {
     </div>`;
   }
 
-  private _renderGalleryEntry(item: RibbonItemModel): TemplateResult {
-    if (item.heading) {
-      return html`<div class="ribbon-gallery-heading" part="gallery-heading">
-        ${item.title}
-      </div>`;
-    }
+  private _renderGalleryContent(item: RibbonItemModel): TemplateResult {
     const hasMenu = item.menu !== null;
-    return html`<button
-      type="button"
-      class="ribbon-gallery-item"
-      part="gallery-item"
-      role="menuitem"
-      title=${this._buttonTitle(item)}
-      aria-label=${item.title}
-      aria-haspopup=${ifDefined(hasMenu ? 'menu' : undefined)}
-      data-item-key=${item.key}
-      ?disabled=${item.disabled}
-      @click=${(event: Event) => {
-        if (hasMenu) {
-          this._pushMenu(item);
-        } else {
-          this._activateItem(item, event.currentTarget as HTMLElement, 'menu');
-        }
-      }}
-    >
-      <span class="ribbon-gallery-preview" part="gallery-preview">
+    return html`<span class="ribbon-gallery-preview" part="gallery-preview">
         ${
           item.preview
             ? html`<img
@@ -1784,8 +1781,98 @@ export class VscodeRibbon extends VscElement {
               aria-hidden="true"
             ></span>`
           : nothing
-      }
+      }`;
+  }
+
+  private _renderGalleryEntry(item: RibbonItemModel): TemplateResult {
+    if (item.heading) {
+      return html`<div class="ribbon-gallery-heading" part="gallery-heading">
+        ${item.title}
+      </div>`;
+    }
+    const hasMenu = item.menu !== null;
+    return html`<button
+      type="button"
+      class="ribbon-gallery-item"
+      part="gallery-item"
+      role="menuitem"
+      title=${this._buttonTitle(item)}
+      aria-label=${item.title}
+      aria-haspopup=${ifDefined(hasMenu ? 'menu' : undefined)}
+      data-item-key=${item.key}
+      ?disabled=${item.disabled}
+      @click=${(event: Event) => {
+        if (hasMenu) {
+          this._pushMenu(item);
+        } else {
+          this._activateItem(item, event.currentTarget as HTMLElement, 'menu');
+        }
+      }}
+    >
+      ${this._renderGalleryContent(item)}
     </button>`;
+  }
+
+  private _renderGalleryTile(item: RibbonItemModel): TemplateResult {
+    const hasMenu = item.menu !== null;
+    return html`<button
+      type="button"
+      class="ribbon-gallery-tile"
+      part="gallery-tile"
+      title=${this._buttonTitle(item)}
+      aria-label=${item.title}
+      aria-haspopup=${ifDefined(hasMenu ? 'menu' : undefined)}
+      ?disabled=${item.disabled}
+      @click=${(event: Event) => {
+        this._activateItem(item, event.currentTarget as HTMLElement, 'ribbon');
+      }}
+    >
+      ${this._renderGalleryContent(item)}
+    </button>`;
+  }
+
+  private _renderGroupGalleryStrip(group: RibbonGroupModel): TemplateResult {
+    return html`<div class="ribbon-gallery-strip" part="gallery-strip">
+      <button
+        type="button"
+        class="ribbon-gallery-scroll"
+        part="gallery-scroll"
+        title=${this.scrollLeftLabel}
+        aria-label=${this.scrollLeftLabel}
+        @click=${() => this._scrollGroupGallery(group, -1)}
+      >
+        <span class="codicon codicon-chevron-left" aria-hidden="true"></span>
+      </button>
+      <div class="ribbon-gallery-viewport" part="gallery-viewport">
+        <div class="ribbon-gallery-track" part="gallery-track">
+          ${group.items.map((item) => this._renderGalleryTile(item))}
+        </div>
+      </div>
+      <button
+        type="button"
+        class="ribbon-gallery-scroll"
+        part="gallery-scroll"
+        title=${this.scrollRightLabel}
+        aria-label=${this.scrollRightLabel}
+        @click=${() => this._scrollGroupGallery(group, 1)}
+      >
+        <span class="codicon codicon-chevron-right" aria-hidden="true"></span>
+      </button>
+    </div>`;
+  }
+
+  private _scrollGroupGallery(
+    group: RibbonGroupModel,
+    direction: -1 | 1
+  ): void {
+    const viewport = this.shadowRoot?.querySelector<HTMLElement>(
+      `.ribbon-group[data-group="${group.id}"] .ribbon-gallery-viewport`
+    );
+    if (!viewport) {
+      return;
+    }
+    viewport.scrollLeft +=
+      direction * Math.max(120, viewport.clientWidth * 0.8);
   }
 
   private _renderCustomContent(
@@ -1830,17 +1917,88 @@ export class VscodeRibbon extends VscElement {
       })}
       @focusout=${this._onGroupFocusOut}
     >
-      <div class="ribbon-items" part="items">
-        ${group.items.map((item) => this._renderMainItem(item, 'group', true))}
-      </div>
+      ${
+        group.layout === 'gallery'
+          ? html`<div
+              class="ribbon-gallery ribbon-gallery-popover"
+              part="gallery"
+              .style=${stylePropertyMap({
+                '--vsc-ribbon-gallery-columns': '4',
+              })}
+            >
+              ${group.items.map((item) =>
+                item.heading
+                  ? html`<div
+                      class="ribbon-gallery-heading"
+                      part="gallery-heading"
+                    >
+                      ${item.title}
+                    </div>`
+                  : this._renderGalleryTile(item)
+              )}
+            </div>`
+          : html`<div class="ribbon-items" part="items">
+              ${group.items.map((item) =>
+                this._renderMainItem(item, 'group', true)
+              )}
+            </div>`
+      }
       ${this._renderDialogLauncher(group, true)}
     </div>`;
+  }
+
+  private _renderGroupTrigger(
+    group: RibbonGroupModel,
+    open: boolean,
+    icon: ResolvedRibbonIcon
+  ): TemplateResult {
+    return html`<button
+      type="button"
+      class="ribbon-group-dropdown"
+      part="group-button"
+      title=${`${this.openGroupLabel}：${group.title}`}
+      aria-label=${`${this.openGroupLabel}：${group.title}`}
+      aria-haspopup="dialog"
+      aria-expanded=${open ? 'true' : 'false'}
+      @click=${(event: Event) =>
+        this._toggleGroup(group, event.currentTarget as HTMLElement)}
+      @keydown=${(event: KeyboardEvent) =>
+        this._onGroupTriggerKeyDown(
+          event,
+          group,
+          event.currentTarget as HTMLElement
+        )}
+    >
+      ${this._renderIcon(icon, 'ribbon-group-icon')}
+      ${this._renderLabel(
+        {title: group.title},
+        {chevron: true, centered: true}
+      )}
+    </button>`;
   }
 
   private _renderGroup(group: RibbonGroupModel): TemplateResult {
     const folded = this._foldedGroups.has(group.key);
     const open = this._isGroupOpen(group);
     const icon = this._groupIcon(group);
+    if (group.layout === 'gallery') {
+      return html`<div
+        class=${classMap({
+          'ribbon-group': true,
+          folded,
+          'ribbon-group-gallery': true,
+        })}
+        part="group"
+        role="group"
+        aria-label=${group.title}
+        data-group=${group.id}
+      >
+        ${this._renderGroupTrigger(group, open, icon)}
+        ${this._renderGroupGalleryStrip(group)}
+        <div class="ribbon-group-title" part="group-title">${group.title}</div>
+        ${this._renderDialogLauncher(group)}
+      </div>`;
+    }
     return html`<div
       class=${classMap({'ribbon-group': true, folded})}
       part="group"
@@ -1848,29 +2006,7 @@ export class VscodeRibbon extends VscElement {
       aria-label=${group.title}
       data-group=${group.id}
     >
-      <button
-        type="button"
-        class="ribbon-group-dropdown"
-        part="group-button"
-        title=${`${this.openGroupLabel}：${group.title}`}
-        aria-label=${`${this.openGroupLabel}：${group.title}`}
-        aria-haspopup="dialog"
-        aria-expanded=${open ? 'true' : 'false'}
-        @click=${(event: Event) =>
-          this._toggleGroup(group, event.currentTarget as HTMLElement)}
-        @keydown=${(event: KeyboardEvent) =>
-          this._onGroupTriggerKeyDown(
-            event,
-            group,
-            event.currentTarget as HTMLElement
-          )}
-      >
-        ${this._renderIcon(icon, 'ribbon-group-icon')}
-        ${this._renderLabel(
-          {title: group.title},
-          {chevron: true, centered: true}
-        )}
-      </button>
+      ${this._renderGroupTrigger(group, open, icon)}
       <div class="ribbon-items" part="items">
         ${group.items.map((item) => this._renderMainItem(item, 'ribbon'))}
       </div>

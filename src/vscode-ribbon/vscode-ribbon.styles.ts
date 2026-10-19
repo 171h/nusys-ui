@@ -115,6 +115,8 @@ const styles: CSSResultGroup = [
     .ribbon-menu-item:focus-visible,
     .ribbon-menu-back:focus-visible,
     .ribbon-gallery-item:focus-visible,
+    .ribbon-gallery-tile:focus-visible,
+    .ribbon-gallery-scroll:focus-visible,
     .ribbon-panel-close:focus-visible,
     .ribbon-panel-item:focus-visible,
     .ribbon-panel-footer-item:focus-visible,
@@ -173,7 +175,7 @@ const styles: CSSResultGroup = [
       display: flex;
       align-items: stretch;
       box-sizing: border-box;
-      width: max-content;
+      width: 100%;
       min-width: 100%;
       height: 100%;
       padding: 3px 6px 2px;
@@ -275,12 +277,116 @@ const styles: CSSResultGroup = [
     }
 
     .ribbon-group.folded .ribbon-items,
-    .ribbon-group.folded .ribbon-group-title {
+    .ribbon-group.folded .ribbon-group-title,
+    .ribbon-group.folded .ribbon-gallery-strip {
       display: none;
     }
 
     .ribbon-group.folded .ribbon-group-dropdown {
       display: flex;
+    }
+
+    /* 图库布局的功能组：可伸缩的横向预览条，表头与组标题保持一致。 */
+    .ribbon-group-gallery {
+      flex: 1 1 0;
+      min-width: 180px;
+      overflow: hidden;
+      padding: 0 2px;
+    }
+
+    .ribbon-group.folded.ribbon-group-gallery {
+      flex: none;
+    }
+
+    .ribbon-gallery-strip {
+      display: flex;
+      align-items: stretch;
+      gap: 2px;
+      width: 100%;
+      min-width: 0;
+      height: var(--vsc-ribbon-items-height);
+    }
+
+    .ribbon-gallery-viewport {
+      flex: 1 1 auto;
+      min-width: 0;
+      overflow-x: auto;
+      overflow-y: hidden;
+      scrollbar-width: none;
+    }
+
+    .ribbon-gallery-viewport::-webkit-scrollbar {
+      display: none;
+    }
+
+    .ribbon-gallery-track {
+      display: flex;
+      gap: 2px;
+      width: max-content;
+      height: 100%;
+    }
+
+    .ribbon-gallery-tile {
+      display: flex;
+      flex: none;
+      flex-direction: column;
+      gap: 2px;
+      width: 96px;
+      padding: 2px;
+      border: 1px solid transparent;
+      border-radius: 3px;
+      background: transparent;
+      color: inherit;
+      font: inherit;
+      font-size: 10px;
+      text-align: center;
+      cursor: pointer;
+    }
+
+    .ribbon-gallery-tile .ribbon-gallery-preview {
+      height: 48px;
+    }
+
+    .ribbon-gallery-tile .ribbon-gallery-label {
+      font-size: 10px;
+      line-height: 13px;
+    }
+
+    .ribbon-gallery-tile:hover:not(:disabled),
+    .ribbon-gallery-tile:focus-visible {
+      border-color: var(--vscode-focusBorder, #0078d4);
+      background: var(
+        --vscode-toolbar-hoverBackground,
+        rgba(127, 127, 127, 0.16)
+      );
+      outline: none;
+    }
+
+    .ribbon-gallery-tile:disabled {
+      opacity: 0.45;
+      cursor: default;
+    }
+
+    .ribbon-gallery-scroll {
+      display: flex;
+      flex: none;
+      align-items: center;
+      justify-content: center;
+      width: 18px;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      color: var(--vscode-descriptionForeground, #9d9d9d);
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    .ribbon-gallery-scroll:hover {
+      background: var(
+        --vscode-toolbar-hoverBackground,
+        rgba(127, 127, 127, 0.16)
+      );
+      color: var(--vscode-foreground, #cccccc);
     }
 
     .ribbon-group-icon {
@@ -1135,6 +1241,10 @@ const styles: CSSResultGroup = [
 
     .ribbon-group-popover.has-dialog {
       padding-bottom: 22px;
+    }
+
+    .ribbon-gallery-popover {
+      padding: 4px;
     }
 
     .ribbon-group-popover-dialog {

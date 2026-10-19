@@ -87,7 +87,13 @@ ArrowDown / ArrowUp 打开菜单并聚焦首项或末项。
 | `id`             | `string`                     | 分组标识，只需在标签内唯一；缺省时自动生成 |
 | `title`          | `string`                     | 分组标题，同时作为分组折叠入口的名称       |
 | `items`          | `VscRibbonItem[]`            | 分组内的按钮                               |
+| `layout`         | `'default' \| 'gallery'`     | 六轨按钮网格或横向图库布局，默认为默认布局 |
 | `dialogLauncher` | `boolean \| {title?, icon?}` | 右下角对话框启动器；点击派发对话框事件     |
+
+设置 `group.layout: 'gallery'` 时，分组按横向图库渲染：每个按钮使用 `preview`
+预览图（缺失时回退为图标）、标题与命令，右侧箭头按钮可横向滚动浏览；图库分组
+会随容器伸展，宽度不足时与其他分组相同，折叠为溢出下拉入口，弹层中以网格完整
+保留全部预览格子。
 
 | 字段          | 类型                                             | 说明                                         |
 | ------------- | ------------------------------------------------ | -------------------------------------------- |
@@ -229,6 +235,7 @@ Escape 关闭，执行命令后也会关闭。折叠按钮、标签双击与覆�
 | `panel-header` / `panel-close` / `panel-body` / `panel-grid` / `panel-item` / `panel-heading` / `panel-description`       | 面板标题栏、关闭按钮、内容区、格子网格、格子、面板分组标题与说明文字     |
 | `panel-footer` / `panel-footer-item`                                                                                      | 面板底部操作区与整行操作项                                               |
 | `gallery` / `gallery-item` / `gallery-preview` / `gallery-heading` / `gallery-description`                                | 图库网格、图库格子、预览区、分组标题与说明文字                           |
+| `gallery-strip` / `gallery-viewport` / `gallery-track` / `gallery-tile` / `gallery-scroll`                                | 组内图库预览条、滚动视口与轨道、图库格子与左右滚动按钮                   |
 | `group-popover` / `scroll-button` / `custom-content`                                                                      | 折叠分组弹层、悬浮滚动按钮与沙箱内容 iframe                              |
 
 ## 功能场景

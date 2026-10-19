@@ -41,6 +41,7 @@ export type {
   VscRibbonDialogEvent,
   VscRibbonDialogLauncher,
   VscRibbonGroup,
+  VscRibbonGroupLayout,
   VscRibbonIcon,
   VscRibbonIconSource,
   VscRibbonItem,

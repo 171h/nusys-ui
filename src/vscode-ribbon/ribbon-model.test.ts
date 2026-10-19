@@ -274,6 +274,30 @@ describe('ribbon-model', () => {
     expect(item.description).toBe('第一行\n第二行');
   });
 
+  it('归一化功能组图库布局', () => {
+    const [tab] = buildRibbonTabs([
+      {
+        id: 'tab',
+        title: 'Tab',
+        groups: [
+          {
+            id: 'gallery',
+            title: '文档格式',
+            layout: 'gallery',
+            items: [{command: 'format', title: '正文'}],
+          },
+          {
+            id: 'default',
+            title: '默认',
+            items: [{command: 'run', title: '运行'}],
+          },
+        ],
+      },
+    ]);
+    expect(tab.groups[0].layout).toBe('default');
+    expect(tab.groups[1].layout).toBe('gallery');
+  });
+
   it('计算按钮档位、布局与标题行数', () => {
     const item = buildRibbonTabs([
       {
