@@ -687,12 +687,46 @@ const styles: CSSResultGroup = [
     }
 
     .ribbon-menu-item .ribbon-label {
-      flex: 1 1 auto;
+      flex: none;
       text-align: left;
     }
 
     .ribbon-menu-item .ribbon-label-text {
       -webkit-line-clamp: 1;
+    }
+
+    /* 菜单项主文案与补充说明纵向排列，快捷键与箭头保持靠右。 */
+    .ribbon-menu-text {
+      display: flex;
+      flex: 1 1 auto;
+      flex-direction: column;
+      min-width: 0;
+      gap: 1px;
+    }
+
+    .ribbon-menu-description {
+      overflow: hidden;
+      color: var(--vscode-descriptionForeground, #9d9d9d);
+      font-size: 11px;
+      line-height: 14px;
+      text-overflow: ellipsis;
+      white-space: pre-line;
+    }
+
+    .ribbon-menu-item:hover:not(:disabled) .ribbon-menu-description,
+    .ribbon-menu-item:focus-visible .ribbon-menu-description {
+      color: inherit;
+    }
+
+    /* 菜单内的分组标题，不可聚焦，仅用于分组菜单项。 */
+    .ribbon-menu-heading {
+      overflow: hidden;
+      padding: 5px 8px 3px;
+      color: var(--vscode-descriptionForeground, #9d9d9d);
+      font-size: 11px;
+      font-weight: 600;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
     .ribbon-menu-item:hover:not(:disabled),
@@ -862,6 +896,26 @@ const styles: CSSResultGroup = [
         minmax(0, 1fr)
       );
       gap: 2px;
+    }
+
+    /* 面板中的分组标题横跨整行。 */
+    .ribbon-panel-heading {
+      grid-column: 1 / -1;
+      margin-top: 2px;
+      padding: 4px 4px 2px;
+      border-bottom: 1px solid var(--vscode-panel-border, #454545);
+      color: var(--vscode-descriptionForeground, #9d9d9d);
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .ribbon-panel-description {
+      max-width: 100%;
+      overflow-wrap: anywhere;
+      color: var(--vscode-descriptionForeground, #9d9d9d);
+      font-size: 10px;
+      line-height: 13px;
+      white-space: pre-line;
     }
 
     .ribbon-panel-item {

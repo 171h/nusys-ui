@@ -545,6 +545,7 @@ export const extraExamples = {
       'Word 风格面板、列数、自定义沙箱内容',
       'vsc-ribbon-command 事件与 arguments 透传',
       '按钮、菜单项与弹层控件使用 Codicon 图标',
+      '菜单分组标题与说明文字（箭头菜单与面板）',
       '菜单项文字左对齐，方向键与 Escape 可操作',
       '分组右下角对话框启动器与 vsc-ribbon-dialog 事件',
       '可拖动 split-layout 父容器调整宽度与高度，并实时显示容器尺寸',
@@ -595,6 +596,19 @@ ribbon.tabs = [
                 }
               ]
             }
+          },
+          {
+            type: 'dropdown',
+            title: '插入图片',
+            icon: 'file-media',
+            menu: {
+              items: [
+                {heading: true, title: '插入图片来自', order: 5},
+                {command: 'insert-local', title: '此设备…', icon: 'folder-opened', keybinding: 'D', order: 10},
+                {command: 'insert-stock', title: '图像集…', icon: 'file-media', keybinding: 'S', order: 20},
+                {command: 'insert-online', title: '联机图片…', icon: 'globe', keybinding: 'O', order: 30}
+              ]
+            }
           }
         ]
       },
@@ -623,6 +637,36 @@ ribbon.tabs = [
                 width: 420,
                 height: 56
               }
+            }
+          },
+          {
+            type: 'dropdown',
+            title: '页边距',
+            icon: 'layout',
+            menu: {
+              layout: 'panel',
+              title: '页边距',
+              columns: 1,
+              items: [
+                {heading: true, title: '上次的自定义设置', order: 1},
+                {
+                  command: 'margin-custom', title: '自定义', order: 2, icon: 'layout',
+                  description: '上：2.5 厘米　下：2.5 厘米\\n左：2.5 厘米　右：2.5 厘米'
+                },
+                {heading: true, title: '预设页边距', order: 3},
+                {
+                  command: 'margin-normal', title: '常规', order: 4, icon: 'layout',
+                  description: '上：2.54 厘米　下：2.54 厘米\\n左：3.18 厘米　右：3.18 厘米'
+                },
+                {
+                  command: 'margin-narrow', title: '窄', order: 5, icon: 'layout',
+                  description: '上：1.27 厘米　下：1.27 厘米\\n左：1.27 厘米　右：1.27 厘米'
+                },
+                {
+                  command: 'margin-wide', title: '宽', order: 6, icon: 'layout',
+                  description: '上：2.54 厘米　下：2.54 厘米\\n左：5.08 厘米　右：5.08 厘米'
+                }
+              ]
             }
           }
         ]

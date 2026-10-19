@@ -90,6 +90,10 @@ export interface VscRibbonItem {
   responsive?: readonly VscRibbonResponsiveStep[];
   /** 排序值，较小者在前。 */
   order?: number;
+  /** 在菜单或面板中渲染为不可交互的分组标题。 */
+  heading?: boolean;
+  /** 菜单项、面板项或图库项的补充说明，显示在标题下方。 */
+  description?: string;
   /** 占位项：可见但不可执行，默认提示“功能尚未实现”。 */
   placeholder?: boolean;
   /** 禁用项：可见但不可操作。 */
@@ -178,6 +182,8 @@ export interface RibbonItemModel {
   tooltip: string;
   keybinding: string;
   separator: boolean;
+  heading: boolean;
+  description: string;
   order: number;
 }
 

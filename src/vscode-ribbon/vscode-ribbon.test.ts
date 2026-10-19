@@ -274,6 +274,126 @@ describe('vscode-ribbon', () => {
     );
   });
 
+  it('菜单分组标题不可聚焦，说明文字显示在标题下方', async () => {
+    const tabs: VscRibbonTab[] = [
+      {
+        id: 'home',
+        title: '开始',
+        default: true,
+        groups: [
+          {
+            id: 'insert',
+            title: '插入',
+            items: [
+              {
+                command: 'insert-image',
+                title: '插入图片',
+                icon: 'file-media',
+                menu: {
+                  items: [
+                    {heading: true, title: '插入图片来自', order: 1},
+                    {
+                      command: 'local',
+                      title: '此设备',
+                      icon: 'folder-opened',
+                      keybinding: 'D',
+                      description: '从当前设备选择图片',
+                      order: 2,
+                    },
+                    {
+                      command: 'online',
+                      title: '联机图片',
+                      icon: 'globe',
+                      description: '第一行\n第二行',
+                      order: 3,
+                    },
+                  ],
+                },
+              },
+            ],
+          },
+        ],
+      },
+    ];
+    const el = await createRibbon(tabs);
+    const menu = await openMenu(el, '插入图片');
+    const heading = menu.querySelector<HTMLElement>('.ribbon-menu-heading')!;
+    expect(heading.textContent).to.contain('插入图片来自');
+    expect(heading.getAttribute('role')).to.equal('presentation');
+    expect(menu.querySelectorAll('[role="menuitem"]')).to.have.length(2);
+    expect(el.shadowRoot!.activeElement?.textContent).to.contain('此设备');
+    const description = menu.querySelector<HTMLElement>(
+      '.ribbon-menu-description'
+    )!;
+    expect(description.textContent).to.contain('从当前设备选择图片');
+    const multiLine = Array.from(
+      menu.querySelectorAll<HTMLElement>('.ribbon-menu-description')
+    )[1];
+    expect(multiLine.textContent).to.contain('第一行');
+    expect(getComputedStyle(multiLine).whiteSpace).to.equal('pre-line');
+  });
+
+  it('面板中的分组标题与说明文字', async () => {
+    const tabs: VscRibbonTab[] = [
+      {
+        id: 'home',
+        title: '开始',
+        default: true,
+        groups: [
+          {
+            id: 'layout',
+            title: '布局',
+            items: [
+              {
+                command: 'margins',
+                title: '页边距',
+                icon: 'layout',
+                menu: {
+                  layout: 'panel',
+                  title: '页边距',
+                  columns: 1,
+                  items: [
+                    {heading: true, title: '上次的自定义设置', order: 1},
+                    {
+                      command: 'custom',
+                      title: '自定义',
+                      icon: 'layout',
+                      description:
+                        '上：2.5 厘米　下：2.5 厘米\n左：2.5 厘米　右：2.5 厘米',
+                      order: 2,
+                    },
+                    {heading: true, title: '预设页边距', order: 3},
+                    {
+                      command: 'narrow',
+                      title: '窄',
+                      icon: 'layout',
+                      description: '上：1.27 厘米　下：1.27 厘米',
+                      order: 4,
+                    },
+                  ],
+                },
+              },
+            ],
+          },
+        ],
+      },
+    ];
+    const el = await createRibbon(tabs);
+    await openMenu(el, '页边距');
+    const headings = Array.from(
+      el.shadowRoot!.querySelectorAll<HTMLElement>('.ribbon-panel-heading')
+    );
+    expect(
+      headings.map((heading) => heading.textContent?.trim())
+    ).to.deep.equal(['上次的自定义设置', '预设页边距']);
+    const descriptions = Array.from(
+      el.shadowRoot!.querySelectorAll<HTMLElement>('.ribbon-panel-description')
+    );
+    expect(descriptions).to.have.length(2);
+    expect(descriptions[0].textContent).to.contain('上：2.5 厘米');
+    expect(getComputedStyle(descriptions[0]).whiteSpace).to.equal('pre-line');
+  });
+
   it('支持递归子菜单与返回导航', async () => {
     const el = await createRibbon();
     Array.from(el.shadowRoot!.querySelectorAll<HTMLElement>('[role="tab"]'))

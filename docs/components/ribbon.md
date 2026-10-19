@@ -104,6 +104,8 @@ ArrowDown / ArrowUp 打开菜单并聚焦首项或末项。
 | `disabled`    | `boolean`                                        | 禁用项                                       |
 | `placeholder` | `boolean`                                        | 占位项，可见但不可执行                       |
 | `keybinding`  | `string`                                         | 菜单项右侧的快捷键文字                       |
+| `heading`     | `boolean`                                        | 在菜单或面板中渲染为不可交互的分组标题       |
+| `description` | `string`                                         | 菜单项、面板项的补充说明，支持多行文本       |
 | `separator`   | `boolean`                                        | 在菜单中渲染为分隔线                         |
 | `tooltip`     | `string`                                         | 鼠标悬停提示，默认使用标题                   |
 
@@ -161,6 +163,10 @@ Escape 关闭，执行命令后也会关闭。折叠按钮、标签双击与覆�
 
 菜单选项文字默认左对齐，快捷键与子菜单箭头靠右，长标题单行截断。
 
+菜单项支持 `heading: true` 渲染为不可交互的分组标题（不进入 `menuitem` 语义与
+键盘导航），`description` 会在标题下方显示补充说明并支持换行，适用于设置预设、
+规范说明等富信息条目。面板中的分组标题会横跨整行显示。
+
 ## 对话框启动器
 
 设置 `group.dialogLauncher: true` 后，功能组右下角会显示对话框启动器；也可以
@@ -209,14 +215,14 @@ Escape 关闭，执行命令后也会关闭。折叠按钮、标签双击与覆�
 
 ## CSS 部件
 
-| 部件                                                                                | 说明                                                 |
-| ----------------------------------------------------------------------------------- | ---------------------------------------------------- |
-| `base` / `tabs` / `tab` / `content`                                                 | 功能区根容器、标签栏、标签与内容区                   |
-| `group` / `group-title` / `items` / `group-button` / `group-dialog`                 | 功能组、分组标题、六轨网格、折叠入口与对话框启动器   |
-| `item` / `item-primary` / `item-trigger`                                            | 普通按钮与分割按钮的主命令、菜单触发区               |
-| `menu` / `menu-items` / `menu-item` / `menu-separator` / `menu-split` / `menu-back` | 下拉菜单容器、列表、菜单项、分隔线、分割行与返回入口 |
-| `panel-header` / `panel-close` / `panel-body` / `panel-grid` / `panel-item`         | 面板标题栏、关闭按钮、内容区、格子网格与格子         |
-| `group-popover` / `scroll-button` / `custom-content`                                | 折叠分组弹层、悬浮滚动按钮与沙箱内容 iframe          |
+| 部件                                                                                                                      | 说明                                                                     |
+| ------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| `base` / `tabs` / `tab` / `content`                                                                                       | 功能区根容器、标签栏、标签与内容区                                       |
+| `group` / `group-title` / `items` / `group-button` / `group-dialog`                                                       | 功能组、分组标题、六轨网格、折叠入口与对话框启动器                       |
+| `item` / `item-primary` / `item-trigger`                                                                                  | 普通按钮与分割按钮的主命令、菜单触发区                                   |
+| `menu` / `menu-items` / `menu-item` / `menu-separator` / `menu-split` / `menu-back` / `menu-heading` / `menu-description` | 下拉菜单容器、列表、菜单项、分隔线、分割行、返回入口、分组标题与说明文字 |
+| `panel-header` / `panel-close` / `panel-body` / `panel-grid` / `panel-item` / `panel-heading` / `panel-description`       | 面板标题栏、关闭按钮、内容区、格子网格、格子、面板分组标题与说明文字     |
+| `group-popover` / `scroll-button` / `custom-content`                                                                      | 折叠分组弹层、悬浮滚动按钮与沙箱内容 iframe                              |
 
 ## 功能场景
 

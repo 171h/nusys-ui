@@ -237,6 +237,34 @@ describe('ribbon-model', () => {
     expect(tab.groups[2].dialogLauncher).toBe(null);
   });
 
+  it('归一化菜单分组标题与说明文字', () => {
+    const [tab] = buildRibbonTabs([
+      {
+        id: 'tab',
+        title: 'Tab',
+        groups: [
+          {
+            id: 'group',
+            title: '分组',
+            items: [
+              {heading: true, title: '插入图片来自'},
+              {
+                command: 'local',
+                title: '此设备',
+                description: ' 第一行\n第二行 ',
+              },
+            ],
+          },
+        ],
+      },
+    ]);
+    const [heading, item] = tab.groups[0].items;
+    expect(heading.heading).toBe(true);
+    expect(heading.description).toBe('');
+    expect(item.heading).toBe(false);
+    expect(item.description).toBe('第一行\n第二行');
+  });
+
   it('计算按钮档位、布局与标题行数', () => {
     const item = buildRibbonTabs([
       {

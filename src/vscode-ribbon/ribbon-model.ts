@@ -150,6 +150,7 @@ function buildItem(item: VscRibbonItem, path: string): RibbonItemModel {
   const placeholder =
     item.placeholder === true || (!command && !menu && !separator);
   const title = item.title ?? '';
+  const description = item.description?.trim() ?? '';
 
   return {
     key: path,
@@ -169,6 +170,8 @@ function buildItem(item: VscRibbonItem, path: string): RibbonItemModel {
     tooltip: item.tooltip?.trim() ? item.tooltip : title,
     keybinding: item.keybinding ?? '',
     separator,
+    heading: item.heading === true,
+    description,
     order: item.order ?? 0,
   };
 }

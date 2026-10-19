@@ -1420,6 +1420,15 @@ export class VscodeRibbon extends VscElement {
         role="separator"
       ></div>`;
     }
+    if (item.heading) {
+      return html`<div
+        class="ribbon-menu-heading"
+        part="menu-heading"
+        role="presentation"
+      >
+        ${item.title}
+      </div>`;
+    }
     const hasMenu = item.menu !== null;
     const isSplit = item.type === 'splitButton' && hasMenu && !!item.command;
     const title = this._buttonTitle(item);
@@ -1441,7 +1450,7 @@ export class VscodeRibbon extends VscElement {
             this._runPrimary(item, 'ribbon');
           }}
         >
-          ${this._renderIcon(item.icon)} ${this._renderLabel(item, {lines: 1})}
+          ${this._renderIcon(item.icon)} ${this._renderMenuText(item)}
         </button>
         <button
           type="button"
@@ -1481,7 +1490,7 @@ export class VscodeRibbon extends VscElement {
         }
       }}
     >
-      ${this._renderIcon(item.icon)} ${this._renderLabel(item, {lines: 1})}
+      ${this._renderIcon(item.icon)} ${this._renderMenuText(item)}
       ${
         item.keybinding
           ? html`<span class="ribbon-menu-keybinding">${item.keybinding}</span>`
@@ -1498,7 +1507,25 @@ export class VscodeRibbon extends VscElement {
     </button>`;
   }
 
+  private _renderMenuText(item: RibbonItemModel): TemplateResult {
+    return html`<span class="ribbon-menu-text">
+      ${this._renderLabel(item, {lines: 1})}
+      ${
+        item.description
+          ? html`<span class="ribbon-menu-description" part="menu-description"
+              >${item.description}</span
+            >`
+          : nothing
+      }
+    </span>`;
+  }
+
   private _renderPanelEntry(item: RibbonItemModel): TemplateResult {
+    if (item.heading) {
+      return html`<div class="ribbon-panel-heading" part="panel-heading">
+        ${item.title}
+      </div>`;
+    }
     const hasMenu = item.menu !== null;
     return html`<button
       type="button"
@@ -1519,6 +1546,13 @@ export class VscodeRibbon extends VscElement {
     >
       ${this._renderIcon(item.icon)}
       ${this._renderLabel(item, {centered: true, lines: 2})}
+      ${
+        item.description
+          ? html`<span class="ribbon-panel-description" part="panel-description"
+              >${item.description}</span
+            >`
+          : nothing
+      }
       ${
         hasMenu
           ? html`<span
