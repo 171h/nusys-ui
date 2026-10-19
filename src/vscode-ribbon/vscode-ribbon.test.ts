@@ -875,6 +875,73 @@ describe('vscode-ribbon', () => {
     expect(visibleItems[0].className).to.contain('ribbon-item-full');
   });
 
+  it('仅包含单个下拉按钮的分组宽度不足时保持原有菜单结构', async () => {
+    const tabs: VscRibbonTab[] = [
+      {
+        id: 'home',
+        title: '开始',
+        default: true,
+        groups: [
+          {
+            id: 'plain',
+            title: '文字',
+            items: [
+              {
+                command: 'run',
+                title: '很长的按钮',
+                icon: 'play',
+                responsive: [{size: 'half'}, {size: 'third'}],
+              },
+            ],
+          },
+          {
+            id: 'styles',
+            title: '样式',
+            items: [
+              {
+                type: 'dropdown',
+                title: '样式库',
+                icon: 'symbol-color',
+                menu: {
+                  layout: 'gallery',
+                  columns: 2,
+                  items: [
+                    {
+                      command: 'style-a',
+                      title: '样式 A',
+                      preview: 'data:image/svg+xml;utf8,<svg/>',
+                    },
+                  ],
+                },
+              },
+            ],
+          },
+        ],
+      },
+    ];
+    const el = await createRibbon(tabs, 'width: 120px');
+    await waitFor(
+      () =>
+        el.shadowRoot?.querySelector(
+          '.ribbon-group[data-group="plain"].folded'
+        ) !== null
+    );
+    expect(
+      el.shadowRoot!.querySelector('.ribbon-group[data-group="styles"].folded')
+    ).to.equal(null);
+    const galleryTrigger = el.shadowRoot!.querySelector<HTMLButtonElement>(
+      '.ribbon-group[data-group="styles"] .ribbon-item'
+    )!;
+    expect(galleryTrigger.getClientRects().length).to.be.greaterThan(0);
+    galleryTrigger.click();
+    await waitFor(
+      () => el.shadowRoot?.querySelector('.ribbon-gallery') !== null
+    );
+    expect(el.shadowRoot!.querySelector('.ribbon-group-popover')).to.equal(
+      null
+    );
+  });
+
   it('宽度不足时折叠分组并保留分组入口', async () => {
     const tabs: VscRibbonTab[] = [
       {

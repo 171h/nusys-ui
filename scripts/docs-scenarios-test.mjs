@@ -324,6 +324,10 @@ export async function testScenarios(page, url) {
 
   // 功能区示例使用可拖动父容器，需要足够宽的视口验证完整布局与降级链。
   await page.setViewportSize({width: 1440, height: 1000});
+  const setSplitPosition = (selector, position) =>
+    frame.locator(selector).evaluate((element, value) => {
+      element.handlePosition = `${value}px`;
+    }, position);
   frame = await open('ribbon-menus');
   const codiconHref = await frame
     .locator('#ribbon-menus')
@@ -471,6 +475,35 @@ export async function testScenarios(page, url) {
     /style-heading-1/
   );
 
+  // 仅含单个下拉按钮的分组在溢出时保留原有下拉结构。
+  await setSplitPosition('#ribbon-menus-width-split', 120);
+  await frame.waitForFunction(() => {
+    const root = document.querySelector('#ribbon-menus').shadowRoot;
+    return (
+      root.querySelector('.ribbon-group[data-group="styles"]') !== null &&
+      root.querySelector('.ribbon-group[data-group="styles"].folded') ===
+        null &&
+      root.querySelectorAll('.ribbon-group.folded').length > 0
+    );
+  });
+  await frame.getByRole('button', {name: '样式库', exact: true}).click();
+  await frame.locator('vscode-ribbon .ribbon-gallery').waitFor();
+  assert.equal(
+    await frame.locator('vscode-ribbon .ribbon-group-popover').count(),
+    0,
+    '单下拉分组应直接打开菜单而不是分组弹层'
+  );
+  await frame.evaluate(() => {
+    document.dispatchEvent(
+      new KeyboardEvent('keydown', {key: 'Escape', bubbles: true})
+    );
+  });
+  await setSplitPosition('#ribbon-menus-width-split', 1600);
+  await frame.waitForFunction(() => {
+    const root = document.querySelector('#ribbon-menus').shadowRoot;
+    return root.querySelectorAll('.ribbon-group.folded').length === 0;
+  });
+
   await frame.getByRole('button', {name: '打开文件设置', exact: true}).click();
   assert.match(
     await frame.locator('#ribbon-menus-output').textContent(),
@@ -484,10 +517,6 @@ export async function testScenarios(page, url) {
   await testRibbonResize(frame, 'ribbon-menus');
 
   frame = await open('ribbon-responsive');
-  const setSplitPosition = (selector, position) =>
-    frame.locator(selector).evaluate((element, value) => {
-      element.handlePosition = `${value}px`;
-    }, position);
   await setSplitPosition('#ribbon-responsive-width-split', 120);
   await frame.waitForFunction(() => {
     const ribbon = document.querySelector('#ribbon-responsive');

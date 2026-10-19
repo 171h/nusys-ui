@@ -457,6 +457,18 @@ export class VscodeRibbon extends VscElement {
   }
 
   /**
+   * 分组只包含一个下拉按钮时，它本身就是一层菜单；
+   * 整组折叠会再套一层溢出下拉，因此跳过折叠并保留原有菜单结构。
+   */
+  private _isSingleMenuGroup(group: RibbonGroupModel): boolean {
+    return (
+      group.layout === 'default' &&
+      group.items.length === 1 &&
+      group.items[0].menu !== null
+    );
+  }
+
+  /**
    * 响应式降级链：
    * ① 同组相同策略整批降档 → ② 从右向左整组折叠到溢出下拉入口 →
    * ③ 仍溢出时显示两端悬浮滚动按钮。
@@ -520,6 +532,10 @@ export class VscodeRibbon extends VscElement {
         return;
       }
       const group = tab.groups[index];
+      // 只有一个下拉按钮的分组不再套一层溢出下拉，保留原有菜单结构。
+      if (this._isSingleMenuGroup(group)) {
+        continue;
+      }
       this._foldedGroups = new Set(this._foldedGroups).add(group.key);
       await this.updateComplete;
       if (token !== this._layoutToken) {
