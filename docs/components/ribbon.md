@@ -252,7 +252,8 @@ Escape 关闭，执行命令后也会关闭。折叠按钮、标签双击与覆�
 ## 组件名称与调试定位
 
 下方每个名称对应一个稳定、唯一的 CSS part。名称既可用于 `::part()` 主题定制，
-也可在开发调试时通过 Shadow DOM 的 `[part~="名称"]` 快速定位元素：
+也可在开发调试时通过 Shadow DOM 的 `[part~="名称"]` 快速定位元素。每种部件的
+实际外观、说明与配置示例见 [功能区部件图鉴](../ribbon-parts)：
 
 ```js
 const ribbon = document.querySelector('vscode-ribbon');

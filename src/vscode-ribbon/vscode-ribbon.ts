@@ -2008,7 +2008,9 @@ export class VscodeRibbon extends VscElement {
       <span class="ribbon-gallery-label">${item.title}</span>
       ${
         item.description
-          ? html`<span class="ribbon-gallery-description"
+          ? html`<span
+              class="ribbon-gallery-description"
+              part="gallery-description"
               >${item.description}</span
             >`
           : nothing

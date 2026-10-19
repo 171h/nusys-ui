@@ -40,6 +40,7 @@
     "docs:preview": "vitepress preview docs",
     "docs:prepare": "pnpm build && node scripts/docs-prepare.mjs",
     "docs:check": "pnpm docs:prepare && node scripts/docs-check.mjs",
+    "docs:ribbon-parts": "node scripts/generate-ribbon-parts.mjs",
     "docs:test": "pnpm docs:build && node scripts/docs-browser.mjs",
     "docs:test:dev": "pnpm docs:prepare && node scripts/docs-dev-test.mjs",
     "dev": "pnpm docs:dev"

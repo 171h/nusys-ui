@@ -60,6 +60,7 @@ export default defineConfig({
           {text: '标签页与视图拖拽', link: '/tabs-drag-drop'},
           {text: '标签页溢出与图标', link: '/tabs-overflow'},
           {text: '功能区 Ribbon', link: '/ribbon'},
+          {text: '功能区部件图鉴', link: '/ribbon-parts'},
           {text: 'CSP 检查模板', link: '/examples/csp'},
         ],
       },
