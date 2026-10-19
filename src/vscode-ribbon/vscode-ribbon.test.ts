@@ -956,6 +956,48 @@ describe('vscode-ribbon', () => {
     expect(detail?.group.title).to.equal('布局');
   });
 
+  it('折叠分组入口图标与整高按钮图标尺寸一致', async () => {
+    const tabs: VscRibbonTab[] = [
+      {
+        id: 'home',
+        title: '开始',
+        default: true,
+        groups: [
+          {
+            id: 'file',
+            title: '文件',
+            items: [{command: 'open', title: '打开', icon: 'folder-opened'}],
+          },
+          {
+            id: 'edit',
+            title: '编辑',
+            items: [{command: 'undo', title: '撤销', icon: 'discard'}],
+          },
+        ],
+      },
+    ];
+    const el = await createRibbon(tabs);
+    const fullIcon = el.shadowRoot!.querySelector<HTMLElement>(
+      '.ribbon-item-full .ribbon-icon'
+    )!;
+    const fullIconSize = getComputedStyle(fullIcon).fontSize;
+    expect(fullIconSize).to.equal('40px');
+
+    el.style.width = '120px';
+    el.refreshLayout();
+    await waitFor(
+      () =>
+        el.shadowRoot?.querySelector(
+          '.ribbon-group.folded .ribbon-group-dropdown .ribbon-group-icon'
+        ) !== null
+    );
+    const groupIcon = el.shadowRoot!.querySelector<HTMLElement>(
+      '.ribbon-group.folded .ribbon-group-dropdown .ribbon-group-icon'
+    )!;
+    expect(getComputedStyle(groupIcon).fontSize).to.equal(fullIconSize);
+    expect(getComputedStyle(groupIcon).width).to.equal('40px');
+  });
+
   it('折叠分组在弹层中保留自定义对话框启动器', async () => {
     const tabs: VscRibbonTab[] = [
       {

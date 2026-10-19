@@ -222,7 +222,7 @@ const styles: CSSResultGroup = [
       outline-offset: -1px;
     }
 
-    .ribbon-group-dialog-icon {
+    .ribbon-group-dialog .ribbon-group-dialog-icon {
       width: 12px;
       height: 12px;
       font-size: 12px;
@@ -389,7 +389,7 @@ const styles: CSSResultGroup = [
       color: var(--vscode-foreground, #cccccc);
     }
 
-    .ribbon-group-icon {
+    .ribbon-group .ribbon-group-icon {
       display: flex;
       flex: 0 0 auto;
       align-items: center;
@@ -834,7 +834,8 @@ const styles: CSSResultGroup = [
       object-fit: cover;
     }
 
-    .ribbon-gallery-icon {
+    .ribbon-gallery .ribbon-gallery-icon,
+    .ribbon-gallery-tile .ribbon-gallery-icon {
       width: 32px;
       height: 32px;
       color: var(--vscode-icon-foreground, #cccccc);
