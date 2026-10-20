@@ -118,6 +118,10 @@ export class VscodeRibbon extends VscElement {
   @property({attribute: false})
   tabs: readonly VscRibbonTab[] = [];
 
+  /** 标题排序语言；未设置时继承最近的 lang，最终使用浏览器默认语言。 */
+  @property({attribute: 'sort-locale'})
+  sortLocale = '';
+
   private _activeTabId = '';
   private _collapsed = false;
   private _activeTabConfigured = false;
@@ -131,7 +135,9 @@ export class VscodeRibbon extends VscElement {
   }
 
   set activeTabId(value: string) {
-    if (!this._restoringState) this._activeTabConfigured = true;
+    if (!this._restoringState) {
+      this._activeTabConfigured = true;
+    }
     this._activeTabId = value;
   }
 
@@ -142,7 +148,9 @@ export class VscodeRibbon extends VscElement {
   }
 
   set collapsed(value: boolean) {
-    if (!this._restoringState) this._collapsedConfigured = true;
+    if (!this._restoringState) {
+      this._collapsedConfigured = true;
+    }
     this._collapsed = value;
   }
 
@@ -254,6 +262,7 @@ export class VscodeRibbon extends VscElement {
   private _layoutToken = 0;
   private _resizeObserver?: ResizeObserver;
   private _themeObserver?: MutationObserver;
+  private _localeObserver?: MutationObserver;
   private _storedState: StoredRibbonState | null = null;
   private _restored = false;
   private _menuFocusFrame?: number;
@@ -274,6 +283,20 @@ export class VscodeRibbon extends VscElement {
     this._storedState = this._readStoredState();
     this._syncTheme();
     this._observeTheme();
+    this._localeObserver = new MutationObserver((records) => {
+      if (
+        records.some(
+          ({target}) => target instanceof Element && target.contains(this)
+        )
+      ) {
+        this.requestUpdate('sortLocale', undefined);
+      }
+    });
+    this._localeObserver.observe(document.documentElement, {
+      subtree: true,
+      attributes: true,
+      attributeFilter: ['lang'],
+    });
     document.addEventListener('pointerdown', this._onDocumentPointerDown, true);
     document.addEventListener('keydown', this._onDocumentKeyDown);
     window.addEventListener('resize', this._onWindowResize);
@@ -294,6 +317,7 @@ export class VscodeRibbon extends VscElement {
     window.removeEventListener('scroll', this._onWindowScroll, true);
     this._resizeObserver?.disconnect();
     this._themeObserver?.disconnect();
+    this._localeObserver?.disconnect();
     clearTimeout(this._layoutTimer);
     cancelAnimationFrame(this._menuFocusFrame ?? 0);
     this._layoutToken++;
@@ -305,8 +329,13 @@ export class VscodeRibbon extends VscElement {
     if (!this.collapsible && this.collapsed) {
       this.collapsed = false;
     }
-    if (changed.has('tabs')) {
-      this._models = buildRibbonTabs(this.tabs);
+    if (changed.has('tabs') || changed.has('sortLocale')) {
+      this._models = buildRibbonTabs(
+        this.tabs,
+        this.sortLocale ||
+          this.closest('[lang]')?.getAttribute('lang') ||
+          undefined
+      );
       this._resetResponsiveState();
       this._restored = this._storedState === null;
       this._scheduleLayout();
@@ -327,6 +356,7 @@ export class VscodeRibbon extends VscElement {
     }
     if (
       changed.has('tabs') ||
+      changed.has('sortLocale') ||
       changed.has('activeTabId') ||
       changed.has('collapsed')
     ) {

@@ -144,6 +144,56 @@ afterEach(() => {
 });
 
 describe('vscode-ribbon', () => {
+  it('菜单标题按当前语言排序并支持中文、英文与瑞典语切换', async () => {
+    const tabs = basicTabs();
+    const words = ['Zulu', 'Åland', 'Örebro'];
+    tabs[0].groups![0].items = [
+      {
+        type: 'dropdown',
+        title: '菜单',
+        menu: {
+          items: [
+            {command: 'first', title: '固定首项', order: -1},
+            ...words.map((title) => ({title, command: title})),
+          ],
+          footer: words.map((title) => ({title, command: title})),
+        },
+      },
+    ];
+    const el = await createRibbon(tabs);
+    for (const [language, expected] of [
+      ['sv', ['Zulu', 'Åland', 'Örebro']],
+      ['en', ['Åland', 'Örebro', 'Zulu']],
+      ['zh-CN', ['Åland', 'Örebro', 'Zulu']],
+      ['sv', ['Zulu', 'Åland', 'Örebro']],
+    ] as const) {
+      el.setAttribute('lang', language);
+      await aTimeout(0);
+      await el.updateComplete;
+      const menu = await openMenu(el, '菜单');
+      expect(
+        Array.from(menu.querySelectorAll('.ribbon-menu-item')).map((item) =>
+          item.getAttribute('aria-label')
+        )
+      ).to.deep.equal(['固定首项', ...expected]);
+      expect(
+        Array.from(menu.querySelectorAll('.ribbon-panel-footer-item')).map(
+          (item) => item.getAttribute('aria-label')
+        )
+      ).to.deep.equal(expected);
+      el.closeMenus();
+      await el.updateComplete;
+    }
+    el.sortLocale = 'en';
+    await el.updateComplete;
+    const overridden = await openMenu(el, '菜单');
+    expect(
+      Array.from(overridden.querySelectorAll('.ribbon-menu-item')).map((item) =>
+        item.getAttribute('aria-label')
+      )
+    ).to.deep.equal(['固定首项', 'Åland', 'Örebro', 'Zulu']);
+  });
+
   for (const configured of [false, true]) {
     for (const attributes of [false, true]) {
       it(`显式${attributes ? '特性' : '属性'}优先于相反的持久化状态（collapsed=${configured}）`, async () => {
@@ -344,7 +394,7 @@ describe('vscode-ribbon', () => {
         groupTrigger.click();
         await el.updateComplete;
         const trigger = el.shadowRoot!.querySelector<HTMLButtonElement>(
-          `.ribbon-group-popover ${type === 'splitButton' ? '.ribbon-split-trigger' : '.ribbon-item'}`
+          `.ribbon-group-popover ${type === 'splitButton' ? '.ribbon-split-trigger' : '.ribbon-item.is-dropdown'}`
         )!;
         expect(trigger).to.not.equal(null);
         if (keyboard) {
@@ -945,7 +995,9 @@ describe('vscode-ribbon', () => {
     )!;
     expect(flyout.getAttribute('role')).to.equal('menu');
     expect(flyout.textContent).to.contain('门式脚手架');
-    expect(el.shadowRoot!.activeElement?.textContent).to.contain('门式脚手架');
+    expect(el.shadowRoot!.activeElement).to.equal(
+      flyout.querySelector('button')
+    );
 
     // Escape 先关闭 flyout，再关闭父菜单。
     document.dispatchEvent(

@@ -125,21 +125,27 @@ function buildCustomContent(
   };
 }
 
-function buildMenu(menu: VscRibbonMenu, path: string): RibbonMenuModel {
+function buildMenu(
+  menu: VscRibbonMenu,
+  path: string,
+  collator: Intl.Collator
+): RibbonMenuModel {
   const items = (menu.items ?? [])
-    .map((item, index) => buildItem(item, `${path}/menu/${index}`))
+    .map((item, index) => buildItem(item, `${path}/menu/${index}`, collator))
     .sort(
       byOrderThen(
         (item) => item.order,
-        (item) => item.title
+        (item) => item.title,
+        collator
       )
     );
   const footer = (menu.footer ?? [])
-    .map((item, index) => buildItem(item, `${path}/footer/${index}`))
+    .map((item, index) => buildItem(item, `${path}/footer/${index}`, collator))
     .sort(
       byOrderThen(
         (item) => item.order,
-        (item) => item.title
+        (item) => item.title,
+        collator
       )
     );
   return {
@@ -157,9 +163,13 @@ function buildMenu(menu: VscRibbonMenu, path: string): RibbonMenuModel {
   };
 }
 
-function buildItem(item: VscRibbonItem, path: string): RibbonItemModel {
+function buildItem(
+  item: VscRibbonItem,
+  path: string,
+  collator: Intl.Collator
+): RibbonItemModel {
   const command = item.command ?? null;
-  const menu = item.menu ? buildMenu(item.menu, path) : null;
+  const menu = item.menu ? buildMenu(item.menu, path, collator) : null;
   const separator = item.separator === true;
   const placeholder =
     item.placeholder === true || (!command && !menu && !separator);
@@ -194,11 +204,12 @@ function buildItem(item: VscRibbonItem, path: string): RibbonItemModel {
 
 function byOrderThen<T>(
   readOrder: (value: T) => number,
-  readTitle: (value: T) => string
+  readTitle: (value: T) => string,
+  collator: Intl.Collator
 ) {
   return (left: T, right: T) =>
     readOrder(left) - readOrder(right) ||
-    readTitle(left).localeCompare(readTitle(right), 'zh-CN');
+    collator.compare(readTitle(left), readTitle(right));
 }
 
 /** 归一化分组右下角的对话框启动器。 */
@@ -224,16 +235,18 @@ function buildDialogLauncher(
 function buildGroup(
   group: VscRibbonGroup,
   index: number,
-  tabId: string
+  tabId: string,
+  collator: Intl.Collator
 ): RibbonGroupModel {
   const id = group.id?.trim() ? group.id : `group-${index + 1}`;
   const path = `${tabId}/${id}`;
   const items = (group.items ?? [])
-    .map((item, itemIndex) => buildItem(item, `${path}/${itemIndex}`))
+    .map((item, itemIndex) => buildItem(item, `${path}/${itemIndex}`, collator))
     .sort(
       byOrderThen(
         (item) => item.order,
-        (item) => item.title
+        (item) => item.title,
+        collator
       )
     );
 
@@ -254,8 +267,16 @@ function buildGroup(
  * 输入数组不会被修改。
  */
 export function buildRibbonTabs(
-  tabs: readonly VscRibbonTab[]
+  tabs: readonly VscRibbonTab[],
+  locale?: string
 ): RibbonTabModel[] {
+  let collator: Intl.Collator;
+  try {
+    collator = new Intl.Collator(locale || undefined);
+  } catch {
+    // 无效语言标记回退到浏览器默认语言。
+    collator = new Intl.Collator();
+  }
   return tabs
     .map((tab) => ({
       id: tab.id,
@@ -263,11 +284,12 @@ export function buildRibbonTabs(
       order: tab.order ?? 0,
       isDefault: tab.default === true,
       groups: (tab.groups ?? [])
-        .map((group, index) => buildGroup(group, index, tab.id))
+        .map((group, index) => buildGroup(group, index, tab.id, collator))
         .sort(
           byOrderThen(
             (group) => group.order,
-            (group) => group.id
+            (group) => group.id,
+            collator
           )
         ),
       source: tab,
@@ -275,7 +297,8 @@ export function buildRibbonTabs(
     .sort(
       byOrderThen(
         (tab) => tab.order,
-        (tab) => tab.id
+        (tab) => tab.id,
+        collator
       )
     );
 }

@@ -106,6 +106,17 @@ ribbon.addEventListener('vsc-ribbon-command', async (event) => {
 HTML 中省略 `collapsed` 表示未配置，可恢复存储值。存储不可用（隐私模式、被禁用）
 时组件静默忽略，不影响交互。
 
+## 标题排序语言
+
+按钮、递归菜单与底部命令始终先按 `order` 排序，再按标题比较。
+使用 `sort-locale="sv"`（JavaScript 属性为 `sortLocale`）指定排序语言；
+未指定时继承组件或最近祖先的 `lang`，没有 `lang` 时使用浏览器默认语言。
+无效语言标记回退到浏览器默认语言。动态修改 `sortLocale` 或祖先、组件的 `lang`
+会重新排序并关闭旧菜单。标签与分组同 `order` 时继续按 id 排序，使用相同语言规则。
+
+例如瑞典语 `sv` 将 `Zulu`、`Åland`、`Örebro` 按此顺序排列；英文 `en`
+则排列为 `Åland`、`Örebro`、`Zulu`。排序语言不会自动翻译标题，业务文案仍由宿主提供。
+
 ## 主题与图标
 
 组件使用 `--vscode-*` 主题变量并提供回退值；在 VS Code Webview 中由宿主提供。

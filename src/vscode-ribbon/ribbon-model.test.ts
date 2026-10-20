@@ -55,6 +55,50 @@ const tabs: VscRibbonTab[] = [
 ];
 
 describe('ribbon-model', () => {
+  for (const [locale, titles, expected] of [
+    ['zh-CN', ['张', '波', '阿'], ['阿', '波', '张']],
+    ['en', ['Zulu', 'Åland', 'Örebro'], ['Åland', 'Örebro', 'Zulu']],
+    ['sv', ['Zulu', 'Åland', 'Örebro'], ['Zulu', 'Åland', 'Örebro']],
+  ] as const) {
+    it(`${locale} 排序覆盖按钮、递归菜单与底部命令且 order 优先`, () => {
+      const items = [
+        {title: '优先', command: 'first', order: -1},
+        ...titles.map((title) => ({title, command: title})),
+      ];
+      const input: VscRibbonTab[] = [
+        {
+          id: 'tab',
+          title: '标签',
+          groups: [
+            {
+              title: '组',
+              items: [
+                {title: '菜单', order: -2, menu: {items, footer: items}},
+                ...items,
+              ],
+            },
+          ],
+        },
+      ];
+      const built = buildRibbonTabs(input, locale);
+      const group = built[0].groups[0];
+      expect(group.items.map(({title}) => title)).toEqual([
+        '菜单',
+        '优先',
+        ...expected,
+      ]);
+      expect(group.items[0].menu!.items.map(({title}) => title)).toEqual([
+        '优先',
+        ...expected,
+      ]);
+      expect(group.items[0].menu!.footer.map(({title}) => title)).toEqual([
+        '优先',
+        ...expected,
+      ]);
+      expect(items.slice(1).map(({title}) => title)).toEqual(titles);
+    });
+  }
+
   it('按 order 排序标签、分组和按钮并补齐默认值', () => {
     const built = buildRibbonTabs(tabs);
     expect(built.map((tab) => tab.id)).toEqual(['first', 'second']);
