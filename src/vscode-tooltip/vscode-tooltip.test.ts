@@ -142,6 +142,34 @@ describe('vscode-tooltip', () => {
     }
   });
 
+  it('Escape 后保持聚焦，普通更新不重开，重新开启焦点触发时恢复提示', async () => {
+    const el = await setup();
+    const target = el.querySelector('button')!;
+    target.focus();
+    await el.updateComplete;
+    expect(panel(el).matches(':popover-open')).to.equal(true);
+    await sendKeys({press: 'Escape'});
+    await el.updateComplete;
+    expect(panel(el).matches(':popover-open')).to.equal(false);
+    expect(document.activeElement).to.equal(target);
+    el.text = '更新后的说明';
+    el.placement = 'top';
+    await el.updateComplete;
+    expect(panel(el).matches(':popover-open')).to.equal(false);
+    el.showOnFocus = false;
+    await el.updateComplete;
+    expect(panel(el).matches(':popover-open')).to.equal(false);
+    el.showOnFocus = true;
+    await el.updateComplete;
+    expect(document.activeElement).to.equal(target);
+    expect(panel(el).matches(':popover-open')).to.equal(true);
+    await sendKeys({press: 'Escape'});
+    await el.updateComplete;
+    el.requestUpdate();
+    await el.updateComplete;
+    expect(panel(el).matches(':popover-open')).to.equal(false);
+  });
+
   it('默认保留中文面板名称和固定按钮文案', async () => {
     const el = await setup();
     const pin = panel(el).querySelector('button')!;

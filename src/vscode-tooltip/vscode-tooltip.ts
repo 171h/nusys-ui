@@ -575,6 +575,7 @@ export class VscodeTooltip extends VscElement {
     }
     if (changes.has('showOnFocus') && this._focused) {
       if (this.showOnFocus) {
+        this._dismissed = false;
         this._show();
       } else if (!this._hasInteraction()) {
         this._open = false;
