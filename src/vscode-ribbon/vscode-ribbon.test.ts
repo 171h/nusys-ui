@@ -144,6 +144,83 @@ afterEach(() => {
 });
 
 describe('vscode-ribbon', () => {
+  for (const layout of ['menu', 'panel', 'gallery'] as const) {
+    for (const contentOnly of [false, true]) {
+      it(`flyout 保留 ${layout} 布局、自定义内容和底部命令（仅附加内容：${contentOnly}）`, async () => {
+        const tabs = basicTabs();
+        tabs[0].groups![0].items = [
+          {
+            type: 'dropdown',
+            title: '根菜单',
+            menu: {
+              items: [
+                {
+                  title: '子菜单',
+                  submenuMode: 'flyout',
+                  menu: {
+                    layout,
+                    title: '面板标题',
+                    columns: 2,
+                    items: contentOnly ? [] : [{command: 'run', title: '运行'}],
+                    custom: {html: '<p>自定义内容</p>'},
+                    footer: [{command: 'footer', title: '底部命令'}],
+                  },
+                },
+              ],
+            },
+          },
+        ];
+        const el = await createRibbon(tabs);
+        await openMenu(el, '根菜单');
+        shadowButton(el, '子菜单')!.click();
+        await el.updateComplete;
+        await aTimeout(48);
+        const flyout = el.shadowRoot!.querySelector<HTMLElement>(
+          '.ribbon-flyout-popover'
+        )!;
+        expect(flyout.getAttribute('role')).to.equal(
+          layout === 'panel' ? 'dialog' : 'menu'
+        );
+        expect(
+          flyout.querySelector('iframe')?.getAttribute('sandbox')
+        ).to.equal('');
+        expect(flyout.querySelector('iframe')?.title).to.equal(
+          el.customContentLabel
+        );
+        if (!contentOnly)
+          expect(
+            flyout.querySelector(
+              layout === 'panel'
+                ? '.ribbon-panel-grid'
+                : layout === 'gallery'
+                  ? '.ribbon-gallery'
+                  : '.ribbon-menu-items'
+            )
+          ).to.not.equal(null);
+        if (layout === 'panel')
+          expect(flyout.getAttribute('aria-label')).to.equal('面板标题');
+        flyout.dispatchEvent(
+          new KeyboardEvent('keydown', {
+            key: 'End',
+            bubbles: true,
+            composed: true,
+          })
+        );
+        const footer = flyout.querySelector<HTMLButtonElement>(
+          '.ribbon-panel-footer-item'
+        )!;
+        expect(footer).to.not.equal(null);
+        expect(el.shadowRoot!.activeElement).to.equal(footer);
+        footer.click();
+        await el.updateComplete;
+        expect(el.dataset.lastCommand).to.equal('footer');
+        expect(el.shadowRoot!.querySelector('.ribbon-menu-popover')).to.equal(
+          null
+        );
+      });
+    }
+  }
+
   it('切换同级 flyout 时裁掉旧分支并保留多层返回路径', async () => {
     const tabs = basicTabs();
     tabs[0].groups![0].items = [

@@ -1045,7 +1045,9 @@ export class VscodeRibbon extends VscElement {
   private _modelByKey(key: string): RibbonItemModel | undefined {
     const menus = [...this._menuStack, ...this._flyouts.map(({menu}) => menu)];
     for (const menu of menus) {
-      const item = menu.items.find((entry) => entry.key === key);
+      const item = [...menu.items, ...menu.footer].find(
+        (entry) => entry.key === key
+      );
       if (item) {
         return item;
       }
@@ -1710,7 +1712,7 @@ export class VscodeRibbon extends VscElement {
           role="menuitem"
           title=${`${this.openMenuLabel}：${item.title}`}
           aria-label=${`${this.openMenuLabel}：${item.title}`}
-          aria-haspopup="menu"
+          aria-haspopup=${item.menu?.layout === 'panel' ? 'dialog' : 'menu'}
           data-item-key=${item.key}
           ?disabled=${item.disabled}
           @click=${(event: Event) =>
@@ -1731,7 +1733,7 @@ export class VscodeRibbon extends VscElement {
       role="menuitem"
       title=${title}
       aria-label=${item.title}
-      aria-haspopup=${ifDefined(hasMenu ? 'menu' : undefined)}
+      aria-haspopup=${ifDefined(hasMenu ? (item.menu?.layout === 'panel' ? 'dialog' : 'menu') : undefined)}
       data-item-key=${item.key}
       ?disabled=${item.disabled}
       @click=${(event: Event) => {
@@ -1785,7 +1787,7 @@ export class VscodeRibbon extends VscElement {
       part="panel-item"
       title=${this._buttonTitle(item)}
       aria-label=${item.title}
-      aria-haspopup=${ifDefined(hasMenu ? 'menu' : undefined)}
+      aria-haspopup=${ifDefined(hasMenu ? (item.menu?.layout === 'panel' ? 'dialog' : 'menu') : undefined)}
       data-item-key=${item.key}
       ?disabled=${item.disabled}
       @click=${(event: Event) => {
@@ -1888,10 +1890,16 @@ export class VscodeRibbon extends VscElement {
     return html`${this._flyouts.map(
       (flyout) =>
         html`<div
-          class="ribbon-popover ribbon-menu-popover ribbon-flyout-popover"
+          class=${classMap({
+            'ribbon-popover': true,
+            'ribbon-menu-popover': true,
+            'ribbon-flyout-popover': true,
+            'is-panel': flyout.menu.layout === 'panel',
+            'is-gallery': flyout.menu.layout === 'gallery',
+          })}
           part="flyout"
-          role="menu"
-          aria-label=${flyout.item.title}
+          role=${flyout.menu.layout === 'panel' ? 'dialog' : 'menu'}
+          aria-label=${flyout.menu.title ?? flyout.item.title}
           .style=${stylePropertyMap({
             left: `${flyout.position?.left ?? 0}px`,
             top: `${flyout.position?.top ?? 0}px`,
@@ -1901,9 +1909,9 @@ export class VscodeRibbon extends VscElement {
           @keydown=${this._onMenuKeyDown}
           @focusout=${this._onMenuFocusOut}
         >
-          <div class="ribbon-menu-items" part="menu-items" role="none">
-            ${flyout.menu.items.map((item) => this._renderMenuEntry(item))}
-          </div>
+          ${this._renderMenuContent(flyout.menu, flyout.item.title, () =>
+            this._closeFlyoutsFrom(this._flyouts.indexOf(flyout), true)
+          )}
         </div>`
     )}`;
   }
@@ -1953,62 +1961,70 @@ export class VscodeRibbon extends VscElement {
             </button>`
           : nothing
       }
-      ${
-        isPanel
-          ? html`<div class="ribbon-panel-header" part="panel-header">
-                <span class="ribbon-panel-title"
-                  >${menu.title ?? state.item.title}</span
-                >
-                <button
-                  type="button"
-                  class="ribbon-panel-close"
-                  part="panel-close"
-                  title=${this.closePanelLabel}
-                  aria-label=${this.closePanelLabel}
-                  @click=${() => this._closeMenu(true)}
-                >
-                  <span class="codicon codicon-close" aria-hidden="true"></span>
-                </button>
-              </div>
-              <div class="ribbon-panel-body" part="panel-body">
-                ${
-                  menu.items.length > 0
-                    ? html`<div
-                        class="ribbon-panel-grid"
-                        part="panel-grid"
-                        .style=${stylePropertyMap({
-                          '--vsc-ribbon-panel-columns': String(menu.columns),
-                        })}
-                      >
-                        ${menu.items
-                          .filter((item) => !item.separator)
-                          .map((item) => this._renderPanelEntry(item))}
-                      </div>`
-                    : nothing
-                }
-                ${this._renderCustomContent(menu)}
-              </div>`
-          : isGallery
-            ? html`<div
-                  class="ribbon-gallery"
-                  part="gallery"
-                  role="none"
-                  .style=${stylePropertyMap({
-                    '--vsc-ribbon-gallery-columns': String(menu.columns),
-                  })}
-                >
-                  ${menu.items
-                    .filter((item) => !item.separator)
-                    .map((item) => this._renderGalleryEntry(item))}
-                </div>
-                ${this._renderCustomContent(menu)}`
-            : html`<div class="ribbon-menu-items" part="menu-items" role="none">
-                  ${menu.items.map((item) => this._renderMenuEntry(item))}
-                </div>
-                ${this._renderCustomContent(menu)}`
-      }
-      ${this._renderMenuFooter(menu)}
+      ${this._renderMenuContent(menu, state.item.title, () => this._closeMenu(true))}
     </div>`;
+  }
+
+  private _renderMenuContent(
+    menu: RibbonMenuModel,
+    title: string,
+    close: () => void
+  ): TemplateResult {
+    const isPanel = menu.layout === 'panel';
+    const isGallery = menu.layout === 'gallery';
+    return html` ${
+      isPanel
+        ? html`<div class="ribbon-panel-header" part="panel-header">
+              <span class="ribbon-panel-title">${menu.title ?? title}</span>
+              <button
+                type="button"
+                class="ribbon-panel-close"
+                part="panel-close"
+                title=${this.closePanelLabel}
+                aria-label=${this.closePanelLabel}
+                @click=${close}
+              >
+                <span class="codicon codicon-close" aria-hidden="true"></span>
+              </button>
+            </div>
+            <div class="ribbon-panel-body" part="panel-body">
+              ${
+                menu.items.length > 0
+                  ? html`<div
+                      class="ribbon-panel-grid"
+                      part="panel-grid"
+                      .style=${stylePropertyMap({
+                        '--vsc-ribbon-panel-columns': String(menu.columns),
+                      })}
+                    >
+                      ${menu.items
+                        .filter((item) => !item.separator)
+                        .map((item) => this._renderPanelEntry(item))}
+                    </div>`
+                  : nothing
+              }
+              ${this._renderCustomContent(menu)}
+            </div>`
+        : isGallery
+          ? html`<div
+                class="ribbon-gallery"
+                part="gallery"
+                role="none"
+                .style=${stylePropertyMap({
+                  '--vsc-ribbon-gallery-columns': String(menu.columns),
+                })}
+              >
+                ${menu.items
+                  .filter((item) => !item.separator)
+                  .map((item) => this._renderGalleryEntry(item))}
+              </div>
+              ${this._renderCustomContent(menu)}`
+          : html`<div class="ribbon-menu-items" part="menu-items" role="none">
+                ${menu.items.map((item) => this._renderMenuEntry(item))}
+              </div>
+              ${this._renderCustomContent(menu)}`
+    }
+    ${this._renderMenuFooter(menu)}`;
   }
 
   private _renderGalleryContent(item: RibbonItemModel): TemplateResult {
@@ -2059,7 +2075,7 @@ export class VscodeRibbon extends VscElement {
       role="menuitem"
       title=${this._buttonTitle(item)}
       aria-label=${item.title}
-      aria-haspopup=${ifDefined(hasMenu ? 'menu' : undefined)}
+      aria-haspopup=${ifDefined(hasMenu ? (item.menu?.layout === 'panel' ? 'dialog' : 'menu') : undefined)}
       data-item-key=${item.key}
       ?disabled=${item.disabled}
       @click=${(event: Event) => {
@@ -2082,7 +2098,7 @@ export class VscodeRibbon extends VscElement {
       part="gallery-tile"
       title=${this._buttonTitle(item)}
       aria-label=${item.title}
-      aria-haspopup=${ifDefined(hasMenu ? 'menu' : undefined)}
+      aria-haspopup=${ifDefined(hasMenu ? (item.menu?.layout === 'panel' ? 'dialog' : 'menu') : undefined)}
       ?disabled=${item.disabled}
       @click=${(event: Event) => {
         this._activateItem(item, event.currentTarget as HTMLElement, 'ribbon');
