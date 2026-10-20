@@ -143,6 +143,63 @@ afterEach(() => {
 });
 
 describe('vscode-ribbon', () => {
+  for (const type of ['dropdown', 'splitButton'] as const) {
+    for (const keyboard of [false, true]) {
+      it(`折叠分组中的 ${type} 通过${keyboard ? 'ArrowDown' : '点击'}打开菜单后保留锚点与 Escape 焦点`, async () => {
+        const tabs = basicTabs();
+        tabs[0].groups![0].items = [
+          {
+            type,
+            command: 'primary',
+            title: '菜单',
+            menu: {items: [{command: 'child', title: '子命令'}]},
+          },
+          {command: 'other', title: '其他'},
+        ];
+        const el = await createRibbon(tabs, 'width: 90px; margin: 40px');
+        await waitFor(
+          () => el.shadowRoot!.querySelector('.ribbon-group.folded') !== null
+        );
+        const groupTrigger = el.shadowRoot!.querySelector<HTMLButtonElement>(
+          '.ribbon-group.folded .ribbon-group-dropdown'
+        )!;
+        groupTrigger.click();
+        await el.updateComplete;
+        const trigger = el.shadowRoot!.querySelector<HTMLButtonElement>(
+          `.ribbon-group-popover ${type === 'splitButton' ? '.ribbon-split-trigger' : '.ribbon-item'}`
+        )!;
+        expect(trigger).to.not.equal(null);
+        if (keyboard) {
+          trigger.focus();
+          trigger.dispatchEvent(
+            new KeyboardEvent('keydown', {
+              key: 'ArrowDown',
+              bubbles: true,
+              composed: true,
+            })
+          );
+        } else trigger.click();
+        await el.updateComplete;
+        await aTimeout(48);
+        const menu = el.shadowRoot!.querySelector<HTMLElement>(
+          '.ribbon-menu-popover'
+        )!;
+        expect(el.shadowRoot!.querySelector('.ribbon-group-popover')).to.equal(
+          null
+        );
+        expect(menu.getBoundingClientRect().top).to.be.closeTo(
+          groupTrigger.getBoundingClientRect().bottom + 2,
+          1
+        );
+        document.dispatchEvent(
+          new KeyboardEvent('keydown', {key: 'Escape', bubbles: true})
+        );
+        await el.updateComplete;
+        expect(el.shadowRoot!.activeElement).to.equal(groupTrigger);
+      });
+    }
+  }
+
   it('对话框启动器支持默认、Codicon 与图片图标双向切换', async () => {
     const tabs = basicTabs();
     const group = tabs[0].groups![0];

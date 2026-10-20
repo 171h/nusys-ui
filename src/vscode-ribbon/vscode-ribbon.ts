@@ -907,6 +907,9 @@ export class VscodeRibbon extends VscElement {
     if (!item.menu) {
       return;
     }
+    if (this._groupEl?.contains(anchor) && this._openGroup) {
+      anchor = this._openGroup.anchor;
+    }
     this._closeGroup(false);
     this._menuStack = [item.menu];
     this._openMenu = {item, anchor};
