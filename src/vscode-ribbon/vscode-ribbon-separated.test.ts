@@ -69,7 +69,7 @@ afterEach(() => {
   }
 });
 
-async function setup() {
+async function setup(mode: ShadowRootMode = 'open') {
   const host = await fixture<HTMLDivElement>(
     html`<div>
       <div id="title" style="display:flex;width:460px;margin-left:70px">
@@ -79,7 +79,7 @@ async function setup() {
     </div>`
   );
   // 面板位于另一个影子根，验证不能跨根解析的 ID 不会作为 ARIA 关联输出。
-  const root = host.querySelector('#outlet')!.attachShadow({mode: 'open'});
+  const root = host.querySelector('#outlet')!.attachShadow({mode});
   const panel = document.createElement('vscode-ribbon-panel');
   root.append(panel);
   const ribbon = host.querySelector('vscode-ribbon')!;
@@ -173,6 +173,7 @@ describe('Ribbon 分离布局', () => {
     host.dispatchEvent(
       new PointerEvent('pointerdown', {bubbles: true, composed: true})
     );
+    await aTimeout(0);
     await ribbon.updateComplete;
     expect(content.hidden).toBe(true);
     ribbon.expand();
@@ -441,5 +442,24 @@ describe('Ribbon 分离布局', () => {
     } finally {
       localStorage.removeItem(storageKey);
     }
+  });
+  it('封闭影子根内的菜单点击不误判为外部，根内其他区域仍可关闭菜单', async () => {
+    const {ribbon, panel, root} = await setup('closed');
+    root.querySelector<HTMLButtonElement>('.ribbon-split-trigger')!.click();
+    await aTimeout(60);
+    const menu = root.querySelector<HTMLElement>('.ribbon-menu-popover')!;
+    menu.dispatchEvent(
+      new PointerEvent('pointerdown', {bubbles: true, composed: true})
+    );
+    await aTimeout(0);
+    expect(root.querySelector('.ribbon-menu-popover')).toBe(menu);
+    const sibling = document.createElement('div');
+    panel.parentNode!.appendChild(sibling);
+    sibling.dispatchEvent(
+      new PointerEvent('pointerdown', {bubbles: true, composed: true})
+    );
+    await aTimeout(0);
+    await ribbon.updateComplete;
+    expect(root.querySelector('.ribbon-menu-popover')).toBeNull();
   });
 });

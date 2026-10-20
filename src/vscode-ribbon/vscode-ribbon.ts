@@ -274,8 +274,14 @@ export class VscodeRibbon extends VscElement {
       throw new Error('Ribbon 与面板必须位于同一个文档。');
     }
     value?.claim(this, this._onPanelConnection);
+    this._panel?.removeEventListener(
+      'pointerdown',
+      this._onSurfacePointerDown,
+      true
+    );
     this._panel?.release(this);
     this._panel = value;
+    value?.addEventListener('pointerdown', this._onSurfacePointerDown, true);
     this._onPanelConnection();
   }
 
@@ -361,6 +367,7 @@ export class VscodeRibbon extends VscElement {
       attributes: true,
       attributeFilter: ['lang'],
     });
+    this.addEventListener('pointerdown', this._onSurfacePointerDown, true);
     document.addEventListener('pointerdown', this._onDocumentPointerDown, true);
     document.addEventListener('keydown', this._onDocumentKeyDown);
     window.addEventListener('resize', this._onWindowResize);
@@ -370,6 +377,7 @@ export class VscodeRibbon extends VscElement {
   }
 
   override disconnectedCallback(): void {
+    this.removeEventListener('pointerdown', this._onSurfacePointerDown, true);
     document.removeEventListener(
       'pointerdown',
       this._onDocumentPointerDown,
@@ -1641,8 +1649,27 @@ export class VscodeRibbon extends VscElement {
     this._closeGroup(false);
   }
 
+  private _surfacePointerPaths = new WeakMap<Event, EventTarget[]>();
+
+  private _onSurfacePointerDown = (event: Event): void => {
+    this._surfacePointerPaths.set(event, event.composedPath());
+  };
+
   private _onDocumentPointerDown = (event: Event): void => {
     const path = event.composedPath();
+    if (this._separated) {
+      // 等待容器内捕获监听器记录完整路径，避免封闭影子根的事件重定向误关菜单。
+      queueMicrotask(() => {
+        if (this.isConnected) {
+          this._handlePointerDown(this._surfacePointerPaths.get(event) ?? path);
+        }
+      });
+    } else {
+      this._handlePointerDown(path);
+    }
+  };
+
+  private _handlePointerDown(path: EventTarget[]): void {
     if (this._openMenu) {
       if (!this._isInsideMenu((path[0] as Node | undefined) ?? null)) {
         this._closeMenu(false);
@@ -1663,7 +1690,7 @@ export class VscodeRibbon extends VscElement {
     ) {
       this._overlayOpen = false;
     }
-  };
+  }
 
   private _onDocumentKeyDown = (event: KeyboardEvent): void => {
     if (event.key !== 'Escape') {
