@@ -6,7 +6,12 @@ import {css} from 'lit';
 /**
  * Ribbon 的可选独立内容容器。通过 `ribbon.panel = panel` 关联；
  * 配置与事件均由 Ribbon 管理。面板断开后 Ribbon 暂时恢复一体布局，重连自动恢复。
- * 面板内沿用 Ribbon 内容区的 CSS parts，主题变量从面板所在容器继承。
+ * 面板内沿用 Ribbon 内容区的 CSS parts。VS Code 主题变量从面板所在容器继承；
+ * 内容区尺寸变量在面板的 `:host` 中声明了默认值，需直接设置在面板元素上。
+ *
+ * @cssprop [--vsc-ribbon-items-height=74px] - 面板内容区的按钮高度。
+ * @cssprop [--vsc-ribbon-icon-size=calc(var(--vsc-ribbon-items-height) / 2)] - 全高按钮图标尺寸。
+ * @cssprop [--vsc-ribbon-compact-icon-size=22px] - 半高按钮图标尺寸。
  *
  * @csspart content - 功能面板的 content 部件。
  * @csspart custom-content - 功能面板的 custom-content 部件。

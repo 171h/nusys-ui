@@ -395,6 +395,18 @@ ribbon.panel = panel;
 | 解除与重新关联 | 设置 `null` 或换成其他面板会清空旧容器、关闭弹层并重新测量；解除后面板可以交给其他 Ribbon。                                                                                                                                  |
 | 样式           | 标签栏的 slots 和 parts 保留在 Ribbon；内容、分组、菜单等同名 parts 位于面板上，例如 `vscode-ribbon-panel::part(group)`。VS Code CSS 变量从面板所在容器继承，应在共同祖先配置主题；显式图标主题仍由 Ribbon 的 `theme` 决定。 |
 
+面板复用了 Ribbon 的 `--vsc-ribbon-items-height`、`--vsc-ribbon-icon-size` 和
+`--vsc-ribbon-compact-icon-size` 尺寸变量，但这些变量在面板的 `:host` 中声明了
+默认值，因此不能只设置在 Ribbon 或共同祖先上，需要直接覆盖面板元素：
+
+```css
+vscode-ribbon-panel {
+  --vsc-ribbon-items-height: 60px;
+  --vsc-ribbon-icon-size: 24px;
+  --vsc-ribbon-compact-icon-size: 18px;
+}
+```
+
 标签保留 `tablist` / `tab` 和单个选中项，面板保留 `tabpanel` 并以当前标签标题
 独立命名。普通一体布局保留原有 `aria-controls` / `aria-labelledby`；分离布局
 不输出跨影子根无法解析的 ID 引用，使用独立可访问名称和实际键盘路径。
