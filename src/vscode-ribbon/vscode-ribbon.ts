@@ -2277,6 +2277,57 @@ export class VscodeRibbon extends VscElement {
     });
   }
 
+  /**
+   * 渲染功能组主体：按钮区、分组标题与对话框启动器。
+   * 功能区与折叠分组的溢出弹层共用同一套标记与样式，避免出现额外的分隔线。
+   */
+  private _renderGroupBody(
+    group: RibbonGroupModel,
+    variant: 'ribbon' | 'popover'
+  ): TemplateResult {
+    if (group.layout === 'gallery') {
+      return html`
+        ${
+          variant === 'ribbon'
+            ? this._renderGroupGalleryStrip(group)
+            : html`<div
+                class="ribbon-gallery ribbon-gallery-popover"
+                part="gallery"
+                .style=${stylePropertyMap({
+                  '--vsc-ribbon-gallery-columns': '4',
+                })}
+              >
+                ${group.items.map((item) =>
+                  item.heading
+                    ? html`<div
+                        class="ribbon-gallery-heading"
+                        part="gallery-heading"
+                      >
+                        ${item.title}
+                      </div>`
+                    : this._renderGalleryTile(item, 'group')
+                )}
+              </div>`
+        }
+        <div class="ribbon-group-title" part="group-title">${group.title}</div>
+        ${this._renderDialogLauncher(group, variant === 'popover')}
+      `;
+    }
+    return html`
+      <div class="ribbon-items" part="items">
+        ${group.items.map((item) =>
+          this._renderMainItem(
+            item,
+            variant === 'ribbon' ? 'ribbon' : 'group',
+            variant === 'popover'
+          )
+        )}
+      </div>
+      <div class="ribbon-group-title" part="group-title">${group.title}</div>
+      ${this._renderDialogLauncher(group, variant === 'popover')}
+    `;
+  }
+
   private _renderGroupPopover(): TemplateResult | typeof nothing {
     const state = this._openGroup;
     if (!state) {
@@ -2300,38 +2351,7 @@ export class VscodeRibbon extends VscElement {
       })}
       @focusout=${this._onGroupFocusOut}
     >
-      ${
-        group.layout === 'gallery'
-          ? html`<div
-              class="ribbon-gallery ribbon-gallery-popover"
-              part="gallery"
-              .style=${stylePropertyMap({
-                '--vsc-ribbon-gallery-columns': '4',
-              })}
-            >
-              ${group.items.map((item) =>
-                item.heading
-                  ? html`<div
-                      class="ribbon-gallery-heading"
-                      part="gallery-heading"
-                    >
-                      ${item.title}
-                    </div>`
-                  : this._renderGalleryTile(item, 'group')
-              )}
-            </div>`
-          : html`<div class="ribbon-items" part="items">
-              ${group.items.map((item) =>
-                this._renderMainItem(item, 'group', true)
-              )}
-            </div>`
-      }
-      <div class="ribbon-group-popover-footer">
-        <span class="ribbon-group-title" part="group-title"
-          >${group.title}</span
-        >
-        ${this._renderDialogLauncher(group, true)}
-      </div>
+      ${this._renderGroupBody(group, 'popover')}
     </div>`;
   }
 
@@ -2382,9 +2402,7 @@ export class VscodeRibbon extends VscElement {
         data-group=${group.id}
       >
         ${this._renderGroupTrigger(group, open, icon)}
-        ${this._renderGroupGalleryStrip(group)}
-        <div class="ribbon-group-title" part="group-title">${group.title}</div>
-        ${this._renderDialogLauncher(group)}
+        ${this._renderGroupBody(group, 'ribbon')}
       </div>`;
     }
     return html`<div
@@ -2395,11 +2413,7 @@ export class VscodeRibbon extends VscElement {
       data-group=${group.id}
     >
       ${this._renderGroupTrigger(group, open, icon)}
-      <div class="ribbon-items" part="items">
-        ${group.items.map((item) => this._renderMainItem(item, 'ribbon'))}
-      </div>
-      <div class="ribbon-group-title" part="group-title">${group.title}</div>
-      ${this._renderDialogLauncher(group)}
+      ${this._renderGroupBody(group, 'ribbon')}
     </div>`;
   }
 

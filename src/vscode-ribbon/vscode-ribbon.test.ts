@@ -1882,25 +1882,35 @@ describe('vscode-ribbon', () => {
     expect(
       popoverLauncher.querySelector('.ribbon-group-dialog-icon')?.className
     ).to.not.contain('is-rotated');
-    // 弹层底部保留与功能区一致的分组标题与启动器。
-    const popoverFooter = popoverLauncher.closest<HTMLElement>(
-      '.ribbon-group-popover-footer'
+    // 弹层直接复用功能区的分组标题与启动器标记，不额外包裹带分隔线的页脚。
+    const popover = el.shadowRoot!.querySelector<HTMLElement>(
+      '.ribbon-group-popover'
     )!;
-    expect(popoverFooter).to.not.equal(null);
-    const popoverTitle = popoverFooter.querySelector<HTMLElement>(
+    expect(popover.querySelector('.ribbon-group-popover-footer')).to.equal(
+      null
+    );
+    expect(popoverLauncher.parentElement).to.equal(popover);
+    const popoverTitle = popover.querySelector<HTMLElement>(
       '.ribbon-group-title'
     )!;
     const inlineTitle = el.shadowRoot!.querySelector<HTMLElement>(
-      '.ribbon-group-title'
+      '.ribbon-group .ribbon-group-title'
     )!;
     expect(popoverTitle.textContent?.trim()).to.equal('分组');
     expect(popoverTitle.getClientRects().length).to.be.greaterThan(0);
-    expect(getComputedStyle(popoverTitle).fontSize).to.equal(
-      getComputedStyle(inlineTitle).fontSize
-    );
-    expect(getComputedStyle(popoverTitle).color).to.equal(
-      getComputedStyle(inlineTitle).color
-    );
+    for (const property of [
+      'fontSize',
+      'fontWeight',
+      'lineHeight',
+      'color',
+      'borderTopWidth',
+      'boxShadow',
+    ] as const) {
+      expect(getComputedStyle(popoverTitle)[property]).to.equal(
+        getComputedStyle(inlineTitle)[property]
+      );
+    }
+    expect(getComputedStyle(popoverTitle).borderTopWidth).to.equal('0px');
     expect(
       getComputedStyle(
         popoverLauncher.querySelector('.ribbon-group-dialog-icon')!
@@ -1956,11 +1966,15 @@ describe('vscode-ribbon', () => {
     expect(popover.querySelector('.ribbon-group-popover-dialog')).to.equal(
       null
     );
+    expect(popover.querySelector('.ribbon-group-popover-footer')).to.equal(
+      null
+    );
     const title = popover.querySelector<HTMLElement>(
-      '.ribbon-group-popover-footer .ribbon-group-title'
+      '.ribbon-group-popover .ribbon-group-title'
     )!;
     expect(title.textContent?.trim()).to.equal('布局');
     expect(getComputedStyle(title).fontSize).to.equal('10px');
+    expect(getComputedStyle(title).borderTopWidth).to.equal('0px');
   });
 
   it('可持久化折叠状态与活动标签', async () => {

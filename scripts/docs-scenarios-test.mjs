@@ -675,9 +675,7 @@ export async function testScenarios(page, url) {
   const filePopover = await frame.evaluate(() => {
     const root = document.querySelector('#ribbon-menus').shadowRoot;
     const popover = root.querySelector('.ribbon-group-popover');
-    const title = popover.querySelector(
-      '.ribbon-group-popover-footer .ribbon-group-title'
-    );
+    const title = popover.querySelector('.ribbon-group-title');
     const launcher = popover.querySelector('.ribbon-group-popover-dialog');
     const inlineTitle = root.querySelector(
       '.ribbon-group[data-group="file"] .ribbon-group-title'
@@ -686,10 +684,14 @@ export async function testScenarios(page, url) {
       label: popover.getAttribute('aria-label'),
       title: title?.textContent?.trim() ?? '',
       titleFontSize: getComputedStyle(title).fontSize,
+      titleColor: getComputedStyle(title).color,
+      titleBorderTopWidth: getComputedStyle(title).borderTopWidth,
+      titleBoxShadow: getComputedStyle(title).boxShadow,
       inlineTitleFontSize: getComputedStyle(inlineTitle).fontSize,
+      inlineTitleColor: getComputedStyle(inlineTitle).color,
       launcherLabel: launcher?.getAttribute('aria-label') ?? null,
-      launcherInFooter:
-        launcher?.closest('.ribbon-group-popover-footer') !== null,
+      launcherInPopover: launcher?.parentElement === popover,
+      hasFooter: popover.querySelector('.ribbon-group-popover-footer') !== null,
       launcherIconFontSize: getComputedStyle(
         launcher.querySelector('.ribbon-group-dialog-icon')
       ).fontSize,
@@ -698,8 +700,12 @@ export async function testScenarios(page, url) {
   assert.equal(filePopover.label, '文件');
   assert.equal(filePopover.title, '文件');
   assert.equal(filePopover.titleFontSize, filePopover.inlineTitleFontSize);
+  assert.equal(filePopover.titleColor, filePopover.inlineTitleColor);
+  assert.equal(filePopover.titleBorderTopWidth, '0px');
+  assert.equal(filePopover.titleBoxShadow, 'none');
+  assert.equal(filePopover.hasFooter, false, '弹层不应额外包裹页脚分隔线');
   assert.equal(filePopover.launcherLabel, '打开文件设置');
-  assert.equal(filePopover.launcherInFooter, true);
+  assert.equal(filePopover.launcherInPopover, true);
   assert.equal(filePopover.launcherIconFontSize, '12px');
   await frame.evaluate(() => {
     document.dispatchEvent(
@@ -856,17 +862,17 @@ export async function testScenarios(page, url) {
   const overflowPopover = await frame.evaluate(() => {
     const root = document.querySelector('#ribbon-overflow').shadowRoot;
     const popover = root.querySelector('.ribbon-group-popover');
-    const footerTitle = popover.querySelector(
-      '.ribbon-group-popover-footer .ribbon-group-title'
-    );
+    const title = popover.querySelector('.ribbon-group-title');
     const inlineTitle = root.querySelector(
       '.ribbon-group[data-group="view"] .ribbon-group-title'
     );
     return {
       label: popover.getAttribute('aria-label'),
-      footerTitle: footerTitle?.textContent?.trim() ?? '',
-      footerTitleFontSize: getComputedStyle(footerTitle).fontSize,
+      title: title?.textContent?.trim() ?? '',
+      titleFontSize: getComputedStyle(title).fontSize,
+      titleBorderTopWidth: getComputedStyle(title).borderTopWidth,
       inlineTitleFontSize: getComputedStyle(inlineTitle).fontSize,
+      hasFooter: popover.querySelector('.ribbon-group-popover-footer') !== null,
       hasDialogLauncher:
         popover.querySelector('.ribbon-group-popover-dialog') !== null,
       items: [...popover.querySelectorAll('.ribbon-item')].map((item) => ({
@@ -877,12 +883,14 @@ export async function testScenarios(page, url) {
     };
   });
   assert.equal(overflowPopover.label, '视图');
-  assert.equal(overflowPopover.footerTitle, '视图');
+  assert.equal(overflowPopover.title, '视图');
   assert.equal(
-    overflowPopover.footerTitleFontSize,
+    overflowPopover.titleFontSize,
     overflowPopover.inlineTitleFontSize,
     '弹层分组标题应与功能区分组标题样式一致'
   );
+  assert.equal(overflowPopover.titleBorderTopWidth, '0px');
+  assert.equal(overflowPopover.hasFooter, false);
   assert.equal(
     overflowPopover.hasDialogLauncher,
     false,
