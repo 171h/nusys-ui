@@ -579,6 +579,23 @@ describe('vscode-ribbon', () => {
     ).to.contain('开始');
   });
 
+  it('同步默认活动标签且点击当前标签不重复派发选择事件', async () => {
+    const el = await createRibbon();
+    expect(el.activeTabId).to.equal('home');
+    expect(el.getAttribute('active-tab')).to.equal('home');
+    let selected = 0;
+    el.addEventListener('vsc-ribbon-select', () => {
+      selected++;
+    });
+    const home = Array.from(
+      el.shadowRoot!.querySelectorAll<HTMLButtonElement>('[role="tab"]')
+    ).find((tab) => tab.textContent?.trim() === '开始')!;
+    home.click();
+    await el.updateComplete;
+    expect(selected).to.equal(0);
+    expect(el.activeTabId).to.equal('home');
+  });
+
   it('点击标签切换并派发选择事件', async () => {
     const el = await createRibbon();
     let selected = '';

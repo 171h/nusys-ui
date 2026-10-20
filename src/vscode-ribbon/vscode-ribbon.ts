@@ -335,6 +335,7 @@ export class VscodeRibbon extends VscElement {
           this.closest('[lang]')?.getAttribute('lang') ||
           undefined
       );
+      this._syncActiveTab();
       this._resetResponsiveState();
       this._restored = this._storedState === null;
       this._scheduleLayout();
@@ -371,6 +372,18 @@ export class VscodeRibbon extends VscElement {
       this._models.find((tab) => tab.isDefault) ??
       this._models[0]
     );
+  }
+
+  /** 将默认或首个标签同步到内部状态，不视为调用方显式配置。 */
+  private _syncActiveTab(): void {
+    const active = this._activeTab;
+    if (!active || this._activeTabId === active.id) {
+      return;
+    }
+    const restoring = this._restoringState;
+    this._restoringState = true;
+    this.activeTabId = active.id;
+    this._restoringState = restoring;
   }
 
   private _readStoredState(): StoredRibbonState | null {
