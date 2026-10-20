@@ -1535,6 +1535,7 @@ export class VscodeRibbon extends VscElement {
     const level = this._itemLevel(item, original);
     const layout = resolveRibbonItemLayout(level.size, level.style);
     const iconOnly = layout === 'icon-only';
+    const verticalSplit = layout === 'vertical';
     const hasMenu = item.menu !== null;
     const isSplit = item.type === 'splitButton' && hasMenu;
     const isDropdown = hasMenu && !isSplit;
@@ -1580,7 +1581,14 @@ export class VscodeRibbon extends VscElement {
             )}
         >
           ${this._renderIcon(item.icon)}
-          ${this._renderLabel(item, {iconOnly, lines: level.size === 'third' ? 1 : 2})}
+          ${
+            verticalSplit
+              ? nothing
+              : this._renderLabel(item, {
+                  iconOnly,
+                  lines: level.size === 'third' ? 1 : 2,
+                })
+          }
         </button>
         <button
           type="button"
@@ -1599,10 +1607,14 @@ export class VscodeRibbon extends VscElement {
               event.currentTarget as HTMLElement
             )}
         >
-          <span
-            class="codicon codicon-chevron-down ribbon-chevron"
-            aria-hidden="true"
-          ></span>
+          ${
+            verticalSplit
+              ? this._renderLabel(item, {lines: 1, chevron: true})
+              : html`<span
+                  class="codicon codicon-chevron-down ribbon-chevron"
+                  aria-hidden="true"
+                ></span>`
+          }
         </button>
       </div>`;
     }

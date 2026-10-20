@@ -493,7 +493,7 @@ const styles: CSSResultGroup = [
       display: flex;
       flex-direction: column;
       justify-content: flex-start;
-      min-width: 68px;
+      min-width: 0;
       max-width: var(--vsc-ribbon-items-height);
       border-radius: 2px;
       overflow: hidden;
@@ -571,6 +571,45 @@ const styles: CSSResultGroup = [
       padding: 0 2px;
       border-top: 0;
       border-left: 1px solid transparent;
+    }
+
+    /* Office 风格垂直分割按钮：上半部分只放图标，下半部分是“标题 + 下拉箭头”。 */
+    .ribbon-split.ribbon-item-vertical {
+      width: max-content;
+      min-width: 0;
+    }
+
+    .ribbon-split.ribbon-item-vertical .ribbon-item-primary {
+      flex: 1 1 0;
+      flex-direction: row;
+      align-items: center;
+      justify-content: center;
+      min-height: 0;
+      padding: 2px 2px 0;
+    }
+
+    .ribbon-split.ribbon-item-vertical .ribbon-split-trigger {
+      flex: 1 1 0;
+      min-height: 0;
+      padding: 0 3px;
+    }
+
+    .ribbon-split.ribbon-item-vertical
+      .ribbon-split-trigger
+      .ribbon-label.has-chevron {
+      flex-direction: row;
+      align-items: center;
+      justify-content: center;
+      width: auto;
+      gap: 2px;
+    }
+
+    .ribbon-split.ribbon-item-vertical
+      .ribbon-split-trigger
+      .ribbon-label-text {
+      -webkit-line-clamp: 1;
+      overflow-wrap: normal;
+      white-space: nowrap;
     }
 
     /* 悬停任一区域时，组合按钮外边框与分格线一起高亮。 */

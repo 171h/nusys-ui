@@ -840,6 +840,19 @@ describe('vscode-ribbon', () => {
     expect(transparent(getComputedStyle(trigger).backgroundColor)).to.equal(
       true
     );
+    // Office 风格：上半部分只显示图标，下半部分合并标题与下拉箭头。
+    expect(primary.querySelector('.ribbon-icon')).to.not.equal(null);
+    expect(primary.querySelector('.ribbon-label')).to.equal(null);
+    expect(trigger.querySelector('.ribbon-label-text')?.textContent).to.equal(
+      '保存'
+    );
+    expect(trigger.querySelector('.ribbon-chevron')).to.not.equal(null);
+    const primaryRect = primary.getBoundingClientRect();
+    const triggerRect = trigger.getBoundingClientRect();
+    const splitRect = split.getBoundingClientRect();
+    expect(Math.abs(primaryRect.height - triggerRect.height)).to.be.at.most(2);
+    expect(splitRect.width).to.be.lessThan(64);
+    expect(splitRect.width).to.be.greaterThan(30);
     primary.click();
     await el.updateComplete;
     expect(command).to.equal('save');
