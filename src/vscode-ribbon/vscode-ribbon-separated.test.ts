@@ -320,6 +320,11 @@ describe('Ribbon 分离布局', () => {
     await second.updateComplete;
     second.panel = null;
     expect(ribbon.shadowRoot!.querySelector('.ribbon-content')).not.toBeNull();
+    expect(
+      ribbon
+        .shadowRoot!.querySelector('.ribbon-content')!
+        .hasAttribute('tabindex')
+    ).toBe(false);
   });
   for (const layout of ['menu', 'panel', 'gallery'] as const) {
     it(`分离面板中的 ${layout} 保留自定义内容、底部命令及关闭焦点`, async () => {

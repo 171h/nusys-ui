@@ -873,7 +873,7 @@ export class VscodeRibbon extends VscElement {
     ) {
       return;
     }
-    if (event.key === 'ArrowDown') {
+    if (event.key === 'ArrowDown' && this._separated) {
       event.preventDefault();
       if (this.collapsed) {
         this._overlayOpen = true;
@@ -2633,7 +2633,7 @@ export class VscodeRibbon extends VscElement {
         part="content"
         id=${this._panelId}
         role="tabpanel"
-        tabindex="0"
+        tabindex=${ifDefined(this._separated ? '0' : undefined)}
         @keydown=${(event: KeyboardEvent) => {
           if (event.key === 'ArrowUp' && event.target === event.currentTarget) {
             event.preventDefault();
