@@ -877,6 +877,7 @@ export class VscodeRibbon extends VscElement {
       event.preventDefault();
       if (this.collapsed) {
         this._overlayOpen = true;
+        this._scheduleLayout();
       }
       void this.updateComplete.then(async () => {
         await this._panel?.updateComplete;

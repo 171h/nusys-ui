@@ -248,6 +248,49 @@ describe('Ribbon 分离布局', () => {
     expect(ribbon.clientWidth).toBe(110);
   });
 
+  it('折叠状态下按 ↓ 打开覆盖层时按当前面板宽度重新测量', async () => {
+    const {host, ribbon, root} = await setup();
+    ribbon.tabs = [
+      {
+        id: 'wide',
+        title: '宽面板',
+        groups: Array.from({length: 8}, (_, i) => ({
+          id: `g${i}`,
+          title: `功能组 ${i}`,
+          items: [
+            {title: `功能 ${i}`, command: `cmd${i}`},
+            {title: `其他 ${i}`, command: `other${i}`},
+          ],
+        })),
+      },
+    ];
+    const outlet = host.querySelector<HTMLElement>('#outlet')!;
+    outlet.style.width = '1500px';
+    await ribbon.updateComplete;
+    await aTimeout(200);
+    const folded = () => root.querySelectorAll('.ribbon-group.folded').length;
+    expect(folded()).toBe(0);
+
+    ribbon.collapse();
+    await ribbon.updateComplete;
+    outlet.style.width = '160px';
+    await aTimeout(100);
+    expect(folded()).toBe(0);
+
+    const selected = ribbon.shadowRoot!.querySelector<HTMLButtonElement>(
+      '.ribbon-tab[aria-selected="true"]'
+    )!;
+    selected.focus();
+    key(selected, 'ArrowDown');
+    await wait(() => folded() > 0);
+    await wait(
+      () => root.querySelector('.ribbon-scroll-button.right') !== null
+    );
+    expect(root.querySelector<HTMLElement>('.ribbon-content')!.hidden).toBe(
+      false
+    );
+  });
+
   it('混合 flyout 与 replace 菜单逐层返回，定位及触发焦点保留', async () => {
     const {ribbon, root} = await setup();
     const trigger = root.querySelector<HTMLButtonElement>(
