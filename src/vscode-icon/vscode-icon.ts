@@ -3,6 +3,10 @@ import {property} from 'lit/decorators.js';
 import {classMap} from 'lit/directives/class-map.js';
 import {ifDefined} from 'lit/directives/if-defined.js';
 import {customElement, VscElement} from '../includes/VscElement.js';
+import {
+  CODICON_STYLESHEET_WARNING,
+  getCodiconStylesheetConfig,
+} from '../includes/codicon-stylesheet.js';
 import {stylePropertyMap} from '../includes/style-property-map.js';
 import styles from './vscode-icon.styles.js';
 
@@ -94,40 +98,14 @@ export class VscodeIcon extends VscElement {
   override connectedCallback(): void {
     super.connectedCallback();
 
-    const {href, nonce} = this._getStylesheetConfig();
+    const {href, nonce} = getCodiconStylesheetConfig();
 
     VscodeIcon.stylesheetHref = href;
     VscodeIcon.nonce = nonce;
-  }
 
-  /**
-   * 在 Web Components 中使用网络字体时，字体样式表需要引入两次：
-   * 一次在页面中，一次在组件中。此函数查找
-   * 页面上的字体样式表，并返回其 URL 与 nonce
-   * 标识。
-   */
-  private _getStylesheetConfig(): {
-    href: string | undefined;
-    nonce: string | undefined;
-  } {
-    // SSR 防护：document 可能不可用
-    if (typeof document === 'undefined') {
-      return {nonce: undefined, href: undefined};
+    if (!href && typeof document !== 'undefined') {
+      this.warn(CODICON_STYLESHEET_WARNING);
     }
-
-    const linkElement = document.getElementById('vscode-codicon-stylesheet');
-    const href = linkElement?.getAttribute('href') || undefined;
-    const nonce = linkElement?.nonce || undefined;
-
-    if (!linkElement) {
-      let msg =
-        'To use the Icon component, the codicons.css file must be included in the page with the id "vscode-codicon-stylesheet"! ';
-      msg += '请在宿主页面中加载 Codicon 样式表。';
-
-      this.warn(msg);
-    }
-
-    return {nonce, href};
   }
 
   private _onButtonClick = (ev: MouseEvent) => {

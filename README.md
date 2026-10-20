@@ -59,6 +59,8 @@ Vite 负责开发、生产构建和生产预览；不再使用 Wireit、Rollup �
 
 标签页新增功能与交互约定参见 [标签页溢出显示](docs/tabs-overflow.md)，涵盖换行、滚动、溢出菜单与标题图标布局。
 
+功能区（Ribbon）的标签、分组、下拉菜单、面板与响应式折叠参见 [功能区 Ribbon](docs/components/ribbon.md)，集成与 `contributes.ribbon` 迁移参见 [功能区集成与迁移](docs/ribbon.md)。
+
 悬浮提示的四向箭头、外部目标关联和字段持续提示参见 [Tooltip 使用说明](docs/components/tooltip.md)，组件页与综合体验页均提供可交互示例。
 
 ### release

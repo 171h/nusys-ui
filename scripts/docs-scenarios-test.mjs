@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import {componentScenarios} from '../docs/data/scenarios.mjs';
+import {testRibbonResize} from './docs-ribbon-resize-test.mjs';
 import {testSelectHover} from './docs-select-hover-test.mjs';
 
 export async function testResponsiveTable(frame) {
@@ -45,6 +46,10 @@ export async function testResponsiveTable(frame) {
 }
 
 export async function testScenarios(page, url) {
+  const previousViewport = page.viewportSize();
+  // 国际化示例在桌面宽度下验证，避免窄屏折叠功能组后隐藏对话框启动器。
+  await page.setViewportSize({width: 1440, height: 1000});
+  await testRibbonI18n(page, url);
   const open = async (id) => {
     const component = Object.keys(componentScenarios).find((key) =>
       componentScenarios[key].includes(id)
@@ -59,8 +64,6 @@ export async function testScenarios(page, url) {
     );
     return frame;
   };
-  const previousViewport = page.viewportSize();
-  await page.setViewportSize({width: 1440, height: 1000});
   for (const component of ['single-select', 'multi-select']) {
     await page.goto(url(`components/${component}`));
     const element = await page
@@ -321,7 +324,712 @@ export async function testScenarios(page, url) {
   await frame.getByRole('button', {name: '打开 1', exact: true}).click();
   assert.equal(await frame.locator('output').textContent(), '打开 1');
 
+  // 功能区示例使用可拖动父容器，需要足够宽的视口验证完整布局与降级链。
   await page.setViewportSize({width: 1440, height: 1000});
+  const setSplitPosition = (selector, position) =>
+    frame.locator(selector).evaluate((element, value) => {
+      element.handlePosition = `${value}px`;
+    }, position);
+  frame = await open('ribbon-menus');
+  const codiconHref = await frame
+    .locator('#ribbon-menus')
+    .evaluate((ribbon) =>
+      ribbon.shadowRoot
+        .querySelector('link[rel="stylesheet"]')
+        ?.getAttribute('href')
+    );
+  assert.match(codiconHref, /codicon\.css/);
+  await frame.waitForFunction(() => {
+    const icon = document
+      .querySelector('#ribbon-menus')
+      ?.shadowRoot?.querySelector('.ribbon-item .ribbon-icon');
+    return (
+      icon !== null &&
+      icon !== undefined &&
+      getComputedStyle(icon, '::before').content !== 'none'
+    );
+  });
+  await frame.getByRole('button', {name: '保存', exact: true}).click();
+  assert.match(
+    await frame.locator('#ribbon-menus-output').textContent(),
+    /save/
+  );
+
+  // 分割按钮：主命令与触发区独立悬停，组合外边框与分格线同步高亮。
+  const splitState = () =>
+    frame.evaluate(() => {
+      const root = document.querySelector('#ribbon-menus').shadowRoot;
+      const split = root.querySelector('.ribbon-split');
+      const primary = split.querySelector('.ribbon-item-primary');
+      const trigger = split.querySelector('.ribbon-split-trigger');
+      const color = (element, property) => getComputedStyle(element)[property];
+      const transparent = (value) =>
+        value === 'transparent' || /rgba\(0, 0, 0, 0\)/.test(value);
+      const shadow = color(trigger, 'boxShadow');
+      const divider = (shadow.match(/rgba?\([^)]+\)/) || ['transparent'])[0];
+      return {
+        outlineStyle: getComputedStyle(split).outlineStyle,
+        outlineColor: getComputedStyle(split).outlineColor,
+        divider,
+        dividerTransparent: transparent(divider),
+        primaryBackground: color(primary, 'backgroundColor'),
+        primaryTransparent: transparent(color(primary, 'backgroundColor')),
+        triggerBackground: color(trigger, 'backgroundColor'),
+        triggerTransparent: transparent(color(trigger, 'backgroundColor')),
+      };
+    });
+  let splitStateValue = await splitState();
+  // 点击保存后鼠标仍停留在主命令上，先移开再验证未悬停状态。
+  await frame.getByRole('button', {name: '板模板', exact: true}).hover();
+  await page.waitForTimeout(120);
+  splitStateValue = await splitState();
+  assert.equal(
+    splitStateValue.dividerTransparent,
+    true,
+    '未悬停时分格线应不可见'
+  );
+  assert.equal(
+    splitStateValue.outlineStyle,
+    'none',
+    '未悬停时组合按钮不应显示边框'
+  );
+  // 图标、标题与箭头应与相邻的“板模板”下拉按钮对应行水平对齐。
+  const splitAlignment = await frame.evaluate(() => {
+    const root = document.querySelector('#ribbon-menus').shadowRoot;
+    const split = root.querySelector('.ribbon-split');
+    const dropdown = [
+      ...root.querySelectorAll('.ribbon-item.is-dropdown.ribbon-item-vertical'),
+    ].find((element) => element.textContent.includes('板模板'));
+    const top = (element) => element.getBoundingClientRect().top;
+    const size = (element) => {
+      const rect = element.getBoundingClientRect();
+      return {width: rect.width, height: rect.height};
+    };
+    return {
+      icon: Math.abs(
+        top(split.querySelector('.ribbon-icon')) -
+          top(dropdown.querySelector('.ribbon-icon'))
+      ),
+      label: Math.abs(
+        top(split.querySelector('.ribbon-label-text')) -
+          top(dropdown.querySelector('.ribbon-label-text'))
+      ),
+      chevron: Math.abs(
+        top(split.querySelector('.ribbon-chevron')) -
+          top(dropdown.querySelector('.ribbon-chevron'))
+      ),
+      splitIcon: size(split.querySelector('.ribbon-icon')),
+      dropdownIcon: size(dropdown.querySelector('.ribbon-icon')),
+      splitButton: size(split),
+      dropdownButton: size(dropdown),
+    };
+  });
+  assert.ok(
+    splitAlignment.icon <= 1.5,
+    `分割按钮图标应与相邻下拉按钮对齐，实际偏差 ${splitAlignment.icon}px`
+  );
+  assert.ok(
+    splitAlignment.label <= 1.5,
+    `分割按钮标题应与相邻下拉按钮对齐，实际偏差 ${splitAlignment.label}px`
+  );
+  assert.ok(
+    splitAlignment.chevron <= 1.5,
+    `分割按钮箭头应与相邻下拉按钮对齐，实际偏差 ${splitAlignment.chevron}px`
+  );
+  const iconSize = splitAlignment.splitIcon;
+  assert.ok(
+    Math.abs(iconSize.width - iconSize.height) < 0.5,
+    `整高按钮图标应为正方形，实际 ${iconSize.width}×${iconSize.height}`
+  );
+  assert.ok(
+    Math.abs(iconSize.height * 2 - splitAlignment.splitButton.height) <= 1,
+    `图标高度应为按钮高度一半，按钮高 ${splitAlignment.splitButton.height}px、图标高 ${iconSize.height}px`
+  );
+  assert.ok(
+    Math.abs(
+      Math.round(iconSize.width) - Math.round(splitAlignment.dropdownIcon.width)
+    ) <= 1,
+    '分割按钮与相邻下拉按钮的图标尺寸应一致'
+  );
+  const splitPrimary = frame
+    .locator('.ribbon-split .ribbon-item-primary')
+    .first();
+  await splitPrimary.hover();
+  await page.waitForTimeout(120);
+  splitStateValue = await splitState();
+  assert.equal(
+    splitStateValue.primaryTransparent,
+    false,
+    '悬停主命令时只有主命令背景激活'
+  );
+  assert.equal(
+    splitStateValue.triggerTransparent,
+    true,
+    '悬停主命令时触发区背景不应激活'
+  );
+  assert.equal(
+    splitStateValue.outlineStyle,
+    'solid',
+    '悬停时组合按钮外边框应高亮'
+  );
+  assert.equal(splitStateValue.dividerTransparent, false, '悬停时分格线应高亮');
+  assert.equal(
+    splitStateValue.divider,
+    splitStateValue.outlineColor,
+    '分格线与外边框应使用同一高亮色'
+  );
+  const splitTrigger = frame
+    .locator('.ribbon-split .ribbon-split-trigger')
+    .first();
+  await splitTrigger.hover();
+  await page.waitForTimeout(120);
+  splitStateValue = await splitState();
+  assert.equal(
+    splitStateValue.triggerTransparent,
+    false,
+    '悬停触发区时只有触发区背景激活'
+  );
+  assert.equal(
+    splitStateValue.primaryTransparent,
+    true,
+    '悬停触发区时主命令背景不应激活'
+  );
+  assert.equal(splitStateValue.outlineStyle, 'solid');
+  assert.equal(splitStateValue.dividerTransparent, false);
+  await frame.getByRole('button', {name: '板模板', exact: true}).hover();
+  await page.waitForTimeout(120);
+  splitStateValue = await splitState();
+  assert.equal(
+    splitStateValue.dividerTransparent,
+    true,
+    '移开后分格线应恢复不可见'
+  );
+  assert.equal(splitStateValue.outlineStyle, 'none', '移开后组合边框应消失');
+
+  await frame.getByRole('button', {name: '板模板', exact: true}).click();
+  const menuItem = frame.getByRole('menuitem', {name: '盘扣式', exact: true});
+  await menuItem.waitFor();
+  assert.equal(
+    await frame
+      .locator('vscode-ribbon .ribbon-menu-item')
+      .first()
+      .evaluate((element) => getComputedStyle(element).textAlign),
+    'left'
+  );
+  // flyout 子菜单：父菜单保持显示，子菜单在父菜单旁展开。
+  await frame.getByRole('menuitem', {name: '更多体系', exact: true}).click();
+  const flyout = frame.locator('vscode-ribbon .ribbon-flyout-popover');
+  await flyout.waitFor();
+  assert.equal(
+    await frame
+      .getByRole('menuitem', {name: '盘扣式', exact: true})
+      .isVisible(),
+    true,
+    '父菜单应保持打开'
+  );
+  assert.equal(
+    await frame.getByRole('menuitem', {name: '返回', exact: true}).count(),
+    0,
+    'flyout 子菜单不应出现返回入口'
+  );
+  await frame.getByRole('menuitem', {name: '门式脚手架', exact: true}).click();
+  assert.match(
+    await frame.locator('#ribbon-menus-output').textContent(),
+    /slab-portal/
+  );
+  await frame.getByRole('button', {name: '板模板', exact: true}).click();
+  await frame.getByRole('menuitem', {name: '盘扣式', exact: true}).click();
+  assert.match(
+    await frame.locator('#ribbon-menus-output').textContent(),
+    /slab-ringlock/
+  );
+  await frame.getByRole('button', {name: '板模板', exact: true}).click();
+  await frame.getByRole('menuitem', {name: '盘扣式', exact: true}).waitFor();
+  await page.keyboard.press('Escape');
+  await menuItem.waitFor({state: 'hidden'});
+  await frame.getByRole('button', {name: '脚手架规范', exact: true}).click();
+  const panel = frame.getByRole('dialog');
+  await panel.waitFor();
+  const customFrame = await (
+    await panel.locator('iframe.ribbon-custom-content').elementHandle()
+  ).contentFrame();
+  await customFrame
+    .getByText('面板下方可放置规范说明', {exact: false})
+    .waitFor();
+  assert.equal(
+    await frame.locator('vscode-ribbon .ribbon-panel-item').count(),
+    4
+  );
+  await frame.getByRole('button', {name: '关闭面板', exact: true}).click();
+  await panel.waitFor({state: 'hidden'});
+
+  // 菜单分组标题不可聚焦、不参与菜单项语义。
+  await frame.getByRole('button', {name: '插入图片', exact: true}).click();
+  await frame.getByRole('menuitem', {name: '此设备…', exact: true}).waitFor();
+  const menuHeadings = (
+    await frame.locator('vscode-ribbon .ribbon-menu-heading').allTextContents()
+  ).map((text) => text.trim());
+  assert.deepEqual(menuHeadings, ['插入图片来自', '最近使用']);
+  assert.equal(
+    await frame
+      .locator('vscode-ribbon .ribbon-menu-heading')
+      .first()
+      .getAttribute('role'),
+    'presentation'
+  );
+  assert.equal(
+    await frame
+      .getByRole('menuitem', {name: '插入图片来自', exact: true})
+      .count(),
+    0
+  );
+  await frame.evaluate(() => {
+    document.dispatchEvent(
+      new KeyboardEvent('keydown', {key: 'Escape', bubbles: true})
+    );
+  });
+
+  // 面板中的分组标题与说明文字。
+  await frame.getByRole('button', {name: '页边距', exact: true}).click();
+  const marginPanel = frame.getByRole('dialog');
+  await marginPanel.waitFor();
+  const marginHeadings = (
+    await frame.locator('vscode-ribbon .ribbon-panel-heading').allTextContents()
+  ).map((text) => text.trim());
+  assert.deepEqual(marginHeadings, ['上次的自定义设置', '预设页边距']);
+  const marginDescriptions = (
+    await frame
+      .locator('vscode-ribbon .ribbon-panel-description')
+      .allTextContents()
+  ).map((text) => text.trim());
+  assert.equal(marginDescriptions.length, 4);
+  assert.match(marginDescriptions[0], /上：2\.5 厘米/);
+  assert.match(marginDescriptions[0], /左：2\.5 厘米/);
+  // 面板底部操作区可执行命令并关闭面板。
+  assert.equal(
+    await frame.locator('vscode-ribbon .ribbon-panel-footer').count(),
+    1
+  );
+  await frame
+    .getByRole('button', {name: '自定义页边距(A)…', exact: true})
+    .click();
+  assert.match(
+    await frame.locator('#ribbon-menus-output').textContent(),
+    /custom-margins/
+  );
+  await frame.getByRole('button', {name: '页边距', exact: true}).click();
+  await frame.getByRole('dialog').waitFor();
+  await frame.getByRole('button', {name: '窄', exact: true}).click();
+  assert.match(
+    await frame.locator('#ribbon-menus-output').textContent(),
+    /margin-narrow/
+  );
+
+  // 图库式下拉面板：预览图 + 标题 + 说明。
+  await frame.getByRole('button', {name: '样式库', exact: true}).click();
+  await frame.locator('vscode-ribbon .ribbon-gallery').waitFor();
+  assert.equal(
+    await frame.locator('vscode-ribbon .ribbon-gallery-item').count(),
+    4
+  );
+  assert.equal(
+    await frame.locator('vscode-ribbon .ribbon-gallery-image').count(),
+    4
+  );
+  assert.equal(
+    (
+      await frame
+        .locator('vscode-ribbon .ribbon-gallery-heading')
+        .first()
+        .textContent()
+    ).trim(),
+    '内置样式'
+  );
+  await frame.getByRole('menuitem', {name: '标题 1', exact: true}).click();
+  assert.match(
+    await frame.locator('#ribbon-menus-output').textContent(),
+    /style-heading-1/
+  );
+
+  // 仅含单个下拉按钮的分组在溢出时保留原有下拉结构。
+  await setSplitPosition('#ribbon-menus-width-split', 120);
+  await frame.waitForFunction(() => {
+    const root = document.querySelector('#ribbon-menus').shadowRoot;
+    return (
+      root.querySelector('.ribbon-group[data-group="styles"]') !== null &&
+      root.querySelector('.ribbon-group[data-group="styles"].folded') ===
+        null &&
+      root.querySelectorAll('.ribbon-group.folded').length > 0
+    );
+  });
+  // 折叠分组弹层保留与功能区一致的分组标题与对话框启动器。
+  await frame.locator('#ribbon-menus').evaluate((ribbon) => {
+    ribbon.shadowRoot
+      .querySelector('.ribbon-group[data-group="file"] .ribbon-group-dropdown')
+      .click();
+  });
+  await frame.waitForFunction(() => {
+    const root = document.querySelector('#ribbon-menus').shadowRoot;
+    return root.querySelector('.ribbon-group-popover') !== null;
+  });
+  const filePopover = await frame.evaluate(() => {
+    const root = document.querySelector('#ribbon-menus').shadowRoot;
+    const popover = root.querySelector('.ribbon-group-popover');
+    const title = popover.querySelector('.ribbon-group-title');
+    const launcher = popover.querySelector('.ribbon-group-popover-dialog');
+    const inlineTitle = root.querySelector(
+      '.ribbon-group[data-group="file"] .ribbon-group-title'
+    );
+    return {
+      label: popover.getAttribute('aria-label'),
+      title: title?.textContent?.trim() ?? '',
+      titleFontSize: getComputedStyle(title).fontSize,
+      titleColor: getComputedStyle(title).color,
+      titleBorderTopWidth: getComputedStyle(title).borderTopWidth,
+      titleBoxShadow: getComputedStyle(title).boxShadow,
+      inlineTitleFontSize: getComputedStyle(inlineTitle).fontSize,
+      inlineTitleColor: getComputedStyle(inlineTitle).color,
+      launcherLabel: launcher?.getAttribute('aria-label') ?? null,
+      launcherInPopover: launcher?.parentElement === popover,
+      hasFooter: popover.querySelector('.ribbon-group-popover-footer') !== null,
+      launcherIconFontSize: getComputedStyle(
+        launcher.querySelector('.ribbon-group-dialog-icon')
+      ).fontSize,
+    };
+  });
+  assert.equal(filePopover.label, '文件');
+  assert.equal(filePopover.title, '文件');
+  assert.equal(filePopover.titleFontSize, filePopover.inlineTitleFontSize);
+  assert.equal(filePopover.titleColor, filePopover.inlineTitleColor);
+  assert.equal(filePopover.titleBorderTopWidth, '0px');
+  assert.equal(filePopover.titleBoxShadow, 'none');
+  assert.equal(filePopover.hasFooter, false, '弹层不应额外包裹页脚分隔线');
+  assert.equal(filePopover.launcherLabel, '打开文件设置');
+  assert.equal(filePopover.launcherInPopover, true);
+  assert.equal(filePopover.launcherIconFontSize, '12px');
+  await frame.evaluate(() => {
+    document.dispatchEvent(
+      new KeyboardEvent('keydown', {key: 'Escape', bubbles: true})
+    );
+  });
+  await frame.waitForFunction(() => {
+    const root = document.querySelector('#ribbon-menus').shadowRoot;
+    return root.querySelector('.ribbon-group-popover') === null;
+  });
+  await frame.getByRole('button', {name: '样式库', exact: true}).click();
+  await frame.locator('vscode-ribbon .ribbon-gallery').waitFor();
+  assert.equal(
+    await frame.locator('vscode-ribbon .ribbon-group-popover').count(),
+    0,
+    '单下拉分组应直接打开菜单而不是分组弹层'
+  );
+  await frame.evaluate(() => {
+    document.dispatchEvent(
+      new KeyboardEvent('keydown', {key: 'Escape', bubbles: true})
+    );
+  });
+  await setSplitPosition('#ribbon-menus-width-split', 1600);
+  await frame.waitForFunction(() => {
+    const root = document.querySelector('#ribbon-menus').shadowRoot;
+    return root.querySelectorAll('.ribbon-group.folded').length === 0;
+  });
+
+  await frame.getByRole('button', {name: '打开文件设置', exact: true}).click();
+  assert.match(
+    await frame.locator('#ribbon-menus-output').textContent(),
+    /打开对话框：文件/
+  );
+  await frame.getByRole('button', {name: '打开“规范”对话框'}).click();
+  assert.match(
+    await frame.locator('#ribbon-menus-output').textContent(),
+    /打开对话框：规范/
+  );
+  await testRibbonResize(frame, 'ribbon-menus');
+
+  frame = await open('ribbon-responsive');
+  await setSplitPosition('#ribbon-responsive-width-split', 120);
+  await frame.waitForFunction(() => {
+    const ribbon = document.querySelector('#ribbon-responsive');
+    return (
+      ribbon.shadowRoot.querySelector(
+        '.ribbon-group[data-group="pit"].folded'
+      ) !== null &&
+      ribbon.shadowRoot.querySelector('.ribbon-menu-popover') === null
+    );
+  });
+  // 折叠分组的溢出弹层恢复声明的原始布局，而不是合并成单个下拉菜单。
+  await frame.locator('#ribbon-responsive').evaluate((ribbon) => {
+    ribbon.shadowRoot
+      .querySelector('.ribbon-group[data-group="pit"] .ribbon-group-dropdown')
+      .click();
+  });
+  await frame.waitForFunction(() => {
+    const ribbon = document.querySelector('#ribbon-responsive');
+    return ribbon.shadowRoot.querySelector('.ribbon-group-popover') !== null;
+  });
+  const responsivePopover = await frame.evaluate(() => {
+    const popover = document
+      .querySelector('#ribbon-responsive')
+      .shadowRoot.querySelector('.ribbon-group-popover');
+    return {
+      label: popover.getAttribute('aria-label'),
+      labels: [...popover.querySelectorAll('.ribbon-item')].map((item) =>
+        item.getAttribute('aria-label')
+      ),
+      classes: [...popover.querySelectorAll('.ribbon-item')].map(
+        (item) => item.className
+      ),
+    };
+  });
+  assert.equal(responsivePopover.label, '基坑与边坡');
+  assert.deepEqual(
+    [...responsivePopover.labels].sort(),
+    ['人工挖孔桩', '围护支撑', '加固锚固', '边坡稳定'].sort()
+  );
+  for (const className of responsivePopover.classes) {
+    assert.match(className, /ribbon-item-full/);
+    assert.doesNotMatch(className, /icon-only|ribbon-item-third/);
+  }
+  await frame.evaluate(() => {
+    document.dispatchEvent(
+      new KeyboardEvent('keydown', {key: 'Escape', bubbles: true})
+    );
+  });
+  await setSplitPosition('#ribbon-responsive-width-split', 1600);
+  await frame.waitForFunction(() => {
+    const ribbon = document.querySelector('#ribbon-responsive');
+    return (
+      ribbon.shadowRoot.querySelector('.ribbon-group.folded') === null &&
+      ribbon.shadowRoot.querySelector('.ribbon-group-popover') === null
+    );
+  });
+  await setSplitPosition('#ribbon-responsive-height-split', 180);
+  await frame.waitForFunction(() => {
+    const wrapper = document.querySelector('#ribbon-responsive-resize-wrapper');
+    const height = Math.round(wrapper.getBoundingClientRect().height);
+    const size = document.querySelector(
+      '#ribbon-responsive-size-output'
+    ).textContent;
+    return height > 160 && height < 200 && size.includes(height + ' px');
+  });
+  await frame.getByRole('button', {name: '单位换算', exact: true}).click();
+  assert.match(
+    await frame.locator('#ribbon-responsive-output').textContent(),
+    /unit/
+  );
+
+  frame = await open('ribbon-overflow');
+  const ribbonOverflowState = () =>
+    frame.evaluate(() => {
+      const root = document.querySelector('#ribbon-overflow').shadowRoot;
+      return {
+        folded: [...root.querySelectorAll('.ribbon-group.folded')].map(
+          (group) => group.getAttribute('data-group')
+        ),
+        visibleItems: [
+          ...root.querySelectorAll('.ribbon-group:not(.folded) .ribbon-item'),
+        ].filter((item) => item.getClientRects().length > 0).length,
+      };
+    });
+  let overflowState = await ribbonOverflowState();
+  assert.deepEqual(overflowState.folded, [], '宽容器下应完整显示全部功能组');
+  assert.equal(overflowState.visibleItems, 7);
+  assert.equal(
+    await frame
+      .locator('#ribbon-overflow')
+      .evaluate(
+        (ribbon) =>
+          ribbon.shadowRoot.querySelectorAll('.ribbon-item.is-dropdown').length
+      ),
+    0,
+    '普通按钮不应被合并为下拉入口'
+  );
+  await setSplitPosition('#ribbon-overflow-width-split', 120);
+  await frame.waitForFunction(() => {
+    const root = document.querySelector('#ribbon-overflow').shadowRoot;
+    return root.querySelectorAll('.ribbon-group.folded').length === 3;
+  });
+  // 打开最右侧折叠分组，弹层按原始布局完整渲染该组按钮。
+  await frame.locator('#ribbon-overflow').evaluate((ribbon) => {
+    ribbon.shadowRoot
+      .querySelector('.ribbon-group[data-group="view"] .ribbon-group-dropdown')
+      .click();
+  });
+  await frame.waitForFunction(() => {
+    const root = document.querySelector('#ribbon-overflow').shadowRoot;
+    return root.querySelector('.ribbon-group-popover') !== null;
+  });
+  const overflowPopover = await frame.evaluate(() => {
+    const root = document.querySelector('#ribbon-overflow').shadowRoot;
+    const popover = root.querySelector('.ribbon-group-popover');
+    const title = popover.querySelector('.ribbon-group-title');
+    const inlineTitle = root.querySelector(
+      '.ribbon-group[data-group="view"] .ribbon-group-title'
+    );
+    return {
+      label: popover.getAttribute('aria-label'),
+      title: title?.textContent?.trim() ?? '',
+      titleFontSize: getComputedStyle(title).fontSize,
+      titleBorderTopWidth: getComputedStyle(title).borderTopWidth,
+      inlineTitleFontSize: getComputedStyle(inlineTitle).fontSize,
+      hasFooter: popover.querySelector('.ribbon-group-popover-footer') !== null,
+      hasDialogLauncher:
+        popover.querySelector('.ribbon-group-popover-dialog') !== null,
+      items: [...popover.querySelectorAll('.ribbon-item')].map((item) => ({
+        label: item.getAttribute('aria-label'),
+        className: item.className,
+        icon: item.querySelector('.ribbon-icon')?.className ?? '',
+      })),
+    };
+  });
+  assert.equal(overflowPopover.label, '视图');
+  assert.equal(overflowPopover.title, '视图');
+  assert.equal(
+    overflowPopover.titleFontSize,
+    overflowPopover.inlineTitleFontSize,
+    '弹层分组标题应与功能区分组标题样式一致'
+  );
+  assert.equal(overflowPopover.titleBorderTopWidth, '0px');
+  assert.equal(overflowPopover.hasFooter, false);
+  assert.equal(
+    overflowPopover.hasDialogLauncher,
+    false,
+    '没有启动器的分组不应显示设置按钮'
+  );
+  assert.deepEqual(
+    [...overflowPopover.items.map((item) => item.label)].sort(),
+    ['侧边栏', '终端'].sort()
+  );
+  for (const item of overflowPopover.items) {
+    assert.match(item.className, /ribbon-item-half/);
+    assert.doesNotMatch(item.className, /icon-only|ribbon-item-third/);
+  }
+  const sidebarItem = overflowPopover.items.find(
+    (item) => item.label === '侧边栏'
+  );
+  assert.match(sidebarItem.icon, /codicon-layout-sidebar-left/);
+  await frame.locator('#ribbon-overflow').evaluate((ribbon) => {
+    ribbon.shadowRoot
+      .querySelector('.ribbon-group-popover .ribbon-item[aria-label="侧边栏"]')
+      .click();
+  });
+  assert.match(
+    await frame.locator('#ribbon-overflow-output').textContent(),
+    /toggle-sidebar/
+  );
+  assert.equal(
+    await frame.evaluate(
+      () =>
+        document
+          .querySelector('#ribbon-overflow')
+          .shadowRoot.querySelector('.ribbon-group-popover') === null
+    ),
+    true,
+    '执行命令后溢出弹层应关闭'
+  );
+  await setSplitPosition('#ribbon-overflow-width-split', 1600);
+  await frame.waitForFunction(() => {
+    const root = document.querySelector('#ribbon-overflow').shadowRoot;
+    return root.querySelectorAll('.ribbon-group.folded').length === 0;
+  });
+  overflowState = await ribbonOverflowState();
+  assert.equal(overflowState.visibleItems, 7, '拉宽后应恢复完整布局');
+  await testRibbonResize(frame, 'ribbon-overflow');
+
+  frame = await open('ribbon-gallery');
+  const galleryState = () =>
+    frame.evaluate(() => {
+      const root = document.querySelector('#ribbon-gallery').shadowRoot;
+      const viewport = root.querySelector('.ribbon-gallery-viewport');
+      return {
+        tiles: root.querySelectorAll('.ribbon-gallery-tile').length,
+        images: root.querySelectorAll('.ribbon-gallery-image').length,
+        scrollLeft: viewport?.scrollLeft ?? 0,
+        scrollWidth: viewport?.scrollWidth ?? 0,
+        clientWidth: viewport?.clientWidth ?? 0,
+      };
+    });
+  let galleryStateValue = await galleryState();
+  assert.equal(galleryStateValue.tiles, 8);
+  assert.equal(galleryStateValue.images, 8);
+  assert.ok(
+    galleryStateValue.scrollWidth > galleryStateValue.clientWidth,
+    '图库内容应在分组内横向滚动'
+  );
+  await frame.locator('#ribbon-gallery').evaluate((ribbon) => {
+    ribbon.shadowRoot.querySelectorAll('.ribbon-gallery-scroll')[1].click();
+  });
+  await frame.waitForFunction(() => {
+    const viewport = document
+      .querySelector('#ribbon-gallery')
+      .shadowRoot.querySelector('.ribbon-gallery-viewport');
+    return viewport.scrollLeft > 0;
+  });
+  await frame.locator('#ribbon-gallery').evaluate((ribbon) => {
+    ribbon.shadowRoot.querySelectorAll('.ribbon-gallery-tile')[0].click();
+  });
+  assert.match(
+    await frame.locator('#ribbon-gallery-output').textContent(),
+    /format-title/
+  );
+  await setSplitPosition('#ribbon-gallery-width-split', 120);
+  await frame.waitForFunction(() => {
+    const root = document.querySelector('#ribbon-gallery').shadowRoot;
+    return root.querySelectorAll('.ribbon-group.folded').length === 2;
+  });
+  await frame.locator('#ribbon-gallery').evaluate((ribbon) => {
+    ribbon.shadowRoot
+      .querySelector(
+        '.ribbon-group[data-group="format"] .ribbon-group-dropdown'
+      )
+      .click();
+  });
+  await frame.waitForFunction(
+    () =>
+      document
+        .querySelector('#ribbon-gallery')
+        .shadowRoot.querySelector('.ribbon-gallery-popover') !== null
+  );
+  const galleryPopover = await frame.evaluate(() => {
+    const root = document.querySelector('#ribbon-gallery').shadowRoot;
+    const popover = root.querySelector('.ribbon-group-popover');
+    const gallery = popover.querySelector('.ribbon-gallery');
+    return {
+      label: popover.getAttribute('aria-label'),
+      tiles: gallery.querySelectorAll('.ribbon-gallery-tile').length,
+      images: gallery.querySelectorAll('.ribbon-gallery-image').length,
+    };
+  });
+  assert.equal(galleryPopover.label, '文档格式');
+  assert.equal(galleryPopover.tiles, 8);
+  assert.equal(galleryPopover.images, 8);
+  await setSplitPosition('#ribbon-gallery-width-split', 1600);
+  await frame.waitForFunction(() => {
+    const root = document.querySelector('#ribbon-gallery').shadowRoot;
+    return root.querySelectorAll('.ribbon-group.folded').length === 0;
+  });
+  galleryStateValue = await galleryState();
+  assert.equal(galleryStateValue.tiles, 8, '拉宽后图库分组应恢复完整展示');
+  await testRibbonResize(frame, 'ribbon-gallery');
+
+  frame = await open('ribbon-state');
+  await frame.getByRole('button', {name: '侧边栏', exact: true}).click();
+  assert.equal(
+    await frame.locator('#ribbon-state-output').textContent(),
+    '命令：toggle-sidebar'
+  );
+  await frame.getByRole('button', {name: '折叠功能区', exact: true}).click();
+  assert.equal(
+    await frame.locator('#ribbon-state-output').textContent(),
+    '功能区已折叠'
+  );
+  await frame.getByRole('button', {name: '展开功能区', exact: true}).click();
+  assert.equal(
+    await frame.locator('#ribbon-state-output').textContent(),
+    '功能区已展开'
+  );
+  await testRibbonResize(frame, 'ribbon-state');
+
   frame = await open('table-responsive');
   await testResponsiveTable(frame);
 
@@ -331,6 +1039,92 @@ export async function testScenarios(page, url) {
   await frame.getByRole('button', {name: '定位 README'}).click();
   assert.match(await frame.locator('output').textContent(), /\[0,1\]/);
   console.log(
-    '已验证新增场景的表单重置、菜单、进度、文件读取、动态选项、多选提交、修改标记、分区回调、滚动、分栏、标签页、表格和树操作。'
+    '已验证新增场景的表单重置、菜单、功能区、进度、文件读取、动态选项、多选提交、修改标记、分区回调、滚动、分栏、标签页、表格和树操作。'
   );
+}
+
+/** 验证中英文切换示例的名称、主题、键盘路径与命令标识。 */
+export async function testRibbonI18n(page, url) {
+  await page.goto(url('components/ribbon'));
+  const element = await page
+    .locator('[data-scenario="ribbon-i18n"] iframe')
+    .elementHandle();
+  const frame = await element.contentFrame();
+  await frame.waitForFunction(
+    () => document.documentElement.dataset.ready === 'true'
+  );
+  const ribbon = frame.locator('#ribbon-i18n');
+  for (const english of [false, true, false]) {
+    if (english !== (await ribbon.evaluate((node) => node.lang === 'en'))) {
+      await frame.locator('#ribbon-language').click();
+    }
+    await frame.waitForFunction(
+      (value) =>
+        document.querySelector('#ribbon-i18n').lang ===
+        (value ? 'en' : 'zh-CN'),
+      english
+    );
+    await frame.evaluate(
+      (dark) => document.body.classList.toggle('vscode-dark', dark),
+      english
+    );
+    await ribbon
+      .getByRole('tab', {name: english ? 'Home' : '开始', exact: true})
+      .waitFor();
+    await ribbon
+      .getByRole('button', {
+        name: english ? 'Open File dialog' : '打开文件对话框',
+        exact: true,
+      })
+      .click();
+    assert.equal(
+      await frame.locator('#ribbon-i18n-output').textContent(),
+      english ? 'Open File dialog' : '打开文件对话框'
+    );
+    await ribbon
+      .getByRole('button', {
+        name: english
+          ? 'Save all project documents and configuration'
+          : '保存全部项目文档与配置',
+        exact: true,
+      })
+      .click();
+    assert.equal(
+      await frame.locator('#ribbon-i18n-output').textContent(),
+      'save-all'
+    );
+    assert.equal(
+      await ribbon
+        .getByRole('button', {
+          name: english ? 'Unavailable' : '不可用',
+          exact: true,
+        })
+        .isDisabled(),
+      true
+    );
+    const trigger = ribbon.getByRole('button', {
+      name: english ? 'Options' : '选项',
+      exact: true,
+    });
+    await trigger.focus();
+    await trigger.press('ArrowDown');
+    await ribbon
+      .getByRole('dialog', {
+        name: english ? 'Project options' : '项目选项',
+        exact: true,
+      })
+      .waitFor();
+    assert.equal(
+      await ribbon.locator('iframe').getAttribute('title'),
+      english ? 'Custom content' : '自定义内容'
+    );
+    await page.keyboard.press('Escape');
+    await ribbon.locator('.ribbon-menu-popover').waitFor({state: 'hidden'});
+    assert.equal(
+      await trigger.evaluate(
+        (node) => node.getRootNode().activeElement === node
+      ),
+      true
+    );
+  }
 }

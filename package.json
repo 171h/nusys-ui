@@ -34,11 +34,13 @@
     "test:release": "vitest run --project release",
     "test:install": "playwright install chromium --with-deps",
     "test:build": "node scripts/verify-build.mjs",
-    "docs:dev": "pnpm docs:prepare && vitepress dev docs",
+    "docs:dev": "node scripts/docs-dev.mjs",
+    "docs:dev:full": "pnpm docs:prepare && vitepress dev docs",
     "docs:build": "pnpm docs:prepare && vitepress build docs",
     "docs:preview": "vitepress preview docs",
     "docs:prepare": "pnpm build && node scripts/docs-prepare.mjs",
     "docs:check": "pnpm docs:prepare && node scripts/docs-check.mjs",
+    "docs:ribbon-parts": "node scripts/generate-ribbon-parts.mjs",
     "docs:test": "pnpm docs:build && node scripts/docs-browser.mjs",
     "docs:test:dev": "pnpm docs:prepare && node scripts/docs-dev-test.mjs",
     "dev": "pnpm docs:dev"
@@ -102,7 +104,7 @@
     "vitepress": "^1.6.4",
     "vue": "^3.5.0"
   },
-  "packageManager": "pnpm@12.8.1",
+  "packageManager": "pnpm@12.14.0",
   "engines": {
     "node": "^22.12.0 || ^24.0.0 || >=26.0.0"
   }

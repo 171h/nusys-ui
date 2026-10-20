@@ -212,6 +212,13 @@ const definitions = [
     'tabs-group',
   ],
   [
+    'ribbon',
+    '功能区 Ribbon',
+    '布局与导航',
+    '标签、分组、命令按钮、下拉菜单、面板与响应式折叠。',
+    'ribbon',
+  ],
+  [
     'toolbar-button',
     '工具栏按钮 ToolbarButton',
     '布局与导航',

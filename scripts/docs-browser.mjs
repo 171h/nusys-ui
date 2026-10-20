@@ -7,6 +7,8 @@ import {chromium} from 'playwright';
 import {components} from '../docs/data/components.mjs';
 import {componentScenarios} from '../docs/data/scenarios.mjs';
 import {testScenarios} from './docs-scenarios-test.mjs';
+import {testRibbonResize} from './docs-ribbon-resize-test.mjs';
+import {testRibbonParts} from './docs-ribbon-parts-test.mjs';
 import {testShowcase} from './docs-showcase-test.mjs';
 import {testFieldsetThemes} from './docs-fieldset-test.mjs';
 
@@ -21,6 +23,7 @@ const types = {
   '.json': 'application/json',
   '.svg': 'image/svg+xml',
   '.ttf': 'font/ttf',
+  '.png': 'image/png',
 };
 const server = createServer(async (request, response) => {
   try {
@@ -162,6 +165,16 @@ try {
     );
     assert.equal(response.status(), 200, `${component.id} API 未构建`);
   }
+
+  const ribbonExample = await open('ribbon');
+  await testRibbonResize(ribbonExample, 'ribbon-basic');
+  await ribbonExample
+    .getByRole('button', {name: '打开文件设置', exact: true})
+    .click();
+  assert.match(
+    await ribbonExample.locator('#ribbon-basic-output').textContent(),
+    /打开对话框：文件/
+  );
 
   let frame = await open('button');
   const sample = page.locator('.example').first();
@@ -713,6 +726,7 @@ try {
     .getByText('快速开始', {exact: true})
     .waitFor();
   await testScenarios(page, url);
+  await testRibbonParts(page, url);
   await testShowcase(
     page,
     url,
@@ -721,7 +735,7 @@ try {
   );
   assert.deepEqual(errors, [], '页面不得出现运行时或本地资源错误');
   console.log(
-    '已验证全部组件与 API 页面、十种主题与三种尺寸、焦点与禁用、百分比提交、表单高亮、fieldset 恢复、选择框、标签与视图及组拖拽、菜单、树、CSP、中文搜索和移动布局。'
+    '已验证全部组件与 API 页面、功能区部件图鉴、十种主题与三种尺寸、焦点与禁用、百分比提交、表单高亮、fieldset 恢复、选择框、标签与视图及组拖拽、菜单、树、CSP、中文搜索和移动布局。'
   );
 } finally {
   await browser.close();
