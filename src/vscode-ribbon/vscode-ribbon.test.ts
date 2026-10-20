@@ -1,4 +1,5 @@
 import {afterEach} from 'vitest';
+import {clickOnElement} from '../includes/test-helpers.js';
 import '../vscode-ribbon/index.js';
 import {
   aTimeout,
@@ -143,6 +144,70 @@ afterEach(() => {
 });
 
 describe('vscode-ribbon', () => {
+  it('切换同级 flyout 时裁掉旧分支并保留多层返回路径', async () => {
+    const tabs = basicTabs();
+    tabs[0].groups![0].items = [
+      {
+        type: 'dropdown',
+        title: '根菜单',
+        menu: {
+          items: ['A', 'B'].map((title) => ({
+            title,
+            submenuMode: 'flyout',
+            menu: {
+              items: ['1', '2'].map((suffix) => ({
+                title: title + suffix,
+                submenuMode: 'flyout',
+                menu: {
+                  items: [
+                    {command: title + suffix, title: '执行' + title + suffix},
+                  ],
+                },
+              })),
+            },
+          })),
+        },
+      },
+    ];
+    const el = await createRibbon(tabs);
+    await openMenu(el, '根菜单');
+    const open = async (label: string) => {
+      await clickOnElement(shadowButton(el, label)!);
+      await el.updateComplete;
+      await aTimeout(40);
+    };
+    const branches = () =>
+      Array.from(el.shadowRoot!.querySelectorAll('.ribbon-flyout-popover')).map(
+        (node) => node.getAttribute('aria-label')
+      );
+    const back = async () => {
+      (el.shadowRoot!.activeElement as HTMLElement).dispatchEvent(
+        new KeyboardEvent('keydown', {
+          key: 'Escape',
+          bubbles: true,
+          composed: true,
+        })
+      );
+      await el.updateComplete;
+    };
+    await open('A');
+    await open('A1');
+    await open('A2');
+    expect(branches()).to.deep.equal(['A', 'A2']);
+    await back();
+    expect(branches()).to.deep.equal(['A']);
+    expect(el.shadowRoot!.activeElement).to.equal(shadowButton(el, 'A2'));
+    await open('A1');
+    await open('B');
+    expect(branches()).to.deep.equal(['B']);
+    await open('B1');
+    await back();
+    expect(branches()).to.deep.equal(['B']);
+    await back();
+    expect(branches()).to.deep.equal([]);
+    expect(el.shadowRoot!.activeElement).to.equal(shadowButton(el, 'B'));
+  });
+
   for (const type of ['dropdown', 'splitButton'] as const) {
     for (const keyboard of [false, true]) {
       it(`折叠分组中的 ${type} 通过${keyboard ? 'ArrowDown' : '点击'}打开菜单后保留锚点与 Escape 焦点`, async () => {

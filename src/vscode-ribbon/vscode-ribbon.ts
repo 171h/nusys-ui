@@ -1199,8 +1199,11 @@ export class VscodeRibbon extends VscElement {
       this._closeFlyoutsFrom(existing);
       return;
     }
+    const parentIndex = this._flyoutElements().findIndex((element) =>
+      element.contains(anchor)
+    );
     this._flyouts = [
-      ...this._flyouts,
+      ...this._flyouts.slice(0, parentIndex + 1),
       {item, menu: item.menu, anchor, position: null},
     ];
     this.updateComplete.then(() => {
