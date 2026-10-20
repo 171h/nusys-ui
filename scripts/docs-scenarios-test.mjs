@@ -1,3 +1,4 @@
+import {testRibbonSeparated} from './docs-ribbon-separated-test.mjs';
 import assert from 'node:assert/strict';
 import {componentScenarios} from '../docs/data/scenarios.mjs';
 import {testRibbonResize} from './docs-ribbon-resize-test.mjs';
@@ -331,6 +332,8 @@ export async function testScenarios(page, url) {
     frame.locator(selector).evaluate((element, value) => {
       element.handlePosition = `${value}px`;
     }, position);
+  await testRibbonSeparated(await open('ribbon-separated'));
+
   frame = await open('ribbon-menus');
   const codiconHref = await frame
     .locator('#ribbon-menus')

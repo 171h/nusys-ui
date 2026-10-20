@@ -744,6 +744,31 @@ try {
     .getByText('快速开始', {exact: true})
     .waitFor();
   await testScenarios(page, url);
+  await page.setViewportSize({width: 1440, height: 1000});
+  const separatedFrame = await open('ribbon-panel');
+  for (const theme of ['light', 'dark-v2', 'hc-dark']) {
+    await selectTheme(theme);
+    const colors = await separatedFrame.evaluate(() => {
+      const ribbon = document.querySelector('#separated-ribbon');
+      const panel = document.querySelector('#separated-panel');
+      return {
+        tabs: getComputedStyle(ribbon).backgroundColor,
+        content: getComputedStyle(
+          panel.shadowRoot.querySelector('.ribbon-content')
+        ).backgroundColor,
+      };
+    });
+    assert.equal(colors.tabs, colors.content, '独立容器应继承相同主题背景');
+    await page
+      .locator('.example-frame')
+      .first()
+      .screenshot({
+        path: resolve(
+          root,
+          `coverage/docs-screenshots/ribbon-separated-${theme}.png`
+        ),
+      });
+  }
   await testRibbonParts(page, url);
   await testShowcase(
     page,

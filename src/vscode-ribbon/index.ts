@@ -1,3 +1,4 @@
+export {VscodeRibbonPanel} from '../vscode-ribbon-panel/index.js';
 export {VscodeRibbon} from './vscode-ribbon.js';
 export type {
   ResolvedRibbonIcon,

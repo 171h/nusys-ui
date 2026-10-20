@@ -219,6 +219,13 @@ const definitions = [
     'ribbon',
   ],
   [
+    'ribbon-panel',
+    '独立功能面板 RibbonPanel',
+    '布局与导航',
+    '由 Ribbon 关联的独立功能面板，支持不同起点和宽度。',
+    'ribbon-separated',
+  ],
+  [
     'toolbar-button',
     '工具栏按钮 ToolbarButton',
     '布局与导航',

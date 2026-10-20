@@ -27,6 +27,7 @@ export {VscodeProgressBar} from './vscode-progress-bar/index.js';
 export {VscodeRadio} from './vscode-radio/index.js';
 export {VscodeRadioGroup} from './vscode-radio-group/index.js';
 export {VscodeRibbon} from './vscode-ribbon/index.js';
+export {VscodeRibbonPanel} from './vscode-ribbon-panel/index.js';
 export type {
   ResolvedRibbonIcon,
   RibbonDialogLauncherModel,
