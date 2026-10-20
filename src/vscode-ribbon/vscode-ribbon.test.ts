@@ -11,6 +11,7 @@ import {
 import type {
   VscRibbonCommandEvent,
   VscRibbonDialogEvent,
+  VscRibbonItem,
   VscRibbonTab,
 } from './ribbon-types.js';
 import {VscodeRibbon} from './index.js';
@@ -594,6 +595,23 @@ describe('vscode-ribbon', () => {
     await el.updateComplete;
     expect(selected).to.equal(0);
     expect(el.activeTabId).to.equal('home');
+  });
+
+  it('refreshLayout 重新读取就地修改的 tabs 数据', async () => {
+    const tabs = basicTabs();
+    const el = await createRibbon(tabs);
+    (tabs[0].groups![0].items as VscRibbonItem[]).push({
+      command: 'added',
+      title: '新增',
+      icon: 'add',
+      size: 'half',
+    });
+    el.refreshLayout();
+    await el.updateComplete;
+    const added = shadowButton(el, '新增');
+    expect(added).to.not.equal(undefined);
+    added!.click();
+    expect(el.dataset.lastCommand).to.equal('added');
   });
 
   it('点击标签切换并派发选择事件', async () => {

@@ -329,13 +329,7 @@ export class VscodeRibbon extends VscElement {
       this.collapsed = false;
     }
     if (changed.has('tabs') || changed.has('sortLocale')) {
-      this._models = buildRibbonTabs(
-        this.tabs,
-        this.sortLocale ||
-          this.closest('[lang]')?.getAttribute('lang') ||
-          undefined
-      );
-      this._syncActiveTab();
+      this._rebuildModels();
       this._resetResponsiveState();
       this._restored = this._storedState === null;
       this._scheduleLayout();
@@ -384,6 +378,17 @@ export class VscodeRibbon extends VscElement {
     this._restoringState = true;
     this.activeTabId = active.id;
     this._restoringState = restoring;
+  }
+
+  /** 按当前 tabs 与排序语言重建模型，并同步回退标签。 */
+  private _rebuildModels(): void {
+    this._models = buildRibbonTabs(
+      this.tabs,
+      this.sortLocale ||
+        this.closest('[lang]')?.getAttribute('lang') ||
+        undefined
+    );
+    this._syncActiveTab();
   }
 
   private _readStoredState(): StoredRibbonState | null {
@@ -764,8 +769,11 @@ export class VscodeRibbon extends VscElement {
     this._overlayOpen = false;
   }
 
-  /** 重新测量并执行一次响应式降级。 */
+  /** 重新读取 tabs 数据、测量并执行一次响应式降级。 */
   refreshLayout(): void {
+    this._closeMenu(false);
+    this._closeGroup(false);
+    this._rebuildModels();
     this._resetResponsiveState();
     this._scheduleLayout();
   }
