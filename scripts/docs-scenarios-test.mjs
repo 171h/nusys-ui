@@ -662,6 +662,54 @@ export async function testScenarios(page, url) {
       root.querySelectorAll('.ribbon-group.folded').length > 0
     );
   });
+  // 折叠分组弹层保留与功能区一致的分组标题与对话框启动器。
+  await frame.locator('#ribbon-menus').evaluate((ribbon) => {
+    ribbon.shadowRoot
+      .querySelector('.ribbon-group[data-group="file"] .ribbon-group-dropdown')
+      .click();
+  });
+  await frame.waitForFunction(() => {
+    const root = document.querySelector('#ribbon-menus').shadowRoot;
+    return root.querySelector('.ribbon-group-popover') !== null;
+  });
+  const filePopover = await frame.evaluate(() => {
+    const root = document.querySelector('#ribbon-menus').shadowRoot;
+    const popover = root.querySelector('.ribbon-group-popover');
+    const title = popover.querySelector(
+      '.ribbon-group-popover-footer .ribbon-group-title'
+    );
+    const launcher = popover.querySelector('.ribbon-group-popover-dialog');
+    const inlineTitle = root.querySelector(
+      '.ribbon-group[data-group="file"] .ribbon-group-title'
+    );
+    return {
+      label: popover.getAttribute('aria-label'),
+      title: title?.textContent?.trim() ?? '',
+      titleFontSize: getComputedStyle(title).fontSize,
+      inlineTitleFontSize: getComputedStyle(inlineTitle).fontSize,
+      launcherLabel: launcher?.getAttribute('aria-label') ?? null,
+      launcherInFooter:
+        launcher?.closest('.ribbon-group-popover-footer') !== null,
+      launcherIconFontSize: getComputedStyle(
+        launcher.querySelector('.ribbon-group-dialog-icon')
+      ).fontSize,
+    };
+  });
+  assert.equal(filePopover.label, '文件');
+  assert.equal(filePopover.title, '文件');
+  assert.equal(filePopover.titleFontSize, filePopover.inlineTitleFontSize);
+  assert.equal(filePopover.launcherLabel, '打开文件设置');
+  assert.equal(filePopover.launcherInFooter, true);
+  assert.equal(filePopover.launcherIconFontSize, '12px');
+  await frame.evaluate(() => {
+    document.dispatchEvent(
+      new KeyboardEvent('keydown', {key: 'Escape', bubbles: true})
+    );
+  });
+  await frame.waitForFunction(() => {
+    const root = document.querySelector('#ribbon-menus').shadowRoot;
+    return root.querySelector('.ribbon-group-popover') === null;
+  });
   await frame.getByRole('button', {name: '样式库', exact: true}).click();
   await frame.locator('vscode-ribbon .ribbon-gallery').waitFor();
   assert.equal(
@@ -808,8 +856,19 @@ export async function testScenarios(page, url) {
   const overflowPopover = await frame.evaluate(() => {
     const root = document.querySelector('#ribbon-overflow').shadowRoot;
     const popover = root.querySelector('.ribbon-group-popover');
+    const footerTitle = popover.querySelector(
+      '.ribbon-group-popover-footer .ribbon-group-title'
+    );
+    const inlineTitle = root.querySelector(
+      '.ribbon-group[data-group="view"] .ribbon-group-title'
+    );
     return {
       label: popover.getAttribute('aria-label'),
+      footerTitle: footerTitle?.textContent?.trim() ?? '',
+      footerTitleFontSize: getComputedStyle(footerTitle).fontSize,
+      inlineTitleFontSize: getComputedStyle(inlineTitle).fontSize,
+      hasDialogLauncher:
+        popover.querySelector('.ribbon-group-popover-dialog') !== null,
       items: [...popover.querySelectorAll('.ribbon-item')].map((item) => ({
         label: item.getAttribute('aria-label'),
         className: item.className,
@@ -818,6 +877,17 @@ export async function testScenarios(page, url) {
     };
   });
   assert.equal(overflowPopover.label, '视图');
+  assert.equal(overflowPopover.footerTitle, '视图');
+  assert.equal(
+    overflowPopover.footerTitleFontSize,
+    overflowPopover.inlineTitleFontSize,
+    '弹层分组标题应与功能区分组标题样式一致'
+  );
+  assert.equal(
+    overflowPopover.hasDialogLauncher,
+    false,
+    '没有启动器的分组不应显示设置按钮'
+  );
   assert.deepEqual(
     [...overflowPopover.items.map((item) => item.label)].sort(),
     ['侧边栏', '终端'].sort()

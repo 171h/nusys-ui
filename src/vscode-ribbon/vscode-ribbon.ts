@@ -2326,7 +2326,12 @@ export class VscodeRibbon extends VscElement {
               )}
             </div>`
       }
-      ${this._renderDialogLauncher(group, true)}
+      <div class="ribbon-group-popover-footer">
+        <span class="ribbon-group-title" part="group-title"
+          >${group.title}</span
+        >
+        ${this._renderDialogLauncher(group, true)}
+      </div>
     </div>`;
   }
 

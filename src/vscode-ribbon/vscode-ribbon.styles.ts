@@ -1347,10 +1347,6 @@ const styles: CSSResultGroup = [
       padding: 6px;
     }
 
-    .ribbon-group-popover.has-dialog {
-      padding-bottom: 22px;
-    }
-
     .ribbon-gallery-popover {
       padding: 4px;
     }
@@ -1360,12 +1356,38 @@ const styles: CSSResultGroup = [
       bottom: 3px;
     }
 
-    .ribbon-group-popover .ribbon-items {
-      height: var(--vsc-ribbon-items-height);
+    /* 折叠分组弹层底部保留原始分组标题与启动器，样式与功能区一致。 */
+    .ribbon-group-popover-footer {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 22px;
+      margin-top: 2px;
+      padding: 0 22px;
+      border-top: 1px solid
+        var(
+          --vscode-menu-separatorBackground,
+          var(--vscode-panel-border, #454545)
+        );
+      box-sizing: border-box;
     }
 
-    .ribbon-group-popover .ribbon-group-title {
-      display: none;
+    .ribbon-group-popover-footer .ribbon-group-title {
+      display: block;
+      width: 100%;
+    }
+
+    .ribbon-group-popover-footer .ribbon-group-popover-dialog {
+      position: absolute;
+      top: 50%;
+      right: 2px;
+      bottom: auto;
+      transform: translateY(-50%);
+    }
+
+    .ribbon-group-popover .ribbon-items {
+      height: var(--vsc-ribbon-items-height);
     }
 
     @media (prefers-reduced-motion: reduce) {

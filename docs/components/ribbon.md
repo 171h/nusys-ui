@@ -135,7 +135,8 @@ ArrowDown / ArrowUp 打开菜单并聚焦首项或末项。
 1. 在各分组内，把初始尺寸、样式及完整 `responsive` 链相同的按钮归为一批；
    宽度不足时整批逐档降级，普通按钮、下拉与分割按钮不按类型拆批；
 2. 仍溢出时从右向左折叠整个功能组；折叠入口是带分组图标与标题的溢出下拉按钮，
-   点击后在弹层中按声明的原始布局完整呈现该组全部按钮，可直接执行命令；
+   点击后在弹层中按声明的原始布局完整呈现该组全部按钮，可直接执行命令；弹层底部
+   保留与功能区一致的分组标题和对话框启动器（如有），便于识别分组并打开设置；
 3. 全部折叠后仍溢出时，内容区两端显示悬浮滚动按钮，原生横向滚动条始终隐藏。
 
 未声明 `responsive` 的按钮保持原布局，只参与整组折叠；折叠后的弹层不复用降级
@@ -254,7 +255,7 @@ Escape 关闭，执行命令后也会关闭。折叠按钮、标签双击与覆�
 | `panel-footer` / `panel-footer-item`                                                                                                                        | 面板底部操作区与整行操作项                                                                           |
 | `gallery` / `gallery-item` / `gallery-preview` / `gallery-heading` / `gallery-description`                                                                  | 图库网格、图库格子、预览区、分组标题与说明文字                                                       |
 | `gallery-strip` / `gallery-viewport` / `gallery-track` / `gallery-tile` / `gallery-scroll`                                                                  | 组内图库预览条、滚动视口与轨道、图库格子与左右滚动按钮                                               |
-| `group-popover` / `scroll-button` / `custom-content`                                                                                                        | 折叠分组弹层、悬浮滚动按钮与沙箱内容 iframe                                                          |
+| `group-popover` / `scroll-button` / `custom-content`                                                                                                        | 折叠分组弹层（含分组标题与启动器）、悬浮滚动按钮与沙箱内容 iframe                                    |
 
 ## 组件名称与调试定位
 

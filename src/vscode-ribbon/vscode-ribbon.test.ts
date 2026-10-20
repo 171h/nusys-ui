@@ -1882,6 +1882,30 @@ describe('vscode-ribbon', () => {
     expect(
       popoverLauncher.querySelector('.ribbon-group-dialog-icon')?.className
     ).to.not.contain('is-rotated');
+    // 弹层底部保留与功能区一致的分组标题与启动器。
+    const popoverFooter = popoverLauncher.closest<HTMLElement>(
+      '.ribbon-group-popover-footer'
+    )!;
+    expect(popoverFooter).to.not.equal(null);
+    const popoverTitle = popoverFooter.querySelector<HTMLElement>(
+      '.ribbon-group-title'
+    )!;
+    const inlineTitle = el.shadowRoot!.querySelector<HTMLElement>(
+      '.ribbon-group-title'
+    )!;
+    expect(popoverTitle.textContent?.trim()).to.equal('分组');
+    expect(popoverTitle.getClientRects().length).to.be.greaterThan(0);
+    expect(getComputedStyle(popoverTitle).fontSize).to.equal(
+      getComputedStyle(inlineTitle).fontSize
+    );
+    expect(getComputedStyle(popoverTitle).color).to.equal(
+      getComputedStyle(inlineTitle).color
+    );
+    expect(
+      getComputedStyle(
+        popoverLauncher.querySelector('.ribbon-group-dialog-icon')!
+      ).fontSize
+    ).to.equal('12px');
 
     let called = 0;
     el.addEventListener('vsc-ribbon-dialog', () => called++);
@@ -1891,6 +1915,52 @@ describe('vscode-ribbon', () => {
     expect(el.shadowRoot!.querySelector('.ribbon-group-popover')).to.equal(
       null
     );
+  });
+
+  it('折叠分组弹层始终显示分组标题且无启动器时不显示设置按钮', async () => {
+    const tabs: VscRibbonTab[] = [
+      {
+        id: 'home',
+        title: '开始',
+        default: true,
+        groups: [
+          {
+            id: 'layout',
+            title: '布局',
+            items: [
+              {
+                command: 'run',
+                title: '很长的按钮',
+                icon: 'play',
+                responsive: [{size: 'half'}, {size: 'third'}],
+              },
+            ],
+          },
+        ],
+      },
+    ];
+    const el = await createRibbon(tabs, 'width: 40px');
+    await waitFor(
+      () => el.shadowRoot?.querySelector('.ribbon-group.folded') !== null
+    );
+    el.shadowRoot!.querySelector<HTMLButtonElement>(
+      '.ribbon-group.folded .ribbon-group-dropdown'
+    )!.click();
+    await waitFor(
+      () => el.shadowRoot?.querySelector('.ribbon-group-popover') !== null
+    );
+    await aTimeout(32);
+    const popover = el.shadowRoot!.querySelector<HTMLElement>(
+      '.ribbon-group-popover'
+    )!;
+    expect(popover.querySelector('.ribbon-group-popover-dialog')).to.equal(
+      null
+    );
+    const title = popover.querySelector<HTMLElement>(
+      '.ribbon-group-popover-footer .ribbon-group-title'
+    )!;
+    expect(title.textContent?.trim()).to.equal('布局');
+    expect(getComputedStyle(title).fontSize).to.equal('10px');
   });
 
   it('可持久化折叠状态与活动标签', async () => {
