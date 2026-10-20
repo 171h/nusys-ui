@@ -1061,11 +1061,16 @@ describe('vscode-ribbon', () => {
       () => el.shadowRoot?.querySelector('.ribbon-gallery-popover') !== null
     );
     await aTimeout(32);
-    expect(
-      el.shadowRoot!.querySelectorAll(
-        '.ribbon-gallery-popover .ribbon-gallery-tile'
-      )
-    ).to.have.length(8);
+    const popoverTiles = el.shadowRoot!.querySelectorAll<HTMLButtonElement>(
+      '.ribbon-gallery-popover .ribbon-gallery-tile'
+    );
+    expect(popoverTiles).to.have.length(8);
+    popoverTiles[1].click();
+    await el.updateComplete;
+    expect(command).to.equal('format-1');
+    expect(el.shadowRoot!.querySelector('.ribbon-group-popover')).to.equal(
+      null
+    );
   });
 
   it('flyout 子菜单在父菜单旁展开并保留父菜单', async () => {

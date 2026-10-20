@@ -2167,7 +2167,10 @@ export class VscodeRibbon extends VscElement {
     </button>`;
   }
 
-  private _renderGalleryTile(item: RibbonItemModel): TemplateResult {
+  private _renderGalleryTile(
+    item: RibbonItemModel,
+    context: 'ribbon' | 'group' = 'ribbon'
+  ): TemplateResult {
     const hasMenu = item.menu !== null;
     return html`<button
       type="button"
@@ -2178,7 +2181,7 @@ export class VscodeRibbon extends VscElement {
       aria-haspopup=${ifDefined(hasMenu ? (item.menu?.layout === 'panel' ? 'dialog' : 'menu') : undefined)}
       ?disabled=${item.disabled}
       @click=${(event: Event) => {
-        this._activateItem(item, event.currentTarget as HTMLElement, 'ribbon');
+        this._activateItem(item, event.currentTarget as HTMLElement, context);
       }}
     >
       ${this._renderGalleryContent(item)}
@@ -2288,7 +2291,7 @@ export class VscodeRibbon extends VscElement {
                     >
                       ${item.title}
                     </div>`
-                  : this._renderGalleryTile(item)
+                  : this._renderGalleryTile(item, 'group')
               )}
             </div>`
           : html`<div class="ribbon-items" part="items">
