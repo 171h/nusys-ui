@@ -1902,12 +1902,20 @@ export class VscodeRibbon extends VscElement {
     if (menu.footer.length === 0) {
       return nothing;
     }
-    return html`<div class="ribbon-panel-footer" part="panel-footer">
-      ${menu.footer.map((item) => this._renderPanelFooterEntry(item))}
+    const isMenu = menu.layout !== 'panel';
+    return html`<div
+      class="ribbon-panel-footer"
+      part="panel-footer"
+      role=${ifDefined(isMenu ? 'none' : undefined)}
+    >
+      ${menu.footer.map((item) => this._renderPanelFooterEntry(item, isMenu))}
     </div>`;
   }
 
-  private _renderPanelFooterEntry(item: RibbonItemModel): TemplateResult {
+  private _renderPanelFooterEntry(
+    item: RibbonItemModel,
+    menuRole = false
+  ): TemplateResult {
     if (item.separator) {
       return html`<div
         class="ribbon-menu-separator"
@@ -1916,7 +1924,11 @@ export class VscodeRibbon extends VscElement {
       ></div>`;
     }
     if (item.heading) {
-      return html`<div class="ribbon-menu-heading" part="menu-heading">
+      return html`<div
+        class="ribbon-menu-heading"
+        part="menu-heading"
+        role=${ifDefined(menuRole ? 'presentation' : undefined)}
+      >
         ${item.title}
       </div>`;
     }
@@ -1925,6 +1937,7 @@ export class VscodeRibbon extends VscElement {
       type="button"
       class="ribbon-panel-footer-item"
       part="panel-footer-item"
+      role=${ifDefined(menuRole ? 'menuitem' : undefined)}
       title=${this._buttonTitle(item)}
       aria-label=${item.title}
       aria-haspopup=${ifDefined(

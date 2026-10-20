@@ -310,6 +310,34 @@ describe('vscode-ribbon', () => {
     ).to.deep.equal(['固定首项', 'Åland', 'Örebro', 'Zulu']);
   });
 
+  it('普通菜单的底部命令补齐 menuitem 语义', async () => {
+    const tabs = basicTabs();
+    tabs[0].groups![0].items = [
+      {
+        type: 'dropdown',
+        title: '菜单',
+        menu: {
+          items: [{command: 'run', title: '运行'}],
+          footer: [
+            {heading: true, title: '更多'},
+            {command: 'footer', title: '底部命令'},
+          ],
+        },
+      },
+    ];
+    const el = await createRibbon(tabs);
+    const menu = await openMenu(el, '菜单');
+    expect(menu.getAttribute('role')).to.equal('menu');
+    const footer = menu.querySelector('.ribbon-panel-footer')!;
+    expect(footer.getAttribute('role')).to.equal('none');
+    expect(
+      footer.querySelector('.ribbon-menu-heading')?.getAttribute('role')
+    ).to.equal('presentation');
+    expect(
+      footer.querySelector('.ribbon-panel-footer-item')?.getAttribute('role')
+    ).to.equal('menuitem');
+  });
+
   for (const configured of [false, true]) {
     for (const attributes of [false, true]) {
       it(`显式${attributes ? '特性' : '属性'}优先于相反的持久化状态（collapsed=${configured}）`, async () => {
