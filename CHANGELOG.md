@@ -23,7 +23,7 @@
 
 ### 新增
 
-- **ribbon**：新增 `vscode-ribbon` 功能区组件，覆盖标签、分组、命令按钮、分割按钮、递归下拉菜单、面板与沙箱自定义内容；实现按批响应式降级、`responsiveMenu` 合并、从右向左分组折叠、两端悬浮滚动入口、折叠覆盖层与可选 `localStorage` 持久化；菜单项文字左对齐，通过 `vsc-ribbon-command`、`vsc-ribbon-select` 与 `vsc-ribbon-collapse` 事件由宿主执行命令和同步状态。
+- **ribbon**：新增 `vscode-ribbon` 功能区组件，覆盖标签、分组、命令按钮、分割按钮、递归下拉菜单、面板、图库、flyout、底部命令与沙箱自定义内容；实现按批响应式降级、从右向左分组折叠、两端悬浮滚动入口、折叠覆盖层、可选 `localStorage` 持久化以及按 `sort-locale` / 继承的 `lang` 排序；支持菜单标题项、补充说明、分组对话框启动器与菜单项左对齐，通过 `vsc-ribbon-command`、`vsc-ribbon-select`、`vsc-ribbon-collapse` 与 `vsc-ribbon-dialog` 事件由宿主执行命令和同步状态。
 - **fieldset**：开启 `legend-checkbox` 时点击 legend 标题也可切换勾选状态，复用内容显隐和业务事件，同时保留标题内独立控件的操作。
 - **fieldset**：新增默认关闭的 `legend-checkbox`，在现有 legend 标题文字左侧显示复选框，复用内容显隐和业务事件接口；普通分区与原有右上角复选框保持原有行为，新增独立测试和示例。
 - **fieldset**：完善标题复选框的内容显隐与业务事件联动示例；无标签复选框使用分区标题作为无障碍名称，并跟随标题更新。
