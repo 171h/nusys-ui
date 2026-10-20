@@ -126,6 +126,10 @@ ArrowDown / ArrowUp 打开菜单并聚焦首项或末项。
 | `custom`  | `{html, css?, width?, height?}`  | 沙箱 iframe 中的静态内容            |
 | `footer`  | `VscRibbonItem[]`                | 面板底部操作区条目                  |
 
+占满按钮高度的整高按钮，其图标统一取按钮高度的一半并保持正方形：默认按钮高度
+`74px` 对应 `37px` 图标，可通过 `--vsc-ribbon-icon-size` 单独覆盖图标尺寸，或
+调整 `--vsc-ribbon-items-height` 同时改变按钮与图标高度。
+
 ## 响应式与折叠
 
 1. 在各分组内，把初始尺寸、样式及完整 `responsive` 链相同的按钮归为一批；

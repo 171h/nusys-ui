@@ -399,6 +399,10 @@ export async function testScenarios(page, url) {
       ...root.querySelectorAll('.ribbon-item.is-dropdown.ribbon-item-vertical'),
     ].find((element) => element.textContent.includes('板模板'));
     const top = (element) => element.getBoundingClientRect().top;
+    const size = (element) => {
+      const rect = element.getBoundingClientRect();
+      return {width: rect.width, height: rect.height};
+    };
     return {
       icon: Math.abs(
         top(split.querySelector('.ribbon-icon')) -
@@ -412,6 +416,10 @@ export async function testScenarios(page, url) {
         top(split.querySelector('.ribbon-chevron')) -
           top(dropdown.querySelector('.ribbon-chevron'))
       ),
+      splitIcon: size(split.querySelector('.ribbon-icon')),
+      dropdownIcon: size(dropdown.querySelector('.ribbon-icon')),
+      splitButton: size(split),
+      dropdownButton: size(dropdown),
     };
   });
   assert.ok(
@@ -425,6 +433,21 @@ export async function testScenarios(page, url) {
   assert.ok(
     splitAlignment.chevron <= 1.5,
     `分割按钮箭头应与相邻下拉按钮对齐，实际偏差 ${splitAlignment.chevron}px`
+  );
+  const iconSize = splitAlignment.splitIcon;
+  assert.ok(
+    Math.abs(iconSize.width - iconSize.height) < 0.5,
+    `整高按钮图标应为正方形，实际 ${iconSize.width}×${iconSize.height}`
+  );
+  assert.ok(
+    Math.abs(iconSize.height * 2 - splitAlignment.splitButton.height) <= 1,
+    `图标高度应为按钮高度一半，按钮高 ${splitAlignment.splitButton.height}px、图标高 ${iconSize.height}px`
+  );
+  assert.ok(
+    Math.abs(
+      Math.round(iconSize.width) - Math.round(splitAlignment.dropdownIcon.width)
+    ) <= 1,
+    '分割按钮与相邻下拉按钮的图标尺寸应一致'
   );
   const splitPrimary = frame
     .locator('.ribbon-split .ribbon-item-primary')

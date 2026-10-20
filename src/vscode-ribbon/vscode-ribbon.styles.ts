@@ -7,7 +7,8 @@ const styles: CSSResultGroup = [
     :host {
       --vsc-ribbon-tabs-height: 32px;
       --vsc-ribbon-items-height: 74px;
-      --vsc-ribbon-icon-size: 40px;
+      /* 占满按钮高度的图标统一为按钮高度的一半，并保持正方形。 */
+      --vsc-ribbon-icon-size: calc(var(--vsc-ribbon-items-height) / 2);
       --vsc-ribbon-compact-icon-size: 22px;
       --vsc-ribbon-height: calc(
         var(--vsc-ribbon-tabs-height) + var(--vsc-ribbon-items-height) + 24px
@@ -585,10 +586,10 @@ const styles: CSSResultGroup = [
     }
 
     .ribbon-split.ribbon-item-vertical .ribbon-item-primary {
-      flex: 0 0 42px;
+      flex: 0 0 calc(var(--vsc-ribbon-items-height) / 2 + 2px);
       box-sizing: border-box;
       flex-direction: row;
-      align-items: center;
+      align-items: flex-start;
       justify-content: center;
       min-height: 0;
       padding: 2px 2px 0;
@@ -597,6 +598,8 @@ const styles: CSSResultGroup = [
     .ribbon-split.ribbon-item-vertical .ribbon-split-trigger {
       flex: 1 1 auto;
       box-sizing: border-box;
+      align-items: flex-start;
+      justify-content: center;
       min-height: 0;
       padding: 0 3px;
       border-top: 0;

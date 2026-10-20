@@ -854,10 +854,29 @@ describe('vscode-ribbon', () => {
     const splitRect = split.getBoundingClientRect();
     expect(splitRect.width).to.be.lessThan(64);
     expect(splitRect.width).to.be.greaterThan(30);
+    // 全高按钮图标统一为按钮高度一半的正方形。
+    const splitIconRect = primary
+      .querySelector('.ribbon-icon')!
+      .getBoundingClientRect();
+    expect(Math.round(splitIconRect.width)).to.equal(
+      Math.round(splitIconRect.height)
+    );
+    expect(Math.abs(splitIconRect.height * 2 - splitRect.height)).to.be.at.most(
+      1
+    );
     // 图标、标题与箭头分别与相邻整高下拉按钮的对应行水平对齐。
     const dropdown = el.shadowRoot!.querySelector<HTMLElement>(
       '.ribbon-item.is-dropdown.ribbon-item-vertical'
     )!;
+    const dropdownIconRect = dropdown
+      .querySelector('.ribbon-icon')!
+      .getBoundingClientRect();
+    expect(Math.round(dropdownIconRect.width)).to.equal(
+      Math.round(splitIconRect.width)
+    );
+    expect(Math.round(dropdownIconRect.height)).to.equal(
+      Math.round(splitIconRect.height)
+    );
     const rowDelta = (left: Element | null, right: Element | null) =>
       Math.abs(
         left!.getBoundingClientRect().top - right!.getBoundingClientRect().top
@@ -1283,8 +1302,14 @@ describe('vscode-ribbon', () => {
     const fullIcon = el.shadowRoot!.querySelector<HTMLElement>(
       '.ribbon-item-full .ribbon-icon'
     )!;
+    const itemsHeight = parseFloat(
+      getComputedStyle(el).getPropertyValue('--vsc-ribbon-items-height')
+    );
+    const halfSize = `${itemsHeight / 2}px`;
     const fullIconSize = getComputedStyle(fullIcon).fontSize;
-    expect(fullIconSize).to.equal('40px');
+    expect(fullIconSize).to.equal(halfSize);
+    expect(getComputedStyle(fullIcon).width).to.equal(halfSize);
+    expect(getComputedStyle(fullIcon).height).to.equal(halfSize);
 
     el.style.width = '120px';
     el.refreshLayout();
@@ -1298,7 +1323,7 @@ describe('vscode-ribbon', () => {
       '.ribbon-group.folded .ribbon-group-dropdown .ribbon-group-icon'
     )!;
     expect(getComputedStyle(groupIcon).fontSize).to.equal(fullIconSize);
-    expect(getComputedStyle(groupIcon).width).to.equal('40px');
+    expect(getComputedStyle(groupIcon).width).to.equal(halfSize);
   });
 
   it('折叠分组在弹层中保留自定义对话框启动器', async () => {
