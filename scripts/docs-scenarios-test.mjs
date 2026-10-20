@@ -46,6 +46,9 @@ export async function testResponsiveTable(frame) {
 }
 
 export async function testScenarios(page, url) {
+  const previousViewport = page.viewportSize();
+  // 国际化示例在桌面宽度下验证，避免窄屏折叠功能组后隐藏对话框启动器。
+  await page.setViewportSize({width: 1440, height: 1000});
   await testRibbonI18n(page, url);
   const open = async (id) => {
     const component = Object.keys(componentScenarios).find((key) =>
@@ -61,8 +64,6 @@ export async function testScenarios(page, url) {
     );
     return frame;
   };
-  const previousViewport = page.viewportSize();
-  await page.setViewportSize({width: 1440, height: 1000});
   for (const component of ['single-select', 'multi-select']) {
     await page.goto(url(`components/${component}`));
     const element = await page
