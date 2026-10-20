@@ -857,7 +857,8 @@ export class VscodeRibbon extends VscElement {
     >
       ${this._renderIcon(
         launcher.icon,
-        `ribbon-group-dialog-icon${launcher.rotated ? ' is-rotated' : ''}`
+        'ribbon-group-dialog-icon',
+        launcher.rotated
       )}
     </button>`;
   }
@@ -1469,12 +1470,13 @@ export class VscodeRibbon extends VscElement {
 
   private _renderIcon(
     icon: ResolvedRibbonIcon,
-    className = 'ribbon-icon'
+    className = 'ribbon-icon',
+    rotated = false
   ): TemplateResult {
     const resolved = resolveThemedIcon(icon, this._dark);
     if (resolved.type === 'image') {
       return html`<span
-        class=${classMap({[className]: true, 'is-image': true})}
+        class=${classMap({[className]: true, 'is-image': true, 'is-rotated': rotated})}
         .style=${stylePropertyMap({
           '--vsc-ribbon-icon-url': `url(${JSON.stringify(resolved.url)})`,
         })}
@@ -1482,7 +1484,7 @@ export class VscodeRibbon extends VscElement {
       ></span>`;
     }
     return html`<span
-      class=${classMap({[className]: true, codicon: true, [`codicon-${resolved.id}`]: true})}
+      class=${classMap({[className]: true, codicon: true, [`codicon-${resolved.id}`]: true, 'is-rotated': rotated})}
       aria-hidden="true"
     ></span>`;
   }

@@ -143,6 +143,35 @@ afterEach(() => {
 });
 
 describe('vscode-ribbon', () => {
+  it('对话框启动器支持默认、Codicon 与图片图标双向切换', async () => {
+    const tabs = basicTabs();
+    const group = tabs[0].groups![0];
+    group.dialogLauncher = {icon: 'settings-gear'};
+    const el = await createRibbon(tabs);
+    for (const icon of [
+      undefined,
+      'settings-gear',
+      './icon.svg',
+      undefined,
+      './icon.svg',
+    ]) {
+      group.dialogLauncher = icon ? {icon} : true;
+      el.tabs = [...tabs];
+      await el.updateComplete;
+      const element = el.shadowRoot!.querySelector(
+        '.ribbon-group-dialog-icon'
+      )!;
+      expect(element.classList.contains('is-rotated')).to.equal(!icon);
+      expect(element.classList.contains('is-image')).to.equal(
+        icon === './icon.svg'
+      );
+      if (!icon)
+        expect(element.classList.contains('codicon-link-external')).to.equal(
+          true
+        );
+    }
+  });
+
   it('is defined', () => {
     const el = document.createElement('vscode-ribbon');
     expect(el).to.be.instanceOf(VscodeRibbon);
