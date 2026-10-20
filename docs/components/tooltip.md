@@ -1,6 +1,6 @@
 # 悬浮提示 Tooltip
 
-鼠标悬停或键盘聚焦时显示 VS Code Activity Bar 风格的文字提示，支持四向箭头和主题切换。
+默认通过鼠标悬停显示 VS Code Activity Bar 风格的文字提示，可选择开启键盘聚焦触发，支持四向箭头和主题切换。
 
 [API 参考](../api/generated/tooltip)
 
@@ -14,7 +14,23 @@ import 'nusys-ui/dist/vscode-tooltip/index.js';
 
 ## 使用说明
 
-将一个触发元素放入默认插槽，通过 `text` 提供纯文本提示，换行符会保留。`placement` 支持 `top`、`bottom`、`left`、`right`，默认 `bottom`，活动栏图标可使用 `right`。鼠标默认悬停 500 毫秒后显示，可通过 `delay` 调整，设置 `0` 即立即显示；聚焦立即显示，Escape 关闭并保持焦点。鼠标可移入提示面板，离开触发元素和面板、且触发元素失焦后关闭。`disabled` 仅禁用提示。
+将一个触发元素放入默认插槽，通过 `text` 提供纯文本提示，换行符会保留。`placement` 支持 `top`、`bottom`、`left`、`right`，默认 `bottom`，活动栏图标可使用 `right`。鼠标默认悬停 500 毫秒后显示，可通过 `delay` 调整，设置 `0` 即立即显示；默认聚焦不显示提示；设置 `show-on-focus`（JavaScript 属性 `showOnFocus = true`）后，Tab、鼠标点击或程序调用获取焦点时立即显示。Escape 关闭并保持焦点。鼠标可移入提示面板，离开触发元素和面板后关闭；开启焦点触发时，触发元素保持焦点也会保持显示。`disabled` 仅禁用提示。
+
+`show-on-focus` 是默认关闭、反射到同名属性的布尔开关，可动态切换。关闭时仅由目标焦点维持的提示会收起，悬停、面板内交互、`open` 和 `pinned` 仍按各自规则保持显示；目标已聚焦时开启则立即显示。默认关闭仅控制视觉触发，无障碍描述关联仍保留。
+
+```html
+<!-- 默认仅悬停触发 -->
+<vscode-tooltip text="保存当前项目">
+  <vscode-button>保存</vscode-button>
+</vscode-tooltip>
+
+<!-- 同时支持悬停和 Tab 聚焦触发 -->
+<vscode-tooltip show-on-focus text="导出当前项目">
+  <vscode-button>导出</vscode-button>
+</vscode-tooltip>
+```
+
+迁移现有的聚焦提示行为时，为原有提示添加 `show-on-focus`；Vue 可用 `:show-on-focus="enableFocusTooltip"` 绑定用户偏好。
 
 触发元素应能通过键盘聚焦，并提供自身的无障碍名称。组件会追加 `aria-describedby`，保留已有描述；替换触发元素或移除组件时清理关联。默认插槽仅支持一个触发元素，请勿将多个操作合并在同一个提示中。对于禁用按钮，可用具有 `tabindex="0"` 的外层元素作为触发元素。
 
@@ -24,7 +40,7 @@ import 'nusys-ui/dist/vscode-tooltip/index.js';
 
 鼠标可以缓慢经过箭头间隙进入面板，在面板内停留、选择文字或滚动时保持显示。面板中的固定按钮或链接获得键盘焦点时也保持显示。
 
-点击右上角的 pinned 图标可固定提示，此时鼠标移开、触发元素失焦都不会关闭；再次点击取消固定后恢复普通悬停行为。默认插槽的触发元素可通过 Tab 进入固定按钮；`for` / `target` 外部关联时，聚焦目标后按 Alt+↓ 进入固定按钮，普通 Tab 保留页面原有顺序。按 Enter 或空格可切换固定状态，继续按 Tab 可访问 Markdown 链接。Escape 关闭提示并清除固定状态；如果焦点位于提示内部，会返回触发元素。
+点击右上角的 pinned 图标可固定提示，此时鼠标移开、触发元素失焦都不会关闭；再次点击取消固定后恢复普通悬停行为。提示显示后，默认插槽的触发元素可通过 Tab 进入固定按钮；`for` / `target` 外部关联时，提示显示且聚焦目标后按 Alt+↓ 进入固定按钮，普通 Tab 保留页面原有顺序。按 Enter 或空格可切换固定状态，继续按 Tab 可访问 Markdown 链接。Escape 关闭提示并清除固定状态；如果焦点位于提示内部，会返回触发元素。
 
 `pinned` 是可读写、反射到同名属性的布尔状态，可通过 `<vscode-tooltip pinned>` 或 `tip.pinned = true` 固定。禁用提示、清空内容、替换目标或移除组件会清除固定状态。固定仅控制关闭行为，仍跟随目标定位并遵守目标可见性规则；`open` 持续提示不受取消固定影响。固定按钮可通过 `::part(pin)` 调整样式。
 
@@ -76,7 +92,7 @@ import 'nusys-ui/dist/vscode-tooltip/index.js';
 
 本组件参考该项目的 `SCTooltip.vue`、`SCHoverSurface.vue` 和字段提示定位需求。替换 `SCTooltip` 时可以使用默认插槽；如果原封装依赖克隆节点保留布局，应使用外部 `for` 关联，保留现有 class、style、事件与 slot 在原触发元素上。`delay="0"` 可保留原封装的立即显示行为，无需再通过 Vue 作用域插槽分发 `tooltipId`。
 
-字段说明与校验使用 `open` 持续显示，将错误和说明合并成换行文本。`fallbacks` 是仅通过 JavaScript 设置的数组，可保留字段提示“右 → 下 → 上”的回退顺序；宽度通过主题无关的 CSS 变量调整。持续提示被 Escape 关闭后不会因内容变化重新打开；将 `open` 先关闭再打开，或再次悬停、聚焦目标可恢复。错误播报仍应由应用中的 `aria-live` 区域承担。
+字段说明与校验使用 `open` 持续显示，将错误和说明合并成换行文本。`fallbacks` 是仅通过 JavaScript 设置的数组，可保留字段提示“右 → 下 → 上”的回退顺序；宽度通过主题无关的 CSS 变量调整。持续提示被 Escape 关闭后不会因内容变化重新打开；将 `open` 先关闭再打开，或再次悬停目标可恢复；开启 `show-on-focus` 后重新聚焦也可恢复。错误播报仍应由应用中的 `aria-live` 区域承担。
 
 ```html
 <vscode-tooltip
@@ -97,12 +113,12 @@ Vue 模板中用 `:text="tipText"`、`:open="hasTip"`、`:disabled="disabled"` �
 
 ## 交互示例
 
-使用右上角导航栏的全站主题和尺寸选择查看浅色、深色和高对比度效果。悬停按钮或使用 Tab 聚焦，按 Escape 关闭提示；切换主题和尺寸时保留当前交互状态。
+使用右上角导航栏的全站主题和尺寸选择查看浅色、深色和高对比度效果。悬停任意按钮显示提示；搜索按钮开启了 `show-on-focus`，也可使用 Tab 聚焦显示。按 Escape 关闭提示；切换主题和尺寸时保留当前交互状态。
 
 <ExamplePreview example="tooltip" />
 
 ```html
-<vscode-tooltip text="搜索 (Ctrl+Shift+F)" placement="right">
+<vscode-tooltip show-on-focus text="搜索 (Ctrl+Shift+F)" placement="right">
   <vscode-button icon="search" aria-label="搜索" icon-only></vscode-button>
 </vscode-tooltip>
 ```

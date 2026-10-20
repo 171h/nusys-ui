@@ -2,9 +2,9 @@ import {extraExamples} from './scenarios.mjs';
 export const examples = {
   tooltip: {
     height: 230,
-    title: '四向提示与键盘聚焦',
+    title: '四向悬停提示与可选键盘聚焦',
     css: '.tooltips{display:flex;gap:32px;justify-content:center;padding:64px 0}',
-    html: '<div class="tooltips"><vscode-tooltip text="上方提示" placement="top"><vscode-button>上</vscode-button></vscode-tooltip><vscode-tooltip text="下方提示" placement="bottom"><vscode-button>下</vscode-button></vscode-tooltip><vscode-tooltip text="左方提示" placement="left"><vscode-button>左</vscode-button></vscode-tooltip><vscode-tooltip text="搜索 (Ctrl+Shift+F)" placement="right"><vscode-button icon="search" aria-label="搜索" icon-only></vscode-button></vscode-tooltip></div>',
+    html: '<div class="tooltips"><vscode-tooltip text="上方提示" placement="top"><vscode-button>上</vscode-button></vscode-tooltip><vscode-tooltip text="下方提示" placement="bottom"><vscode-button>下</vscode-button></vscode-tooltip><vscode-tooltip text="左方提示" placement="left"><vscode-button>左</vscode-button></vscode-tooltip><vscode-tooltip show-on-focus text="搜索 (Ctrl+Shift+F)" placement="right"><vscode-button icon="search" aria-label="搜索" icon-only></vscode-button></vscode-tooltip></div>',
   },
   ...extraExamples,
   badge: {

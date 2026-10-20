@@ -13,9 +13,10 @@ import {resetMouse, sendKeys, sendMouse} from '../includes/browser-commands.js';
 
 const panel = (el: VscodeTooltip) =>
   el.shadowRoot!.querySelector<HTMLElement>('.tooltip')!;
-const setup = () =>
+const setup = (showOnFocus = true) =>
   fixture<VscodeTooltip>(html`
     <vscode-tooltip
+      ?show-on-focus=${showOnFocus}
       text="搜索 (Ctrl+Shift+F)"
       delay="0"
       style="position:fixed;left:250px;top:150px"
@@ -26,6 +27,120 @@ const setup = () =>
 
 describe('vscode-tooltip', () => {
   afterEach(async () => resetMouse());
+
+  for (const association of ['slot', 'for', 'target'] as const) {
+    it(`${association} 默认 Tab 聚焦不显示，开启 show-on-focus 后聚焦立即显示并在失焦时关闭`, async () => {
+      await sendMouse({type: 'move', position: [1200, 900]});
+      const root = await fixture<HTMLDivElement>(html`
+        <div>
+          <button>前一个</button>
+          <vscode-tooltip text="说明" delay="10000">
+            <button id="focus-trigger">触发</button>
+          </vscode-tooltip>
+          <button>后一个</button>
+        </div>
+      `);
+      const el = root.querySelector('vscode-tooltip')!;
+      const target = root.querySelector<HTMLButtonElement>('#focus-trigger')!;
+      const previous = root.querySelector('button')!;
+      if (association !== 'slot') {
+        root.insertBefore(target, el);
+        if (association === 'for') {
+          el.for = target.id;
+        } else {
+          el.target = target;
+        }
+        await el.updateComplete;
+      }
+      previous.focus();
+      await sendKeys({press: 'Tab'});
+      expect(document.activeElement).to.equal(target);
+      expect(el.showOnFocus).to.equal(false);
+      expect(panel(el).matches(':popover-open')).to.equal(false);
+      expect(target.getAttribute('aria-describedby')).to.include(
+        'vscode-tooltip-'
+      );
+      target.blur();
+      el.setAttribute('show-on-focus', '');
+      await el.updateComplete;
+      previous.focus();
+      await sendKeys({press: 'Tab'});
+      await el.updateComplete;
+      expect(panel(el).matches(':popover-open')).to.equal(true);
+      target.blur();
+      await el.updateComplete;
+      expect(panel(el).matches(':popover-open')).to.equal(false);
+    });
+  }
+
+  it('默认聚焦内部输入框仍保留跨 Shadow DOM 的无障碍描述', async () => {
+    const el = await fixture<VscodeTooltip>(html`
+      <vscode-tooltip text="字段说明">
+        <vscode-textfield label="字段"></vscode-textfield>
+      </vscode-tooltip>
+    `);
+    const field = el.querySelector('vscode-textfield')!;
+    await field.updateComplete;
+    const input = field.shadowRoot!.querySelector('input')!;
+    input.focus();
+    await el.updateComplete;
+    expect(panel(el).matches(':popover-open')).to.equal(false);
+    expect(input.ariaDescribedByElements).to.include(
+      el.querySelector('[role="tooltip"]')
+    );
+    input.blur();
+    expect(input.ariaDescribedByElements).not.to.include(
+      el.querySelector('[role="tooltip"]')
+    );
+  });
+
+  it('默认聚焦不取消悬停延迟，鼠标离开后即使仍聚焦也关闭', async () => {
+    const el = await setup(false);
+    el.delay = 80;
+    await el.updateComplete;
+    const target = el.querySelector('button')!;
+    target.dispatchEvent(new MouseEvent('mouseenter'));
+    target.focus();
+    await el.updateComplete;
+    expect(panel(el).matches(':popover-open')).to.equal(false);
+    await waitUntil(() => panel(el).matches(':popover-open'));
+    target.dispatchEvent(new MouseEvent('mouseleave'));
+    await waitUntil(() => !panel(el).matches(':popover-open'));
+    expect(document.activeElement).to.equal(target);
+  });
+
+  it('聚焦期间可动态开关，关闭不影响悬停、持续显示和固定提示', async () => {
+    const el = await setup(false);
+    const target = el.querySelector('button')!;
+    target.focus();
+    el.showOnFocus = true;
+    await el.updateComplete;
+    expect(el.hasAttribute('show-on-focus')).to.equal(true);
+    expect(panel(el).matches(':popover-open')).to.equal(true);
+    el.showOnFocus = false;
+    await el.updateComplete;
+    expect(panel(el).matches(':popover-open')).to.equal(false);
+    for (const mode of ['hover', 'open', 'pinned'] as const) {
+      el.showOnFocus = true;
+      await el.updateComplete;
+      if (mode === 'hover') {
+        target.dispatchEvent(new MouseEvent('mouseenter'));
+      } else {
+        el[mode] = true;
+      }
+      el.showOnFocus = false;
+      await el.updateComplete;
+      expect(panel(el).matches(':popover-open')).to.equal(true);
+      if (mode === 'hover') {
+        target.dispatchEvent(new MouseEvent('mouseleave'));
+        await aTimeout(120);
+      } else {
+        el[mode] = false;
+      }
+      await el.updateComplete;
+      expect(panel(el).matches(':popover-open')).to.equal(false);
+    }
+  });
 
   it('默认保留中文面板名称和固定按钮文案', async () => {
     const el = await setup();
@@ -45,6 +160,7 @@ describe('vscode-tooltip', () => {
   it('支持通过属性翻译文案，并在显示和固定期间动态切换语言', async () => {
     const el = await fixture<VscodeTooltip>(html`
       <vscode-tooltip
+        show-on-focus
         text="说明内容"
         tooltip-label="Tooltip"
         pin-label="Pin tooltip"
@@ -91,6 +207,7 @@ describe('vscode-tooltip', () => {
           <button id="keyboard-tooltip-target">说明</button>
           <button>下一个字段</button>
           <vscode-tooltip
+            show-on-focus
             for=${association === 'for' ? 'keyboard-tooltip-target' : ''}
             markdown
             text="[文档](https://example.com)"
@@ -289,7 +406,11 @@ describe('vscode-tooltip', () => {
 
   it('初始 pinned 属性直接显示，Markdown 链接获得焦点时保持显示', async () => {
     const el = await fixture<VscodeTooltip>(
-      html`<vscode-tooltip pinned markdown text="[文档](https://example.com)"
+      html`<vscode-tooltip
+        show-on-focus
+        pinned
+        markdown
+        text="[文档](https://example.com)"
         ><button>说明</button></vscode-tooltip
       >`
     );
@@ -310,6 +431,7 @@ describe('vscode-tooltip', () => {
         <div>
           <button id="hidden-tooltip-target">目标</button>
           <vscode-tooltip
+            show-on-focus
             for="hidden-tooltip-target"
             text="提示"
             open
@@ -378,6 +500,7 @@ describe('vscode-tooltip', () => {
           ></vscode-radio-group
         >
         <vscode-tooltip
+          show-on-focus
           for="tooltip-choice"
           text="选择说明"
           delay="0"
@@ -415,6 +538,7 @@ describe('vscode-tooltip', () => {
           ><span slot="content-after">单位</span></vscode-textfield
         >
         <vscode-tooltip
+          show-on-focus
           for="other-tooltip-target"
           text="请输入有效数值"
         ></vscode-tooltip>
@@ -510,6 +634,7 @@ describe('vscode-tooltip', () => {
           <div style="height:300px"></div>
         </div>
         <vscode-tooltip
+          show-on-focus
           for="tooltip-scroll-target"
           text="字段说明"
           open
@@ -569,7 +694,7 @@ describe('vscode-tooltip', () => {
     const root = await fixture<HTMLDivElement>(html`<div></div>`);
     const shadow = root.attachShadow({mode: 'open'});
     shadow.innerHTML =
-      '<button id="shadow-target">操作</button><vscode-tooltip for="shadow-target" text="说明"></vscode-tooltip>';
+      '<button id="shadow-target">操作</button><vscode-tooltip show-on-focus for="shadow-target" text="说明"></vscode-tooltip>';
     const el = shadow.querySelector('vscode-tooltip')!;
     await el.updateComplete;
     shadow.querySelector('button')!.focus();

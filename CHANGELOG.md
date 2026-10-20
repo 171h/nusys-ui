@@ -8,6 +8,8 @@
 
 ### 修复
 
+- **tooltip**：默认仅通过鼠标悬停触发，新增 `show-on-focus`（`showOnFocus`）开关以启用 Tab 等聚焦触发；需要保留原聚焦行为的应用应显式开启。
+
 - **tooltip**：新增 `tooltip-label`、`pin-label` 和 `unpin-label`，允许应用翻译面板无障碍名称及固定按钮文案，支持动态切换语言并保留中文默认值。
 - **tooltip**：固定按钮改用 Codicons 的 `pinned` 线框图标，默认及固定状态统一使用适配主题的浅灰色。
 - **release**：覆盖已有的本地或远程标签必须输入 `y` 确认；远程标签查询失败时显示 Git 的具体原因，保留远程标签替换的并发保护。

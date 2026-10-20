@@ -310,6 +310,24 @@ try {
     false
   );
   await fieldTip.waitFor({state: 'hidden'});
+  frame = await open('tooltip', 2);
+  await page.locator('.example-frame').nth(2).scrollIntoViewIfNeeded();
+  const actionTip = frame.locator('#action-tip .tooltip');
+  const saveTarget = frame.getByRole('button', {name: '保存', exact: true});
+  await page.mouse.move(0, 0);
+  await saveTarget.focus();
+  await actionTip.waitFor({state: 'hidden'});
+  await frame.locator('#focus-tooltip label').click();
+  await saveTarget.focus();
+  await actionTip.waitFor({state: 'visible'});
+  await frame.locator('#action-tip').evaluate((element) => {
+    element.showOnFocus = false;
+  });
+  await actionTip.waitFor({state: 'hidden'});
+  await saveTarget.hover();
+  await actionTip.waitFor({state: 'visible'});
+  await frame.locator('#disable-tooltip label').click();
+  await actionTip.waitFor({state: 'hidden'});
   frame = await open('tooltip', 3);
   for (const theme of ['light', 'dark', 'hc-light', 'hc-dark']) {
     await selectTheme(theme);
