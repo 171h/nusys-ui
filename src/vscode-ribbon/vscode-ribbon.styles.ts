@@ -573,14 +573,20 @@ const styles: CSSResultGroup = [
       border-left: 1px solid transparent;
     }
 
-    /* Office 风格垂直分割按钮：上半部分只放图标，下半部分是“标题 + 下拉箭头”。 */
+    /*
+     * Office 风格垂直分割按钮：图标、标题与下拉箭头分别与相邻整高
+     * 下拉按钮的对应行水平对齐；上半部分只放图标，下半部分是
+     * “标题 + 下拉箭头”按钮。
+     */
     .ribbon-split.ribbon-item-vertical {
       width: max-content;
       min-width: 0;
+      padding: 0;
     }
 
     .ribbon-split.ribbon-item-vertical .ribbon-item-primary {
-      flex: 1 1 0;
+      flex: 0 0 42px;
+      box-sizing: border-box;
       flex-direction: row;
       align-items: center;
       justify-content: center;
@@ -589,19 +595,22 @@ const styles: CSSResultGroup = [
     }
 
     .ribbon-split.ribbon-item-vertical .ribbon-split-trigger {
-      flex: 1 1 0;
+      flex: 1 1 auto;
+      box-sizing: border-box;
       min-height: 0;
       padding: 0 3px;
+      border-top: 0;
+      box-shadow: inset 0 1px 0 transparent;
     }
 
     .ribbon-split.ribbon-item-vertical
       .ribbon-split-trigger
       .ribbon-label.has-chevron {
-      flex-direction: row;
+      flex-direction: column;
       align-items: center;
-      justify-content: center;
-      width: auto;
-      gap: 2px;
+      justify-content: flex-start;
+      width: 100%;
+      gap: 1px;
     }
 
     .ribbon-split.ribbon-item-vertical
@@ -648,6 +657,18 @@ const styles: CSSResultGroup = [
 
     .ribbon-split.ribbon-item-icon-only .ribbon-item-primary .ribbon-label {
       display: none;
+    }
+
+    /* 垂直分割按钮使用内阴影绘制分格线，避免边框占用标题与箭头的对齐高度。 */
+    .ribbon-split.ribbon-item-vertical:has(
+        .ribbon-item-primary:hover:not(:disabled)
+      )
+      .ribbon-split-trigger,
+    .ribbon-split.ribbon-item-vertical:has(
+        .ribbon-split-trigger:hover:not(:disabled)
+      )
+      .ribbon-split-trigger {
+      box-shadow: inset 0 1px 0 var(--vscode-focusBorder, #0078d4);
     }
 
     /* 展开菜单时只有触发区保持激活背景，主命令区域不受影响。 */
@@ -751,7 +772,10 @@ const styles: CSSResultGroup = [
     }
 
     .ribbon-chevron {
+      display: inline-block;
       flex: none;
+      width: 16px;
+      height: 16px;
       font-size: 12px;
       line-height: 12px;
     }

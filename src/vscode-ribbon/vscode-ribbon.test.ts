@@ -805,6 +805,12 @@ describe('vscode-ribbon', () => {
                 icon: 'save',
                 menu: {items: [{command: 'save-as', title: '另存为'}]},
               },
+              {
+                type: 'dropdown',
+                title: '板模板',
+                icon: 'symbol-class',
+                menu: {items: [{command: 'slab', title: '盘扣式'}]},
+              },
             ],
           },
         ],
@@ -830,9 +836,7 @@ describe('vscode-ribbon', () => {
     const transparent = (color: string) =>
       color === 'transparent' || /rgba\(0, 0, 0, 0\)/.test(color);
     // 未悬停时分格线与组合外边框均不显示。
-    expect(transparent(getComputedStyle(trigger).borderTopColor)).to.equal(
-      true
-    );
+    expect(transparent(getComputedStyle(trigger).boxShadow)).to.equal(true);
     expect(getComputedStyle(split).outlineStyle).to.equal('none');
     expect(transparent(getComputedStyle(primary).backgroundColor)).to.equal(
       true
@@ -847,12 +851,35 @@ describe('vscode-ribbon', () => {
       '保存'
     );
     expect(trigger.querySelector('.ribbon-chevron')).to.not.equal(null);
-    const primaryRect = primary.getBoundingClientRect();
-    const triggerRect = trigger.getBoundingClientRect();
     const splitRect = split.getBoundingClientRect();
-    expect(Math.abs(primaryRect.height - triggerRect.height)).to.be.at.most(2);
     expect(splitRect.width).to.be.lessThan(64);
     expect(splitRect.width).to.be.greaterThan(30);
+    // 图标、标题与箭头分别与相邻整高下拉按钮的对应行水平对齐。
+    const dropdown = el.shadowRoot!.querySelector<HTMLElement>(
+      '.ribbon-item.is-dropdown.ribbon-item-vertical'
+    )!;
+    const rowDelta = (left: Element | null, right: Element | null) =>
+      Math.abs(
+        left!.getBoundingClientRect().top - right!.getBoundingClientRect().top
+      );
+    expect(
+      rowDelta(
+        primary.querySelector('.ribbon-icon'),
+        dropdown.querySelector('.ribbon-icon')
+      )
+    ).to.be.at.most(1);
+    expect(
+      rowDelta(
+        trigger.querySelector('.ribbon-label-text'),
+        dropdown.querySelector('.ribbon-label-text')
+      )
+    ).to.be.at.most(1);
+    expect(
+      rowDelta(
+        trigger.querySelector('.ribbon-chevron'),
+        dropdown.querySelector('.ribbon-chevron')
+      )
+    ).to.be.at.most(1);
     primary.click();
     await el.updateComplete;
     expect(command).to.equal('save');

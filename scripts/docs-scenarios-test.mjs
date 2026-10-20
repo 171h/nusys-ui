@@ -363,11 +363,13 @@ export async function testScenarios(page, url) {
       const color = (element, property) => getComputedStyle(element)[property];
       const transparent = (value) =>
         value === 'transparent' || /rgba\(0, 0, 0, 0\)/.test(value);
+      const shadow = color(trigger, 'boxShadow');
+      const divider = (shadow.match(/rgba?\([^)]+\)/) || ['transparent'])[0];
       return {
         outlineStyle: getComputedStyle(split).outlineStyle,
         outlineColor: getComputedStyle(split).outlineColor,
-        divider: color(trigger, 'borderTopColor'),
-        dividerTransparent: transparent(color(trigger, 'borderTopColor')),
+        divider,
+        dividerTransparent: transparent(divider),
         primaryBackground: color(primary, 'backgroundColor'),
         primaryTransparent: transparent(color(primary, 'backgroundColor')),
         triggerBackground: color(trigger, 'backgroundColor'),
@@ -388,6 +390,41 @@ export async function testScenarios(page, url) {
     splitStateValue.outlineStyle,
     'none',
     '未悬停时组合按钮不应显示边框'
+  );
+  // 图标、标题与箭头应与相邻的“板模板”下拉按钮对应行水平对齐。
+  const splitAlignment = await frame.evaluate(() => {
+    const root = document.querySelector('#ribbon-menus').shadowRoot;
+    const split = root.querySelector('.ribbon-split');
+    const dropdown = [
+      ...root.querySelectorAll('.ribbon-item.is-dropdown.ribbon-item-vertical'),
+    ].find((element) => element.textContent.includes('板模板'));
+    const top = (element) => element.getBoundingClientRect().top;
+    return {
+      icon: Math.abs(
+        top(split.querySelector('.ribbon-icon')) -
+          top(dropdown.querySelector('.ribbon-icon'))
+      ),
+      label: Math.abs(
+        top(split.querySelector('.ribbon-label-text')) -
+          top(dropdown.querySelector('.ribbon-label-text'))
+      ),
+      chevron: Math.abs(
+        top(split.querySelector('.ribbon-chevron')) -
+          top(dropdown.querySelector('.ribbon-chevron'))
+      ),
+    };
+  });
+  assert.ok(
+    splitAlignment.icon <= 1.5,
+    `分割按钮图标应与相邻下拉按钮对齐，实际偏差 ${splitAlignment.icon}px`
+  );
+  assert.ok(
+    splitAlignment.label <= 1.5,
+    `分割按钮标题应与相邻下拉按钮对齐，实际偏差 ${splitAlignment.label}px`
+  );
+  assert.ok(
+    splitAlignment.chevron <= 1.5,
+    `分割按钮箭头应与相邻下拉按钮对齐，实际偏差 ${splitAlignment.chevron}px`
   );
   const splitPrimary = frame
     .locator('.ribbon-split .ribbon-item-primary')

@@ -468,7 +468,7 @@ const parts = [
     selector: '[part~="item-primary"]',
     pad: 10,
     description:
-      '垂直分割按钮的上方主区域，只显示图标，点击执行主命令；上下两半高度约相等，悬停时只有该区域背景激活，同时组合按钮外边框与分格线一起高亮。',
+      '垂直分割按钮的上方主区域，只显示图标并与相邻整高下拉按钮的图标行水平对齐；点击执行主命令，悬停时只有该区域背景激活，同时组合按钮外边框与分格线一起高亮。',
     lang: 'js',
     usage:
       "{\n  type: 'splitButton',\n  command: 'save', // 主区域命令\n  title: '保存',\n  icon: 'save',\n  menu: {items: [{command: 'save-as', title: '另存为…', icon: 'save-as'}]},\n}",
@@ -481,7 +481,7 @@ const parts = [
     selector: '[part~="item-trigger"]',
     pad: 10,
     description:
-      '垂直分割按钮的下方触发区，把标题与下拉箭头合并为一个按钮，点击展开菜单而不执行主命令；悬停时只有该区域背景激活，并同步高亮组合边框与分格线。',
+      '垂直分割按钮的下方触发区，把标题与下拉箭头合并为一个按钮，标题行与箭头行分别与相邻整高下拉按钮对应行水平对齐；点击展开菜单而不执行主命令，悬停时只有该区域背景激活，并同步高亮组合边框与分格线。',
     lang: 'js',
     usage:
       "{\n  type: 'splitButton',\n  command: 'save',\n  title: '保存',\n  icon: 'save',\n  menu: {items: [{command: 'save-as', title: '另存为…'}]},\n}",
