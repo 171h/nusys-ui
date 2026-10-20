@@ -359,10 +359,6 @@ vscode-ribbon::part(tab) {
 
 <ComponentExamples component="ribbon" />
 
-## 相关指南
-
-[功能区集成与迁移](../ribbon) · [主题与图标](../guide/theming) · [常见问题](../guide/faq)
-
 ## 标签栏与内容面板分离布局
 
 保留一个 `vscode-ribbon` 作为状态和事件的所有者，将可选的
@@ -410,3 +406,7 @@ Escape 逐层返回混合子菜单、恢复触发焦点；折叠覆盖层关闭�
 布局、折叠后点标签、逐层返回菜单，或点击工作区关闭覆盖层。
 
 <ExamplePreview example="ribbon-separated" />
+
+## 相关指南
+
+[功能区集成与迁移](../ribbon) · [主题与图标](../guide/theming) · [常见问题](../guide/faq)
