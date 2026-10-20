@@ -1550,6 +1550,43 @@ describe('vscode-ribbon', () => {
     expect(shadowButton(el, '基坑计算')).to.equal(undefined);
   });
 
+  it('宽分组弹层限制在视口内且可以滚动执行最后一个命令', async () => {
+    const tabs = basicTabs();
+    tabs[0].groups![0].items = Array.from({length: 40}, (_, index) => ({
+      command: `wide-${index}`,
+      title: `宽分组命令 ${index}`,
+      size: 'full',
+      order: index,
+    }));
+    const el = await createRibbon(tabs, 'width: 100px');
+    await waitFor(
+      () => el.shadowRoot?.querySelector('.ribbon-group.folded') !== null
+    );
+    await clickOnElement(
+      el.shadowRoot!.querySelector<HTMLElement>('.ribbon-group-dropdown')!
+    );
+    await aTimeout(40);
+    const popover = el.shadowRoot!.querySelector<HTMLElement>(
+      '.ribbon-group-popover'
+    )!;
+    const bounds = popover.getBoundingClientRect();
+    expect(bounds.left).to.be.at.least(8);
+    expect(bounds.right).to.be.at.most(innerWidth - 8);
+    expect(popover.scrollWidth).to.be.greaterThan(popover.clientWidth);
+    popover.scrollLeft = popover.scrollWidth;
+    const last = popover.querySelector<HTMLElement>(
+      '[aria-label="宽分组命令 39"]'
+    )!;
+    await aTimeout(40);
+    expect(last.getBoundingClientRect().right).to.be.at.most(bounds.right);
+    await clickOnElement(last);
+    await el.updateComplete;
+    expect(el.dataset.lastCommand).to.equal('wide-39');
+    expect(el.shadowRoot!.querySelector('.ribbon-group-popover')).to.equal(
+      null
+    );
+  });
+
   it('溢出下拉弹层按原始布局完整呈现分组按钮', async () => {
     const el = await createRibbon(overflowTabs(), 'width: 140px');
     await waitFor(

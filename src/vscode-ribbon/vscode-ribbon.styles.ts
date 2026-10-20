@@ -1344,6 +1344,7 @@ const styles: CSSResultGroup = [
     /* =============================== 折叠分组弹层 =============================== */
 
     .ribbon-group-popover {
+      max-width: calc(100vw - 16px);
       padding: 6px;
     }
 
