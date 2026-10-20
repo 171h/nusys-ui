@@ -144,6 +144,97 @@ afterEach(() => {
 });
 
 describe('vscode-ribbon', () => {
+  it('中英文动态切换同步辅助名称、长译文与禁用状态并保留命令', async () => {
+    const el = await createRibbon();
+    for (const english of [false, true, false]) {
+      el.lang = english ? 'en' : 'zh-CN';
+      el.theme = english ? 'dark' : 'light';
+      el.tablistLabel = english ? 'Project ribbon' : '项目功能区';
+      el.collapseLabel = english ? 'Collapse ribbon' : '折叠功能区';
+      el.expandLabel = english ? 'Expand ribbon' : '展开功能区';
+      el.openMenuLabel = english ? 'Open menu' : '打开菜单';
+      el.openGroupLabel = english ? 'Open group' : '打开分组';
+      el.backLabel = english ? 'Back' : '返回';
+      el.closePanelLabel = english ? 'Close panel' : '关闭面板';
+      el.scrollLeftLabel = english ? 'Scroll left' : '向左滚动';
+      el.scrollRightLabel = english ? 'Scroll right' : '向右滚动';
+      el.placeholderLabel = english ? 'Not implemented' : '尚未实现';
+      el.customContentLabel = english ? 'Custom content' : '自定义内容';
+      const longTitle = english
+        ? 'Save all project documents and configuration'
+        : '保存全部项目文档与配置';
+      const dialogTitle = english ? 'Open File dialog' : '打开文件对话框';
+      el.tabs = [
+        {
+          id: 'home',
+          title: english ? 'Home' : '开始',
+          groups: [
+            {
+              id: 'file',
+              title: english ? 'File' : '文件',
+              dialogLauncher: {title: dialogTitle},
+              items: [
+                {command: 'save-all', title: longTitle, size: 'half'},
+                {title: 'placeholder', placeholder: true},
+                {command: 'disabled', title: 'disabled', disabled: true},
+                {
+                  type: 'splitButton',
+                  command: 'primary',
+                  title: 'options',
+                  menu: {layout: 'panel', custom: {html: '<p>详情</p>'}},
+                },
+              ],
+            },
+          ],
+        },
+      ];
+      await aTimeout(0);
+      await el.updateComplete;
+      expect(
+        el
+          .shadowRoot!.querySelector('[role="tablist"]')
+          ?.getAttribute('aria-label')
+      ).to.equal(el.tablistLabel);
+      expect(shadowButton(el, dialogTitle)?.title).to.equal(dialogTitle);
+      expect(shadowButton(el, 'placeholder')?.title).to.contain(
+        el.placeholderLabel
+      );
+      expect(shadowButton(el, 'placeholder')!.disabled).to.equal(true);
+      expect(shadowButton(el, 'disabled')!.disabled).to.equal(true);
+      expect(
+        shadowButton(el, longTitle)!.getBoundingClientRect().height
+      ).to.be.greaterThan(0);
+      shadowButton(el, longTitle)!.click();
+      expect(el.dataset.lastCommand).to.equal('save-all');
+      const trigger = shadowButton(el, `${el.openMenuLabel}：options`)!;
+      trigger.focus();
+      trigger.dispatchEvent(
+        new KeyboardEvent('keydown', {
+          key: 'ArrowDown',
+          bubbles: true,
+          composed: true,
+        })
+      );
+      await el.updateComplete;
+      await aTimeout(32);
+      expect(el.shadowRoot!.querySelector('iframe')?.title).to.equal(
+        el.customContentLabel
+      );
+      expect(shadowButton(el, el.closePanelLabel)).to.not.equal(undefined);
+      document.dispatchEvent(
+        new KeyboardEvent('keydown', {key: 'Escape', bubbles: true})
+      );
+      await el.updateComplete;
+      expect(el.shadowRoot!.activeElement).to.equal(trigger);
+      expect(shadowButton(el, el.collapseLabel)).to.not.equal(undefined);
+      el.collapse();
+      await el.updateComplete;
+      expect(shadowButton(el, el.expandLabel)).to.not.equal(undefined);
+      el.expand();
+      await el.updateComplete;
+    }
+  });
+
   it('菜单标题按当前语言排序并支持中文、英文与瑞典语切换', async () => {
     const tabs = basicTabs();
     const words = ['Zulu', 'Åland', 'Örebro'];
@@ -208,7 +299,9 @@ describe('vscode-ribbon', () => {
           el.storageKey = key;
           if (attributes) {
             el.setAttribute('active-tab', 'home');
-            if (configured) el.setAttribute('collapsed', '');
+            if (configured) {
+              el.setAttribute('collapsed', '');
+            }
           } else {
             el.activeTabId = 'home';
             el.collapsed = configured;
@@ -273,7 +366,7 @@ describe('vscode-ribbon', () => {
         expect(flyout.querySelector('iframe')?.title).to.equal(
           el.customContentLabel
         );
-        if (!contentOnly)
+        if (!contentOnly) {
           expect(
             flyout.querySelector(
               layout === 'panel'
@@ -283,8 +376,10 @@ describe('vscode-ribbon', () => {
                   : '.ribbon-menu-items'
             )
           ).to.not.equal(null);
-        if (layout === 'panel')
+        }
+        if (layout === 'panel') {
           expect(flyout.getAttribute('aria-label')).to.equal('面板标题');
+        }
         flyout.dispatchEvent(
           new KeyboardEvent('keydown', {
             key: 'End',
@@ -406,7 +501,9 @@ describe('vscode-ribbon', () => {
               composed: true,
             })
           );
-        } else trigger.click();
+        } else {
+          trigger.click();
+        }
         await el.updateComplete;
         await aTimeout(48);
         const menu = el.shadowRoot!.querySelector<HTMLElement>(
@@ -450,10 +547,11 @@ describe('vscode-ribbon', () => {
       expect(element.classList.contains('is-image')).to.equal(
         icon === './icon.svg'
       );
-      if (!icon)
+      if (!icon) {
         expect(element.classList.contains('codicon-link-external')).to.equal(
           true
         );
+      }
     }
   });
 

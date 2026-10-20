@@ -86,6 +86,7 @@ export const componentScenarios = {
     'ribbon-overflow',
     'ribbon-gallery',
     'ribbon-state',
+    'ribbon-i18n',
   ],
   'toolbar-button': ['toolbar-states'],
   'toolbar-container': ['toolbar-states'],
@@ -935,6 +936,42 @@ ribbon.addEventListener('vsc-ribbon-dialog', (event) => {
   document.querySelector('#ribbon-gallery-output').textContent =
     '打开对话框：' + event.detail.group.title;
 });`,
+    520,
+    ribbonResizeCss
+  ),
+  'ribbon-i18n': demo(
+    '中英文动态切换与长译文',
+    [
+      '业务文案、内部辅助名称与对话框启动器同步翻译',
+      'lang 切换排序语言；命令标识保持不变',
+      '长标题、禁用与占位状态；当前仅支持 LTR',
+    ],
+    `<vscode-button id="ribbon-language">切换为英文 / Switch to English</vscode-button>${ribbonResizeHtml('ribbon-i18n', '<vscode-ribbon id="ribbon-i18n"></vscode-ribbon>')}<output id="ribbon-i18n-output" aria-live="polite">等待操作</output>`,
+    `${ribbonResizeScript('ribbon-i18n')}
+const ribbon = document.querySelector('#ribbon-i18n');
+let english = false;
+function translate() {
+  ribbon.lang = english ? 'en' : 'zh-CN';
+  const labels = english
+    ? ['Project ribbon', 'Collapse ribbon', 'Expand ribbon', 'Open menu', 'Open group', 'Back', 'Close panel', 'Scroll left', 'Scroll right', 'Not implemented', 'Custom content']
+    : ['项目功能区', '折叠功能区', '展开功能区', '打开菜单', '打开分组菜单', '返回', '关闭面板', '向左滚动', '向右滚动', '功能尚未实现', '自定义内容'];
+  ['tablistLabel', 'collapseLabel', 'expandLabel', 'openMenuLabel', 'openGroupLabel', 'backLabel', 'closePanelLabel', 'scrollLeftLabel', 'scrollRightLabel', 'placeholderLabel', 'customContentLabel'].forEach((key, index) => { ribbon[key] = labels[index]; });
+  ribbon.tabs = [{id: 'home', title: english ? 'Home' : '开始', groups: [{
+    id: 'file', title: english ? 'File' : '文件',
+    dialogLauncher: {title: english ? 'Open File dialog' : '打开文件对话框'},
+    items: [
+      {command: 'save-all', title: english ? 'Save all project documents and configuration' : '保存全部项目文档与配置', icon: 'save-all', size: 'half'},
+      {title: english ? 'Future action' : '待实现操作', placeholder: true, size: 'half'},
+      {command: 'locked', title: english ? 'Unavailable' : '不可用', disabled: true, size: 'half'},
+      {type: 'dropdown', title: english ? 'Options' : '选项', icon: 'settings-gear', menu: {layout: 'panel', title: english ? 'Project options' : '项目选项', items: [{command: 'settings', title: english ? 'Settings' : '设置'}], custom: {html: english ? '<p>Project details</p>' : '<p>项目详情</p>'}}},
+    ],
+  }]}];
+  document.querySelector('#ribbon-language').textContent = english ? '切换为中文 / Switch to Chinese' : '切换为英文 / Switch to English';
+}
+document.querySelector('#ribbon-language').addEventListener('click', () => { english = !english; translate(); });
+ribbon.addEventListener('vsc-ribbon-command', (event) => { document.querySelector('#ribbon-i18n-output').textContent = event.detail.command; });
+ribbon.addEventListener('vsc-ribbon-dialog', (event) => { document.querySelector('#ribbon-i18n-output').textContent = event.detail.group.dialogLauncher.title; });
+translate();`,
     520,
     ribbonResizeCss
   ),

@@ -325,6 +325,33 @@ vscode-ribbon::part(tab) {
 | 组内图库滚动按钮 | `gallery-scroll`      | 图库预览条左右滚动按钮          |
 | 自定义内容       | `custom-content`      | 面板中的沙箱 iframe             |
 
+## 国际化与支持边界
+
+宿主负责解析 NLS 并提供标签、分组、命令、菜单、面板的 `title`、`description`、
+`tooltip`、`keybinding` 与自定义内容。切换语言时重新赋值 `tabs`，并同步更新以下
+公开属性（同名短横线特性也可用）：
+
+| 属性                                   | 翻译范围                     |
+| -------------------------------------- | ---------------------------- |
+| `tablistLabel`                         | 标签栏名称                   |
+| `collapseLabel` / `expandLabel`        | 折叠与展开按钮               |
+| `openMenuLabel` / `openGroupLabel`     | 菜单与折叠分组入口的名称前缀 |
+| `backLabel` / `closePanelLabel`        | 返回与关闭面板               |
+| `scrollLeftLabel` / `scrollRightLabel` | 两端滚动按钮                 |
+| `placeholderLabel`                     | 占位命令提示                 |
+| `customContentLabel`                   | 沙箱 iframe 名称             |
+
+这些属性默认使用中文，设置 `lang` 不会自动翻译。`dialogLauncher: true` 的默认名称
+仍为 `打开“分组标题”对话框`；非中文宿主必须逐组设置
+`dialogLauncher: {title: 'Open File dialog'}`，并在切换语言时更新，才能同时翻译
+`title` 与 `aria-label`。业务命令标识与参数保持不变。
+
+`sort-locale` / `sortLocale` 控制标题排序，缺省继承最近的 `lang`，最终回退到浏览器
+语言，详见 [标题排序语言](../ribbon#标题排序语言)。中英文切换和长译文示例见下方功能场景。
+
+目前只验证从左到右（LTR）的布局与键盘导航。RTL 的箭头方向、flyout 展开方向和
+滚动语义尚未适配，暂不承诺 RTL 支持。
+
 ## 功能场景
 
 下列场景补充状态、组合约束、数据操作和交互边界。每项列出覆盖的公开功能，代码视图可直接查阅实际运行代码。

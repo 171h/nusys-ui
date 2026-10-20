@@ -46,6 +46,7 @@ export async function testResponsiveTable(frame) {
 }
 
 export async function testScenarios(page, url) {
+  await testRibbonI18n(page, url);
   const open = async (id) => {
     const component = Object.keys(componentScenarios).find((key) =>
       componentScenarios[key].includes(id)
@@ -961,4 +962,90 @@ export async function testScenarios(page, url) {
   console.log(
     '已验证新增场景的表单重置、菜单、功能区、进度、文件读取、动态选项、多选提交、修改标记、分区回调、滚动、分栏、标签页、表格和树操作。'
   );
+}
+
+/** 验证中英文切换示例的名称、主题、键盘路径与命令标识。 */
+export async function testRibbonI18n(page, url) {
+  await page.goto(url('components/ribbon'));
+  const element = await page
+    .locator('[data-scenario="ribbon-i18n"] iframe')
+    .elementHandle();
+  const frame = await element.contentFrame();
+  await frame.waitForFunction(
+    () => document.documentElement.dataset.ready === 'true'
+  );
+  const ribbon = frame.locator('#ribbon-i18n');
+  for (const english of [false, true, false]) {
+    if (english !== (await ribbon.evaluate((node) => node.lang === 'en'))) {
+      await frame.locator('#ribbon-language').click();
+    }
+    await frame.waitForFunction(
+      (value) =>
+        document.querySelector('#ribbon-i18n').lang ===
+        (value ? 'en' : 'zh-CN'),
+      english
+    );
+    await frame.evaluate(
+      (dark) => document.body.classList.toggle('vscode-dark', dark),
+      english
+    );
+    await ribbon
+      .getByRole('tab', {name: english ? 'Home' : '开始', exact: true})
+      .waitFor();
+    await ribbon
+      .getByRole('button', {
+        name: english ? 'Open File dialog' : '打开文件对话框',
+        exact: true,
+      })
+      .click();
+    assert.equal(
+      await frame.locator('#ribbon-i18n-output').textContent(),
+      english ? 'Open File dialog' : '打开文件对话框'
+    );
+    await ribbon
+      .getByRole('button', {
+        name: english
+          ? 'Save all project documents and configuration'
+          : '保存全部项目文档与配置',
+        exact: true,
+      })
+      .click();
+    assert.equal(
+      await frame.locator('#ribbon-i18n-output').textContent(),
+      'save-all'
+    );
+    assert.equal(
+      await ribbon
+        .getByRole('button', {
+          name: english ? 'Unavailable' : '不可用',
+          exact: true,
+        })
+        .isDisabled(),
+      true
+    );
+    const trigger = ribbon.getByRole('button', {
+      name: english ? 'Options' : '选项',
+      exact: true,
+    });
+    await trigger.focus();
+    await trigger.press('ArrowDown');
+    await ribbon
+      .getByRole('dialog', {
+        name: english ? 'Project options' : '项目选项',
+        exact: true,
+      })
+      .waitFor();
+    assert.equal(
+      await ribbon.locator('iframe').getAttribute('title'),
+      english ? 'Custom content' : '自定义内容'
+    );
+    await page.keyboard.press('Escape');
+    await ribbon.locator('.ribbon-menu-popover').waitFor({state: 'hidden'});
+    assert.equal(
+      await trigger.evaluate(
+        (node) => node.getRootNode().activeElement === node
+      ),
+      true
+    );
+  }
 }
