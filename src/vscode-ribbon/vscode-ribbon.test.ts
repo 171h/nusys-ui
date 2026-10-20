@@ -815,17 +815,36 @@ describe('vscode-ribbon', () => {
     el.addEventListener('vsc-ribbon-command', (event) => {
       command = event.detail.command;
     });
+    const split = el.shadowRoot!.querySelector<HTMLElement>('.ribbon-split')!;
+    expect(split.getAttribute('role')).to.equal('group');
+    expect(split.getAttribute('aria-label')).to.equal('保存');
     const primary = el.shadowRoot!.querySelector<HTMLButtonElement>(
       '.ribbon-item-primary'
     )!;
+    const trigger = el.shadowRoot!.querySelector<HTMLButtonElement>(
+      '.ribbon-split-trigger'
+    )!;
+    expect(primary).to.not.equal(trigger);
+    expect(primary.getAttribute('title')).to.equal('保存');
+    expect(trigger.getAttribute('aria-haspopup')).to.equal('menu');
+    const transparent = (color: string) =>
+      color === 'transparent' || /rgba\(0, 0, 0, 0\)/.test(color);
+    // 未悬停时分格线与组合外边框均不显示。
+    expect(transparent(getComputedStyle(trigger).borderTopColor)).to.equal(
+      true
+    );
+    expect(getComputedStyle(split).outlineStyle).to.equal('none');
+    expect(transparent(getComputedStyle(primary).backgroundColor)).to.equal(
+      true
+    );
+    expect(transparent(getComputedStyle(trigger).backgroundColor)).to.equal(
+      true
+    );
     primary.click();
     await el.updateComplete;
     expect(command).to.equal('save');
     expect(el.shadowRoot!.querySelector('.ribbon-menu-popover')).to.equal(null);
 
-    const trigger = el.shadowRoot!.querySelector<HTMLButtonElement>(
-      '.ribbon-split-trigger'
-    )!;
     trigger.click();
     await waitFor(
       () => el.shadowRoot?.querySelector('.ribbon-menu-popover') !== null
@@ -834,6 +853,11 @@ describe('vscode-ribbon', () => {
     expect(
       el.shadowRoot!.querySelector('.ribbon-menu-item')?.textContent
     ).to.contain('另存为');
+    // 展开菜单时只有触发区保持激活背景，主命令区域不显示激活背景。
+    expect(transparent(getComputedStyle(split).backgroundColor)).to.equal(true);
+    expect(transparent(getComputedStyle(primary).backgroundColor)).to.equal(
+      true
+    );
   });
 
   it('面板菜单使用列数网格并渲染沙箱内容', async () => {

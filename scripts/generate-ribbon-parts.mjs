@@ -467,7 +467,8 @@ const parts = [
     state: 'default',
     selector: '[part~="item-primary"]',
     pad: 10,
-    description: '分割按钮的上方主区域，直接点击执行主命令。',
+    description:
+      '分割按钮的上方主区域，直接点击执行主命令；悬停时只有该区域背景激活，同时组合按钮外边框与分格线一起高亮。',
     lang: 'js',
     usage:
       "{\n  type: 'splitButton',\n  command: 'save', // 主区域命令\n  title: '保存',\n  icon: 'save',\n  menu: {items: [{command: 'save-as', title: '另存为…', icon: 'save-as'}]},\n}",
@@ -479,7 +480,8 @@ const parts = [
     state: 'default',
     selector: '[part~="item-trigger"]',
     pad: 10,
-    description: '分割按钮的下方触发区，点击展开菜单而不执行主命令。',
+    description:
+      '分割按钮的下方触发区，点击展开菜单而不执行主命令；悬停时只有该区域背景激活，并同步高亮组合边框与分格线。',
     lang: 'js',
     usage:
       "{\n  type: 'splitButton',\n  command: 'save',\n  title: '保存',\n  icon: 'save',\n  menu: {items: [{command: 'save-as', title: '另存为…'}]},\n}",

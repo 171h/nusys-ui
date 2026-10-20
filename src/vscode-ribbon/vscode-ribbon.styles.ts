@@ -458,7 +458,7 @@ const styles: CSSResultGroup = [
       padding-left: 4px;
     }
 
-    .ribbon-item:hover:not(:disabled) {
+    .ribbon-item:hover:not(:disabled):not(.ribbon-split) {
       background: var(
         --vscode-toolbar-hoverBackground,
         rgba(127, 127, 127, 0.16)
@@ -500,13 +500,6 @@ const styles: CSSResultGroup = [
       box-sizing: border-box;
     }
 
-    .ribbon-split:hover {
-      background: var(
-        --vscode-toolbar-hoverBackground,
-        rgba(127, 127, 127, 0.16)
-      );
-    }
-
     .ribbon-item-primary,
     .ribbon-split-trigger {
       display: flex;
@@ -533,7 +526,7 @@ const styles: CSSResultGroup = [
       flex: none;
       min-height: 18px;
       gap: 3px;
-      border-top: 1px solid var(--vscode-panel-border, #454545);
+      border-top: 1px solid transparent;
       font-size: 11px;
     }
 
@@ -577,11 +570,58 @@ const styles: CSSResultGroup = [
       min-height: 0;
       padding: 0 2px;
       border-top: 0;
-      border-left: 1px solid var(--vscode-panel-border, #454545);
+      border-left: 1px solid transparent;
+    }
+
+    /* 悬停任一区域时，组合按钮外边框与分格线一起高亮。 */
+    .ribbon-split:has(.ribbon-item-primary:hover:not(:disabled)),
+    .ribbon-split:has(.ribbon-split-trigger:hover:not(:disabled)) {
+      outline: 1px solid var(--vscode-focusBorder, #0078d4);
+      outline-offset: -1px;
+    }
+
+    .ribbon-split:has(.ribbon-item-primary:hover:not(:disabled))
+      .ribbon-split-trigger,
+    .ribbon-split:has(.ribbon-split-trigger:hover:not(:disabled))
+      .ribbon-split-trigger {
+      border-top-color: var(--vscode-focusBorder, #0078d4);
+    }
+
+    .ribbon-split.ribbon-item-half:has(
+        .ribbon-item-primary:hover:not(:disabled)
+      )
+      .ribbon-split-trigger,
+    .ribbon-split.ribbon-item-third:has(
+        .ribbon-item-primary:hover:not(:disabled)
+      )
+      .ribbon-split-trigger,
+    .ribbon-split.ribbon-item-half:has(
+        .ribbon-split-trigger:hover:not(:disabled)
+      )
+      .ribbon-split-trigger,
+    .ribbon-split.ribbon-item-third:has(
+        .ribbon-split-trigger:hover:not(:disabled)
+      )
+      .ribbon-split-trigger {
+      border-top-color: transparent;
+      border-left-color: var(--vscode-focusBorder, #0078d4);
     }
 
     .ribbon-split.ribbon-item-icon-only .ribbon-item-primary .ribbon-label {
       display: none;
+    }
+
+    /* 展开菜单时只有触发区保持激活背景，主命令区域不受影响。 */
+    .ribbon-split.is-expanded {
+      background: transparent;
+      box-shadow: none;
+    }
+
+    .ribbon-split.is-expanded .ribbon-split-trigger {
+      background: var(
+        --vscode-toolbar-activeBackground,
+        var(--vscode-toolbar-hoverBackground, rgba(127, 127, 127, 0.16))
+      );
     }
 
     /* 下拉入口：图标在上、标题与箭头在下。 */

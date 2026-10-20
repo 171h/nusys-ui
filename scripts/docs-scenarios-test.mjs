@@ -352,6 +352,98 @@ export async function testScenarios(page, url) {
     await frame.locator('#ribbon-menus-output').textContent(),
     /save/
   );
+
+  // 分割按钮：主命令与触发区独立悬停，组合外边框与分格线同步高亮。
+  const splitState = () =>
+    frame.evaluate(() => {
+      const root = document.querySelector('#ribbon-menus').shadowRoot;
+      const split = root.querySelector('.ribbon-split');
+      const primary = split.querySelector('.ribbon-item-primary');
+      const trigger = split.querySelector('.ribbon-split-trigger');
+      const color = (element, property) => getComputedStyle(element)[property];
+      const transparent = (value) =>
+        value === 'transparent' || /rgba\(0, 0, 0, 0\)/.test(value);
+      return {
+        outlineStyle: getComputedStyle(split).outlineStyle,
+        outlineColor: getComputedStyle(split).outlineColor,
+        divider: color(trigger, 'borderTopColor'),
+        dividerTransparent: transparent(color(trigger, 'borderTopColor')),
+        primaryBackground: color(primary, 'backgroundColor'),
+        primaryTransparent: transparent(color(primary, 'backgroundColor')),
+        triggerBackground: color(trigger, 'backgroundColor'),
+        triggerTransparent: transparent(color(trigger, 'backgroundColor')),
+      };
+    });
+  let splitStateValue = await splitState();
+  // 点击保存后鼠标仍停留在主命令上，先移开再验证未悬停状态。
+  await frame.getByRole('button', {name: '板模板', exact: true}).hover();
+  await page.waitForTimeout(120);
+  splitStateValue = await splitState();
+  assert.equal(
+    splitStateValue.dividerTransparent,
+    true,
+    '未悬停时分格线应不可见'
+  );
+  assert.equal(
+    splitStateValue.outlineStyle,
+    'none',
+    '未悬停时组合按钮不应显示边框'
+  );
+  const splitPrimary = frame
+    .locator('.ribbon-split .ribbon-item-primary')
+    .first();
+  await splitPrimary.hover();
+  await page.waitForTimeout(120);
+  splitStateValue = await splitState();
+  assert.equal(
+    splitStateValue.primaryTransparent,
+    false,
+    '悬停主命令时只有主命令背景激活'
+  );
+  assert.equal(
+    splitStateValue.triggerTransparent,
+    true,
+    '悬停主命令时触发区背景不应激活'
+  );
+  assert.equal(
+    splitStateValue.outlineStyle,
+    'solid',
+    '悬停时组合按钮外边框应高亮'
+  );
+  assert.equal(splitStateValue.dividerTransparent, false, '悬停时分格线应高亮');
+  assert.equal(
+    splitStateValue.divider,
+    splitStateValue.outlineColor,
+    '分格线与外边框应使用同一高亮色'
+  );
+  const splitTrigger = frame
+    .locator('.ribbon-split .ribbon-split-trigger')
+    .first();
+  await splitTrigger.hover();
+  await page.waitForTimeout(120);
+  splitStateValue = await splitState();
+  assert.equal(
+    splitStateValue.triggerTransparent,
+    false,
+    '悬停触发区时只有触发区背景激活'
+  );
+  assert.equal(
+    splitStateValue.primaryTransparent,
+    true,
+    '悬停触发区时主命令背景不应激活'
+  );
+  assert.equal(splitStateValue.outlineStyle, 'solid');
+  assert.equal(splitStateValue.dividerTransparent, false);
+  await frame.getByRole('button', {name: '板模板', exact: true}).hover();
+  await page.waitForTimeout(120);
+  splitStateValue = await splitState();
+  assert.equal(
+    splitStateValue.dividerTransparent,
+    true,
+    '移开后分格线应恢复不可见'
+  );
+  assert.equal(splitStateValue.outlineStyle, 'none', '移开后组合边框应消失');
+
   await frame.getByRole('button', {name: '板模板', exact: true}).click();
   const menuItem = frame.getByRole('menuitem', {name: '盘扣式', exact: true});
   await menuItem.waitFor();
