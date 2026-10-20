@@ -213,30 +213,33 @@ describe('ribbon-model', () => {
   });
 
   it('保留分组内按钮的声明顺序与响应式配置', () => {
-    const [tab] = buildRibbonTabs([
-      {
-        id: 'tab',
-        title: 'Tab',
-        groups: [
-          {
-            id: 'group',
-            title: '基坑',
-            items: [
-              {
-                command: 'slope',
-                title: '边坡',
-                responsive: [{size: 'third'}],
-              },
-              {
-                command: 'support',
-                title: '围护',
-                size: 'half',
-              },
-            ],
-          },
-        ],
-      },
-    ]);
+    const [tab] = buildRibbonTabs(
+      [
+        {
+          id: 'tab',
+          title: 'Tab',
+          groups: [
+            {
+              id: 'group',
+              title: '基坑',
+              items: [
+                {
+                  command: 'slope',
+                  title: '边坡',
+                  responsive: [{size: 'third'}],
+                },
+                {
+                  command: 'support',
+                  title: '围护',
+                  size: 'half',
+                },
+              ],
+            },
+          ],
+        },
+      ],
+      'zh-CN'
+    );
     const group = tab.groups[0];
     expect(group.items).toHaveLength(2);
     expect(group.items.map((item) => item.command)).toEqual([
