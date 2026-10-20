@@ -144,6 +144,42 @@ afterEach(() => {
 });
 
 describe('vscode-ribbon', () => {
+  for (const configured of [false, true]) {
+    for (const attributes of [false, true]) {
+      it(`显式${attributes ? '特性' : '属性'}优先于相反的持久化状态（collapsed=${configured}）`, async () => {
+        const key = `ribbon-explicit-${Date.now()}`;
+        localStorage.setItem(
+          key,
+          JSON.stringify({collapsed: !configured, activeTabId: 'insert'})
+        );
+        try {
+          const el = document.createElement('vscode-ribbon');
+          el.persistState = true;
+          el.storageKey = key;
+          if (attributes) {
+            el.setAttribute('active-tab', 'home');
+            if (configured) el.setAttribute('collapsed', '');
+          } else {
+            el.activeTabId = 'home';
+            el.collapsed = configured;
+          }
+          const mounted = await fixture<VscodeRibbon>(el);
+          await mounted.updateComplete;
+          // 异步数据不应让已配置的状态被存储覆盖。
+          mounted.tabs = basicTabs();
+          await mounted.updateComplete;
+          await mounted.updateComplete;
+          expect(mounted.activeTabId).to.equal('home');
+          expect(mounted.collapsed).to.equal(
+            attributes && !configured ? true : configured
+          );
+        } finally {
+          localStorage.removeItem(key);
+        }
+      });
+    }
+  }
+
   for (const layout of ['menu', 'panel', 'gallery'] as const) {
     for (const contentOnly of [false, true]) {
       it(`flyout 保留 ${layout} 布局、自定义内容和底部命令（仅附加内容：${contentOnly}）`, async () => {

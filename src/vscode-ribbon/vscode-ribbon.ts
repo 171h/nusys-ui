@@ -118,13 +118,33 @@ export class VscodeRibbon extends VscElement {
   @property({attribute: false})
   tabs: readonly VscRibbonTab[] = [];
 
+  private _activeTabId = '';
+  private _collapsed = false;
+  private _activeTabConfigured = false;
+  private _collapsedConfigured = false;
+  private _restoringState = false;
+
   /** 当前标签 id；无匹配项时使用 `default` 标签或第一个标签。 */
   @property({reflect: true, attribute: 'active-tab'})
-  activeTabId = '';
+  get activeTabId(): string {
+    return this._activeTabId;
+  }
+
+  set activeTabId(value: string) {
+    if (!this._restoringState) this._activeTabConfigured = true;
+    this._activeTabId = value;
+  }
 
   /** 折叠按钮区，只保留标签栏。 */
   @property({type: Boolean, reflect: true})
-  collapsed = false;
+  get collapsed(): boolean {
+    return this._collapsed;
+  }
+
+  set collapsed(value: boolean) {
+    if (!this._restoringState) this._collapsedConfigured = true;
+    this._collapsed = value;
+  }
 
   /** 是否显示折叠按钮并允许折叠；设为 `false` 后功能区始终展开。 */
   @property({type: Boolean, reflect: true})
@@ -358,15 +378,22 @@ export class VscodeRibbon extends VscElement {
     }
     this._restored = true;
     this._storedState = null;
-    if (typeof stored.collapsed === 'boolean') {
+    this._restoringState = true;
+    if (
+      !this._collapsedConfigured &&
+      this.collapsible &&
+      typeof stored.collapsed === 'boolean'
+    ) {
       this.collapsed = stored.collapsed;
     }
     if (
+      !this._activeTabConfigured &&
       stored.activeTabId &&
       this._models.some((tab) => tab.id === stored.activeTabId)
     ) {
       this.activeTabId = stored.activeTabId;
     }
+    this._restoringState = false;
   }
 
   private _persistState(): void {

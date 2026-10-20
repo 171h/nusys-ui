@@ -102,7 +102,9 @@ ribbon.addEventListener('vsc-ribbon-command', async (event) => {
 ```
 
 恢复状态时，如果调用方显式设置了 `collapsed` 或 `active-tab` 特性，会优先使用
-显式值。存储不可用（隐私模式、被禁用）时组件静默忽略，不影响交互。
+显式值；JavaScript 属性赋值同样优先，包括 `ribbon.collapsed = false`。
+HTML 中省略 `collapsed` 表示未配置，可恢复存储值。存储不可用（隐私模式、被禁用）
+时组件静默忽略，不影响交互。
 
 ## 主题与图标
 
