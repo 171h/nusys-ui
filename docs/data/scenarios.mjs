@@ -129,10 +129,10 @@ export const extraExamples = {
     [
       'target 元素引用关联，保留 flex/grid 布局',
       'text 动态更新、disabled 禁用提示而保留操作',
-      'delay=0 立即悬停、键盘聚焦与 Escape 关闭',
+      'delay=0 立即悬停、show-on-focus 开关与 Escape 关闭',
     ],
-    '<div class="variants tooltip-actions"><vscode-button id="tooltip-save">保存</vscode-button><vscode-button id="tooltip-export" secondary>导出</vscode-button><vscode-tooltip id="action-tip" text="保存当前项目" delay="0"></vscode-tooltip></div><div class="variants"><vscode-button id="switch-tooltip-target" secondary>提示导出操作</vscode-button><vscode-checkbox id="disable-tooltip" label="禁用提示"></vscode-checkbox></div><output aria-live="polite">提示关联保存操作</output>',
-    "const tip=document.querySelector('#action-tip');tip.target=document.querySelector('#tooltip-save');document.querySelector('#switch-tooltip-target').onclick=()=>{tip.target=document.querySelector('#tooltip-export');tip.text='导出当前计算结果';document.querySelector('output').textContent='提示关联导出操作';};document.querySelector('#disable-tooltip').addEventListener('change',event=>{tip.disabled=event.target.checked;});",
+    '<div class="variants tooltip-actions"><vscode-button id="tooltip-save">保存</vscode-button><vscode-button id="tooltip-export" secondary>导出</vscode-button><vscode-tooltip id="action-tip" text="保存当前项目" delay="0"></vscode-tooltip></div><div class="variants"><vscode-button id="switch-tooltip-target" secondary>提示导出操作</vscode-button><vscode-checkbox id="focus-tooltip" label="聚焦时显示提示"></vscode-checkbox><vscode-checkbox id="disable-tooltip" label="禁用提示"></vscode-checkbox></div><output aria-live="polite">提示关联保存操作</output>',
+    "const tip=document.querySelector('#action-tip');tip.target=document.querySelector('#tooltip-save');document.querySelector('#focus-tooltip').addEventListener('change',event=>{tip.showOnFocus=event.target.checked;});document.querySelector('#switch-tooltip-target').onclick=()=>{tip.target=document.querySelector('#tooltip-export');tip.text='导出当前计算结果';document.querySelector('output').textContent='提示关联导出操作';};document.querySelector('#disable-tooltip').addEventListener('change',event=>{tip.disabled=event.target.checked;});",
     240,
     '.tooltip-actions{padding:36px 0}'
   ),

@@ -25,7 +25,7 @@ for (const tag of ['th_open', 'td_open']) {
 }
 
 /**
- * 鼠标悬停或键盘聚焦时显示活动栏风格的文字提示。
+ * 默认鼠标悬停时显示活动栏风格的文字提示，可选择开启键盘聚焦触发。
  *
  * @tag vscode-tooltip
  * @slot - 一个触发元素；键盘操作时该元素应能获得焦点。
@@ -79,8 +79,12 @@ export class VscodeTooltip extends VscElement {
   @property({attribute: false}) fallbacks: readonly TooltipPlacement[] | null =
     null;
 
-  /** 鼠标悬停后的显示延迟，单位为毫秒；键盘聚焦立即显示。 */
+  /** 鼠标悬停后的显示延迟，单位为毫秒；开启 showOnFocus 后聚焦立即显示。 */
   @property({type: Number}) delay = 500;
+
+  /** 聚焦触发元素时立即显示提示，默认关闭；支持 Tab 切换焦点。 */
+  @property({type: Boolean, attribute: 'show-on-focus', reflect: true})
+  showOnFocus = false;
 
   /** 禁用提示，不影响触发元素本身。 */
   @property({type: Boolean, reflect: true}) disabled = false;
@@ -297,7 +301,10 @@ export class VscodeTooltip extends VscElement {
 
   private _hasInteraction(): boolean {
     return (
-      this._focused || this._hovered || this._panelHovered || this._panelFocused
+      (this.showOnFocus && this._focused) ||
+      this._hovered ||
+      this._panelHovered ||
+      this._panelFocused
     );
   }
 
@@ -345,6 +352,9 @@ export class VscodeTooltip extends VscElement {
       this._focusDescriptionTarget = focused;
     }
     this._focused = true;
+    if (!this.showOnFocus) {
+      return;
+    }
     this._dismissed = false;
     clearTimeout(this._timer);
     this._show();
@@ -562,6 +572,14 @@ export class VscodeTooltip extends VscElement {
       this._mutation.disconnect();
       this._syncTarget();
       this._observeRoot();
+    }
+    if (changes.has('showOnFocus') && this._focused) {
+      if (this.showOnFocus) {
+        this._dismissed = false;
+        this._show();
+      } else if (!this._hasInteraction()) {
+        this._open = false;
+      }
     }
     if (changes.has('open') || (changes.has('pinned') && this.pinned)) {
       this._dismissed = false;

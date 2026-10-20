@@ -82,6 +82,7 @@ export async function testScenarios(page, url) {
   await frame.getByRole('tooltip', {name: '保存当前项目'}).waitFor();
   await frame.getByRole('button', {name: '提示导出操作', exact: true}).click();
   await frame.getByText('提示关联导出操作', {exact: true}).waitFor();
+  await frame.locator('#focus-tooltip label').click();
   await frame.getByRole('button', {name: '导出', exact: true}).focus();
   await frame.getByRole('tooltip', {name: '导出当前计算结果'}).waitFor();
   await page.keyboard.press('Escape');
