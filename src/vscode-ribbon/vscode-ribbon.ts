@@ -1,5 +1,5 @@
 import {html, nothing, PropertyValues, TemplateResult} from 'lit';
-import {property, query, state} from 'lit/decorators.js';
+import {property, state} from 'lit/decorators.js';
 import {classMap} from 'lit/directives/class-map.js';
 import {ifDefined} from 'lit/directives/if-defined.js';
 import {customElement, VscElement} from '../includes/VscElement.js';
@@ -36,6 +36,7 @@ import type {
   VscRibbonTheme,
 } from './ribbon-types.js';
 import styles from './vscode-ribbon.styles.js';
+import {VscodeRibbonPanel} from '../vscode-ribbon-panel/index.js';
 
 interface PopoverPosition {
   left: number;
@@ -254,10 +255,72 @@ export class VscodeRibbon extends VscElement {
   @state()
   private _showScrollRight = false;
 
-  @query('.ribbon-scroll-viewport') private _viewportEl!: HTMLElement;
-  @query('.ribbon-groups') private _groupsEl!: HTMLElement;
-  @query('.ribbon-menu-popover') private _menuEl?: HTMLElement;
-  @query('.ribbon-group-popover') private _groupEl?: HTMLElement;
+  private _panel: VscodeRibbonPanel | null = null;
+
+  /**
+   * 可选的独立内容面板。通过元素引用关联，支持不同影子根；设为 null 恢复一体布局。
+   * 一个面板只能关联一个 Ribbon。数据、状态、持久化与事件始终归 Ribbon 所有。
+   */
+  @property({attribute: false})
+  get panel(): VscodeRibbonPanel | null {
+    return this._panel;
+  }
+
+  set panel(value: VscodeRibbonPanel | null) {
+    if (value === this._panel) {
+      return;
+    }
+    if (value && value.ownerDocument !== this.ownerDocument) {
+      throw new Error('Ribbon 与面板必须位于同一个文档。');
+    }
+    value?.claim(this, this._onPanelConnection);
+    this._panel?.release(this);
+    this._panel = value;
+    this._onPanelConnection();
+  }
+
+  private get _separated(): boolean {
+    return !!this._panel?.isConnected && this.isConnected;
+  }
+
+  private get _contentRoot(): ShadowRoot | null {
+    return this._separated ? this._panel!.shadowRoot : this.shadowRoot;
+  }
+
+  private get _viewportEl(): HTMLElement | null {
+    return this._contentRoot?.querySelector('.ribbon-scroll-viewport') ?? null;
+  }
+
+  private get _groupsEl(): HTMLElement | null {
+    return this._contentRoot?.querySelector('.ribbon-groups') ?? null;
+  }
+
+  private get _menuEl(): HTMLElement | undefined {
+    return (
+      this._contentRoot?.querySelector<HTMLElement>('.ribbon-menu-popover') ??
+      undefined
+    );
+  }
+
+  private get _groupEl(): HTMLElement | undefined {
+    return (
+      this._contentRoot?.querySelector<HTMLElement>('.ribbon-group-popover') ??
+      undefined
+    );
+  }
+
+  private _onPanelConnection = (): void => {
+    this.closeMenus();
+    this._layoutToken++;
+    this._panel?.present(nothing, this);
+    this._resetResponsiveState();
+    this._resizeObserver?.disconnect();
+    if (this.isConnected) {
+      this._resizeObserver?.observe(this._separated ? this._panel! : this);
+    }
+    this.requestUpdate();
+    this._scheduleLayout();
+  };
 
   private _layoutTimer?: ReturnType<typeof setTimeout>;
   private _layoutToken = 0;
@@ -303,8 +366,7 @@ export class VscodeRibbon extends VscElement {
     window.addEventListener('resize', this._onWindowResize);
     window.addEventListener('scroll', this._onWindowScroll, true);
     this._resizeObserver = new ResizeObserver(() => this._scheduleLayout());
-    this._resizeObserver.observe(this);
-    this._scheduleLayout();
+    this._onPanelConnection();
   }
 
   override disconnectedCallback(): void {
@@ -320,9 +382,20 @@ export class VscodeRibbon extends VscElement {
     this._themeObserver?.disconnect();
     this._localeObserver?.disconnect();
     clearTimeout(this._layoutTimer);
+    this._layoutTimer = undefined;
     cancelAnimationFrame(this._menuFocusFrame ?? 0);
     this._layoutToken++;
+    this.closeMenus();
+    this._panel?.present(nothing, this);
     super.disconnectedCallback();
+  }
+
+  protected override async getUpdateComplete(): Promise<boolean> {
+    const complete = await super.getUpdateComplete();
+    if (this._separated) {
+      await this._panel!.updateComplete;
+    }
+    return complete;
   }
 
   protected override willUpdate(changed: PropertyValues): void {
@@ -343,6 +416,7 @@ export class VscodeRibbon extends VscElement {
 
   protected override updated(changed: PropertyValues): void {
     super.updated(changed);
+    this._panel?.present(this._separated ? this._renderPanel() : nothing, this);
     if (changed.has('persistState') || changed.has('storageKey')) {
       this._storedState = this._readStoredState();
       this._restored = this._storedState === null;
@@ -791,6 +865,19 @@ export class VscodeRibbon extends VscElement {
     ) {
       return;
     }
+    if (event.key === 'ArrowDown') {
+      event.preventDefault();
+      if (this.collapsed) {
+        this._overlayOpen = true;
+      }
+      void this.updateComplete.then(async () => {
+        await this._panel?.updateComplete;
+        this._contentRoot
+          ?.querySelector<HTMLElement>('.ribbon-content')
+          ?.focus();
+      });
+      return;
+    }
     const keys = ['ArrowLeft', 'ArrowRight', 'Home', 'End'];
     if (!keys.includes(event.key)) {
       return;
@@ -819,6 +906,7 @@ export class VscodeRibbon extends VscElement {
         this.shadowRoot?.querySelectorAll<HTMLElement>('.ribbon-tab') ?? []
       ).find((element) => element.dataset.tabId === target.id);
       targetButton?.focus();
+      targetButton?.scrollIntoView({block: 'nearest', inline: 'nearest'});
     });
   };
 
@@ -1076,7 +1164,7 @@ export class VscodeRibbon extends VscElement {
 
   private _flyoutElements(): HTMLElement[] {
     return Array.from(
-      this.shadowRoot?.querySelectorAll<HTMLElement>(
+      this._contentRoot?.querySelectorAll<HTMLElement>(
         '.ribbon-flyout-popover'
       ) ?? []
     );
@@ -1365,7 +1453,7 @@ export class VscodeRibbon extends VscElement {
   }
 
   private _onMenuKeyDown(event: KeyboardEvent): void {
-    const active = this.shadowRoot?.activeElement as HTMLElement | null;
+    const active = this._contentRoot?.activeElement as HTMLElement | null;
     const container = this._activeMenuContainer(active);
     const options = this._focusableIn(container);
     const inFlyout =
@@ -1568,7 +1656,11 @@ export class VscodeRibbon extends VscElement {
         this._closeGroup(false);
       }
     }
-    if (this._overlayOpen && !path.includes(this)) {
+    if (
+      this._overlayOpen &&
+      !path.includes(this) &&
+      !path.includes(this._panel!)
+    ) {
       this._overlayOpen = false;
     }
   };
@@ -1597,8 +1689,15 @@ export class VscodeRibbon extends VscElement {
     }
     if (this._overlayOpen) {
       this._overlayOpen = false;
+      this._focusActiveTab();
     }
   };
+
+  private _focusActiveTab(): void {
+    this.shadowRoot
+      ?.querySelector<HTMLElement>('.ribbon-tab.is-active')
+      ?.focus();
+  }
 
   private _onWindowResize = (): void => {
     this._closeMenu(false);
@@ -2305,7 +2404,7 @@ export class VscodeRibbon extends VscElement {
     group: RibbonGroupModel,
     direction: -1 | 1
   ): void {
-    const viewport = this.shadowRoot?.querySelector<HTMLElement>(
+    const viewport = this._contentRoot?.querySelector<HTMLElement>(
       `.ribbon-group[data-group="${group.id}"] .ribbon-gallery-viewport`
     );
     if (!viewport) {
@@ -2336,7 +2435,7 @@ export class VscodeRibbon extends VscElement {
 
   /** 读取宿主主题值，供 iframe 文档内的字体与前景色使用。 */
   private _customContentSource(content: RibbonCustomContentModel): string {
-    const style = getComputedStyle(this);
+    const style = getComputedStyle(this._separated ? this._panel! : this);
     const read = (name: string) => style.getPropertyValue(name).trim();
     return buildRibbonCustomContentSource(content, {
       fontFamily: read('--vscode-font-family'),
@@ -2486,79 +2585,19 @@ export class VscodeRibbon extends VscElement {
     </div>`;
   }
 
-  override render(): TemplateResult {
+  private _renderPanel(): TemplateResult {
     const tab = this._activeTab;
     const activeIndex = this._models.findIndex((model) => model.id === tab?.id);
     const contentVisible = !this.collapsed || this._overlayOpen;
-    return html`<header
-      class=${classMap({
-        ribbon: true,
-        'is-collapsed': this.collapsed,
-        'is-overlay-open': this._overlayOpen,
-      })}
-      part="base"
-      aria-label=${this.tablistLabel}
-    >
-      <link
-        rel="stylesheet"
-        href=${ifDefined(this._codiconStylesheet.href)}
-        nonce=${ifDefined(this._codiconStylesheet.nonce)}
-      />
-      <div class="ribbon-tabs" part="tabs">
-        <slot name="tabs-start"></slot>
-        <div
-          class="ribbon-tabs-list"
-          part="tabs-list"
-          role="tablist"
-          aria-label=${this.tablistLabel}
-          @keydown=${this._onTabsKeyDown}
-        >
-          ${this._models.map(
-            (model, index) =>
-              html`<button
-                type="button"
-                role="tab"
-                id=${`${this._instanceId}-tab-${index}`}
-                class=${classMap({
-                  'ribbon-tab': true,
-                  'is-active': model.id === tab?.id,
-                })}
-                part="tab"
-                data-tab-id=${model.id}
-                aria-controls=${this._panelId}
-                aria-selected=${model.id === tab?.id ? 'true' : 'false'}
-                tabindex=${model.id === tab?.id ? 0 : -1}
-                @click=${() => this._selectTab(model)}
-                @dblclick=${this._onTabDoubleClick}
-              >
-                ${model.title}
-              </button>`
-          )}
-        </div>
-        <slot name="tabs-end"></slot>
-        ${
-          this.collapsible
-            ? html`<button
-                type="button"
-                class="ribbon-collapse"
-                part="collapse-button"
-                title=${this.collapsed ? this.expandLabel : this.collapseLabel}
-                aria-label=${this.collapsed ? this.expandLabel : this.collapseLabel}
-                aria-expanded=${this.collapsed ? 'false' : 'true'}
-                @click=${this._toggleCollapse}
-              >
-                <span
-                  class=${classMap({
-                    codicon: true,
-                    'codicon-chevron-up': !this.collapsed,
-                    'codicon-chevron-down': this.collapsed,
-                  })}
-                  aria-hidden="true"
-                ></span>
-              </button>`
-            : nothing
-        }
-      </div>
+    return html` ${
+        this._separated
+          ? html`<link
+              rel="stylesheet"
+              href=${ifDefined(this._codiconStylesheet.href)}
+              nonce=${ifDefined(this._codiconStylesheet.nonce)}
+            />`
+          : nothing
+      }
       <div
         class=${classMap({
           'ribbon-content': true,
@@ -2567,9 +2606,16 @@ export class VscodeRibbon extends VscElement {
         part="content"
         id=${this._panelId}
         role="tabpanel"
+        tabindex="0"
+        @keydown=${(event: KeyboardEvent) => {
+          if (event.key === 'ArrowUp' && event.target === event.currentTarget) {
+            event.preventDefault();
+            this._focusActiveTab();
+          }
+        }}
         aria-label=${tab?.title ?? ''}
         aria-labelledby=${ifDefined(
-          activeIndex >= 0
+          !this._separated && activeIndex >= 0
             ? `${this._instanceId}-tab-${activeIndex}`
             : undefined
         )}
@@ -2620,7 +2666,81 @@ export class VscodeRibbon extends VscElement {
         }
         ${this._renderMenu()} ${this._renderFlyouts()}
         ${this._renderGroupPopover()}
+      </div>`;
+  }
+
+  override render(): TemplateResult {
+    const tab = this._activeTab;
+    return html`<header
+      class=${classMap({
+        ribbon: true,
+        'is-collapsed': this.collapsed,
+        'is-overlay-open': this._overlayOpen,
+      })}
+      part="base"
+      aria-label=${this.tablistLabel}
+    >
+      <link
+        rel="stylesheet"
+        href=${ifDefined(this._codiconStylesheet.href)}
+        nonce=${ifDefined(this._codiconStylesheet.nonce)}
+      />
+      <div class="ribbon-tabs" part="tabs">
+        <slot name="tabs-start"></slot>
+        <div
+          class="ribbon-tabs-list"
+          part="tabs-list"
+          role="tablist"
+          aria-label=${this.tablistLabel}
+          @keydown=${this._onTabsKeyDown}
+        >
+          ${this._models.map(
+            (model, index) =>
+              html`<button
+                type="button"
+                role="tab"
+                id=${`${this._instanceId}-tab-${index}`}
+                class=${classMap({
+                  'ribbon-tab': true,
+                  'is-active': model.id === tab?.id,
+                })}
+                part="tab"
+                data-tab-id=${model.id}
+                aria-controls=${ifDefined(this._separated ? undefined : this._panelId)}
+                aria-selected=${model.id === tab?.id ? 'true' : 'false'}
+                tabindex=${model.id === tab?.id ? 0 : -1}
+                @click=${() => this._selectTab(model)}
+                @dblclick=${this._onTabDoubleClick}
+              >
+                ${model.title}
+              </button>`
+          )}
+        </div>
+        <slot name="tabs-end"></slot>
+        ${
+          this.collapsible
+            ? html`<button
+                type="button"
+                class="ribbon-collapse"
+                part="collapse-button"
+                title=${this.collapsed ? this.expandLabel : this.collapseLabel}
+                aria-label=${this.collapsed ? this.expandLabel : this.collapseLabel}
+                aria-expanded=${this.collapsed ? 'false' : 'true'}
+                @click=${this._toggleCollapse}
+              >
+                <span
+                  class=${classMap({
+                    codicon: true,
+                    'codicon-chevron-up': !this.collapsed,
+                    'codicon-chevron-down': this.collapsed,
+                  })}
+                  aria-hidden="true"
+                ></span>
+              </button>`
+            : nothing
+        }
       </div>
+      ${this._separated ? nothing : this._renderPanel()}
     </header>`;
   }
 }
