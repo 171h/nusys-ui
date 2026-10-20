@@ -86,7 +86,6 @@ const POPOVER_MIN_SPACE = 160;
  * @fires {VscRibbonCollapseEvent} vsc-ribbon-collapse - 功能区展开或折叠时派发。
  * @fires {VscRibbonDialogEvent} vsc-ribbon-dialog - 点击功能组右下角的对话框启动器时派发。
  *
- * @cssprop [--vsc-ribbon-height=130px] - 标签栏与按钮区的总高度。
  * @cssprop [--vsc-ribbon-tabs-height=32px] - 标签栏高度。
  * @cssprop [--vsc-ribbon-items-height=74px] - 按钮区高度。
  * @cssprop [--vsc-ribbon-icon-size=40px] - 全高按钮图标尺寸。

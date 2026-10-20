@@ -10,9 +10,6 @@ const styles: CSSResultGroup = [
       /* 占满按钮高度的图标统一为按钮高度的一半，并保持正方形。 */
       --vsc-ribbon-icon-size: calc(var(--vsc-ribbon-items-height) / 2);
       --vsc-ribbon-compact-icon-size: 22px;
-      --vsc-ribbon-height: calc(
-        var(--vsc-ribbon-tabs-height) + var(--vsc-ribbon-items-height) + 24px
-      );
       display: block;
       font-family: var(--vscode-font-family, sans-serif);
       font-size: var(--vscode-font-size, 13px);
