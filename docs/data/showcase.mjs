@@ -8,7 +8,7 @@ const extra = {
   'single-select': ['combobox'],
   tabs: ['tabs-overflow'],
 };
-const wide = /^(form|tabs|table|split|textfield-native|choice-layouts)/;
+const wide = /^(form|tabs|table|split|textfield-native|choice-layouts|ribbon)/;
 export const showcaseGroups = groups.map((title) => ({
   title,
   items: components

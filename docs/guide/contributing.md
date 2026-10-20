@@ -9,9 +9,18 @@ pnpm install --frozen-lockfile
 pnpm docs:dev
 ```
 
-开发命令先构建组件、生成 API 和复制示例资源，再启动 VitePress。`pnpm dev`、`pnpm start` 与 `pnpm docs:dev` 使用相同入口。修改 Markdown、Vue 主题或示例数据由 VitePress 热更新；保存组件源码或样式后，Vite 8 自动重新构建 bundle 并重载文档页，无需手动刷新。自定义元素通过页面重载应用新的类定义，示例临时输入会重置，已保存的主题和尺寸继续保留。
+`pnpm docs:dev` 会优先复用已有的文档构建产物：当 `docs/public/assets` 与
+`docs/api/generated` 已存在时直接启动 VitePress，跳过耗时的 `pnpm docs:prepare`
+（组件打包、类型检查、自定义元素清单与 API 生成），使日常启动时间大幅缩短。
+`pnpm dev`、`pnpm start` 与 `pnpm docs:dev` 使用相同入口。修改 Markdown、Vue
+主题或示例数据由 VitePress 热更新；保存组件源码或样式后，Vite 8 自动重新构建
+bundle 并重载文档页，无需手动刷新。自定义元素通过页面重载应用新的类定义，示例
+临时输入会重置，已保存的主题和尺寸继续保留。
 
-源码监听只在开发服务器中启用，不修改发布用的 `dist/`；生产文档仍加载完整构建生成的 bundle。修改公共 API、JSDoc 或构建配置后，停止开发服务器并重新执行 `pnpm docs:dev`，以重新生成 API 和加载配置；也可单独执行 `pnpm docs:prepare` 更新 API。
+首次启动或缺少构建产物时会自动执行一次 `pnpm docs:prepare`。需要强制刷新 API、
+自定义元素清单或构建产物时，可运行 `pnpm docs:dev:full`，或设置
+`DOCS_FORCE_PREPARE=1` 后再启动。源码监听只在开发服务器中启用，不修改发布用的
+`dist/`；生产文档仍加载完整构建生成的 bundle。
 
 ```sh
 pnpm docs:check

@@ -71,6 +71,10 @@ const checks = [
   ['textfield', /<code>false<\/code>/],
   ['fieldset', /uncheckedMode/],
   ['tabs-group', /vsc-tabs-group-layout-change/],
+  ['ribbon', /vsc-ribbon-command/],
+  ['ribbon', /vsc-ribbon-collapse/],
+  ['ribbon', /vsc-ribbon-select/],
+  ['ribbon', /collapsible/],
   ['progress-bar', /<code>indicator<\/code>/],
   ['scrollable', /vsc-scrollable-scroll/],
 ];

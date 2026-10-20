@@ -1,4 +1,9 @@
 import {extraExamples} from './scenarios.mjs';
+import {
+  ribbonResizeCss,
+  ribbonResizeHtml,
+  ribbonResizeScript,
+} from './ribbon-resizable.mjs';
 export const examples = {
   tooltip: {
     height: 230,
@@ -247,6 +252,105 @@ export const examples = {
     title: '跨容器移动标签页组',
     html: '<div class="groups"><vscode-tabs-group><vscode-tabs><vscode-tab-header>文件</vscode-tab-header><vscode-tab-panel><fieldset><legend>文件列表</legend><p>index.ts</p></fieldset></vscode-tab-panel><vscode-tab-header>大纲</vscode-tab-header><vscode-tab-panel><fieldset><legend>符号</legend><p>组件定义</p></fieldset></vscode-tab-panel></vscode-tabs></vscode-tabs-group><vscode-tabs-group empty-text="拖动标题栏空白处，将整组移入此处"></vscode-tabs-group></div>',
     css: '.groups {display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px} vscode-tabs-group {min-height: 200px} @media(max-width: 500px) {.groups {grid-template-columns: 1fr}}',
+  },
+  ribbon: {
+    height: 470,
+    title: '标签、分组与下拉菜单',
+    html: `${ribbonResizeHtml('ribbon-basic', '<vscode-ribbon id="ribbon-basic" tablist-label="示例功能区"></vscode-ribbon>')}<output id="ribbon-basic-output" aria-live="polite">选择命令后在这里显示结果。</output>`,
+    css: ribbonResizeCss,
+    js: `${ribbonResizeScript('ribbon-basic')}
+const ribbon = document.querySelector('#ribbon-basic');
+ribbon.tabs = [
+  {
+    id: 'home',
+    title: '开始',
+    default: true,
+    groups: [
+      {
+        id: 'file',
+        title: '文件',
+        dialogLauncher: {title: '打开文件设置', icon: 'settings-gear'},
+        items: [
+          {command: 'open', title: '打开', icon: 'folder-opened', size: 'half'},
+          {command: 'save', title: '保存', icon: 'save', size: 'half', keybinding: 'Ctrl+S'},
+          {command: 'save-as', title: '另存为', icon: 'save-as', size: 'half'}
+        ]
+      },
+      {
+        id: 'edit',
+        title: '编辑',
+        dialogLauncher: true,
+        items: [
+          {command: 'undo', title: '撤销', icon: 'discard', size: 'third'},
+          {command: 'redo', title: '重做', icon: 'redo', size: 'third'}
+        ]
+      }
+    ]
+  },
+  {
+    id: 'formwork',
+    title: '模板',
+    groups: [
+      {
+        id: 'formwork',
+        title: '模板工程',
+        items: [
+          {
+            type: 'dropdown',
+            title: '板模板',
+            icon: 'symbol-class',
+            menu: {
+              items: [
+                {command: 'slab-ringlock', title: '盘扣式', icon: 'layers'},
+                {command: 'slab-coupler', title: '扣件式', icon: 'layers'},
+                {
+                  title: '更多体系',
+                  icon: 'ellipsis',
+                  order: 30,
+                  menu: {items: [{command: 'slab-portal', title: '门式（占位）', icon: 'layers', placeholder: true}]}
+                }
+              ]
+            }
+          },
+          {
+            type: 'splitButton',
+            command: 'open-wall',
+            title: '墙模板',
+            icon: 'layout',
+            menu: {items: [{command: 'open-wall-single', title: '单侧墙模板', icon: 'layout'}]}
+          }
+        ]
+      }
+    ]
+  },
+  {
+    id: 'view',
+    title: '视图',
+    groups: [
+      {
+        id: 'layout',
+        title: '布局',
+        dialogLauncher: true,
+        items: [
+          {command: 'toggle-sidebar', title: '侧边栏', icon: 'layout-sidebar-left', size: 'half', pressed: true},
+          {title: '分屏预览', icon: 'split-horizontal', size: 'half', placeholder: true}
+        ]
+      }
+    ]
+  }
+];
+ribbon.addEventListener('vsc-ribbon-command', (event) => {
+  document.querySelector('#ribbon-basic-output').textContent =
+    '执行命令：' + event.detail.command + '（' + event.detail.item.title + '）';
+});
+ribbon.addEventListener('vsc-ribbon-select', (event) => {
+  document.querySelector('#ribbon-basic-output').textContent =
+    '切换到标签：' + event.detail.tab.title;
+});
+ribbon.addEventListener('vsc-ribbon-dialog', (event) => {
+  document.querySelector('#ribbon-basic-output').textContent =
+    '打开对话框：' + event.detail.group.title;
+});`,
   },
   toolbar: {
     height: 160,
