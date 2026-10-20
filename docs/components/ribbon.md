@@ -395,6 +395,17 @@ ribbon.panel = panel;
 | 解除与重新关联 | 设置 `null` 或换成其他面板会清空旧容器、关闭弹层并重新测量；解除后面板可以交给其他 Ribbon。                                                                                                                                  |
 | 样式           | 标签栏的 slots 和 parts 保留在 Ribbon；内容、分组、菜单等同名 parts 位于面板上，例如 `vscode-ribbon-panel::part(group)`。VS Code CSS 变量从面板所在容器继承，应在共同祖先配置主题；显式图标主题仍由 Ribbon 的 `theme` 决定。 |
 
+面板与 Ribbon 的可见性按各自容器独立生效：给 `vscode-ribbon` 设置 `hidden`
+或让它的祖先 `display: none` 只隐藏标签栏，`vscode-ribbon-panel` 仍会显示并保持
+交互。需要整体隐藏时，应同时设置两个元素，或把它们放入同一个可隐藏的容器：
+
+```js
+function setAppRibbonVisible(visible) {
+  ribbon.hidden = !visible;
+  panel.hidden = !visible;
+}
+```
+
 面板复用了 Ribbon 的 `--vsc-ribbon-items-height`、`--vsc-ribbon-icon-size` 和
 `--vsc-ribbon-compact-icon-size` 尺寸变量，但这些变量在面板的 `:host` 中声明了
 默认值，因此不能只设置在 Ribbon 或共同祖先上，需要直接覆盖面板元素：
