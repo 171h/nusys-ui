@@ -487,4 +487,23 @@ describe('ribbon-custom-content', () => {
     expect(source).not.toContain('</style><script>');
     expect(source).toContain('<\\/style>');
   });
+
+  it('注入主题字体与前景色，并在 iframe 内使用这些变量', () => {
+    const source = buildRibbonCustomContentSource(
+      {html: '<p>提示</p>', css: '', width: 320, height: 180},
+      {
+        fontFamily: 'Test Sans',
+        fontSize: '15px',
+        fontWeight: '600',
+        foreground: '#123456',
+      }
+    );
+    expect(source).toContain(
+      ':root{--vscode-font-family:Test Sans;--vscode-font-size:15px;--vscode-font-weight:600;--vscode-foreground:#123456;}'
+    );
+    expect(source).toContain(
+      'font:var(--vscode-font-size,12px) var(--vscode-font-family,sans-serif)'
+    );
+    expect(source).toContain('color:var(--vscode-foreground,#cccccc)');
+  });
 });

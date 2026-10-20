@@ -236,6 +236,30 @@ describe('vscode-ribbon', () => {
     }
   });
 
+  it('自定义内容 iframe 继承宿主主题字体与前景色', async () => {
+    const tabs = basicTabs();
+    tabs[0].groups![0].items = [
+      {
+        type: 'dropdown',
+        title: '面板',
+        menu: {layout: 'panel', custom: {html: '<p>详情</p>'}},
+      },
+    ];
+    const el = await createRibbon(tabs);
+    el.style.setProperty('--vscode-font-family', 'Test Sans');
+    el.style.setProperty('--vscode-font-size', '15px');
+    el.style.setProperty('--vscode-font-weight', '600');
+    el.style.setProperty('--vscode-foreground', '#123456');
+    await openMenu(el, '面板');
+    const source = el
+      .shadowRoot!.querySelector('iframe')!
+      .getAttribute('srcdoc')!;
+    expect(source).to.contain('--vscode-font-family:Test Sans;');
+    expect(source).to.contain('--vscode-font-size:15px;');
+    expect(source).to.contain('--vscode-font-weight:600;');
+    expect(source).to.contain('--vscode-foreground:#123456;');
+  });
+
   it('菜单标题按当前语言排序并支持中文、英文与瑞典语切换', async () => {
     const tabs = basicTabs();
     const words = ['Zulu', 'Åland', 'Örebro'];

@@ -41,3 +41,4 @@ export {
 } from './ribbon-model.js';
 export type {RibbonItemLayout} from './ribbon-model.js';
 export {buildRibbonCustomContentSource} from './ribbon-custom-content.js';
+export type {RibbonCustomContentTheme} from './ribbon-custom-content.js';

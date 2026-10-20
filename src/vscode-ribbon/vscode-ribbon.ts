@@ -22,6 +22,7 @@ import {
 } from './ribbon-model.js';
 import type {
   ResolvedRibbonIcon,
+  RibbonCustomContentModel,
   RibbonGroupModel,
   RibbonItemModel,
   RibbonMenuModel,
@@ -2243,12 +2244,24 @@ export class VscodeRibbon extends VscElement {
       part="custom-content"
       sandbox=""
       title=${this.customContentLabel}
-      .srcdoc=${buildRibbonCustomContentSource(menu.custom)}
+      .srcdoc=${this._customContentSource(menu.custom)}
       .style=${stylePropertyMap({
         width: `${menu.custom.width}px`,
         height: `${menu.custom.height}px`,
       })}
     ></iframe>`;
+  }
+
+  /** 读取宿主主题值，供 iframe 文档内的字体与前景色使用。 */
+  private _customContentSource(content: RibbonCustomContentModel): string {
+    const style = getComputedStyle(this);
+    const read = (name: string) => style.getPropertyValue(name).trim();
+    return buildRibbonCustomContentSource(content, {
+      fontFamily: read('--vscode-font-family'),
+      fontSize: read('--vscode-font-size'),
+      fontWeight: read('--vscode-font-weight'),
+      foreground: read('--vscode-foreground'),
+    });
   }
 
   private _renderGroupPopover(): TemplateResult | typeof nothing {
