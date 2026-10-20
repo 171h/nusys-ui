@@ -1,13 +1,6 @@
 export const groups = ['基础与反馈', '表单控件', '布局与导航', '数据展示'];
 const definitions = [
   [
-    'ribbon-panel',
-    '独立功能面板 RibbonPanel',
-    '布局与导航',
-    '由 Ribbon 关联的独立功能面板，支持不同起点和宽度。',
-    'ribbon-separated',
-  ],
-  [
     'tooltip',
     '悬浮提示 Tooltip',
     '基础与反馈',
@@ -224,6 +217,13 @@ const definitions = [
     '布局与导航',
     '标签、分组、命令按钮、下拉菜单、面板与响应式折叠。',
     'ribbon',
+  ],
+  [
+    'ribbon-panel',
+    '独立功能面板 RibbonPanel',
+    '布局与导航',
+    '由 Ribbon 关联的独立功能面板，支持不同起点和宽度。',
+    'ribbon-separated',
   ],
   [
     'toolbar-button',

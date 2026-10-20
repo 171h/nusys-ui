@@ -8,6 +8,8 @@
 
 ### 修复
 
+- **docs**：将 Ribbon 与 RibbonPanel 侧栏入口相邻排列，综合体验页的拆分布局与其余 Ribbon 场景统一归类并集中展示。
+
 - **tooltip**：默认仅通过鼠标悬停触发，新增 `show-on-focus`（`showOnFocus`）开关以启用 Tab 等聚焦触发；需要保留原聚焦行为的应用应显式开启。Escape 关闭后，保持目标焦点并重新开启焦点触发可恢复提示，普通更新仍保持关闭。
 
 - **ribbon**：flyout 内的 replace 子菜单保留当前层及祖先，返回时逐层恢复菜单与触发项焦点。

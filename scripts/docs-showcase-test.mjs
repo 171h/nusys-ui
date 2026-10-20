@@ -1,3 +1,4 @@
+import {testRibbonSeparated} from './docs-ribbon-separated-test.mjs';
 import assert from 'node:assert/strict';
 import {components} from '../docs/data/components.mjs';
 import {examples} from '../docs/data/examples.mjs';
@@ -30,6 +31,19 @@ export async function testShowcase(page, url, selectTheme, screenshots) {
   });
   await page.evaluate(() => window.scrollTo(0, 0));
   const demos = showcaseGroups.flatMap((group) => group.items);
+  const ribbonIndexes = demos.flatMap((demo, index) =>
+    demo.id.startsWith('ribbon') ? [index] : []
+  );
+  assert.ok(ribbonIndexes.length > 1, '综合页应展示多个 Ribbon 功能场景');
+  assert.equal(
+    ribbonIndexes.at(-1) - ribbonIndexes[0] + 1,
+    ribbonIndexes.length,
+    'Ribbon 场景必须集中排列，不能被其他组件示例隔开'
+  );
+  assert.ok(
+    ribbonIndexes.every((index) => demos[index].component === 'ribbon'),
+    'Ribbon 场景应统一归入功能区 Ribbon'
+  );
   for (const demo of demos) {
     const component = components.find((item) => item.id === demo.component);
     const title = component.title.split(' ').at(-1) + examples[demo.id].title;
@@ -84,6 +98,7 @@ export async function testShowcase(page, url, selectTheme, screenshots) {
   );
   for (const component of components)
     assert.ok(tags.has(`vscode-${component.id}`), `综合页缺少 ${component.id}`);
+  await testRibbonSeparated(frames.get('ribbon-separated'));
   const tooltipFrame = frames.get('tooltip');
   const tooltipSearch = tooltipFrame.getByRole('button', {
     name: '搜索',
