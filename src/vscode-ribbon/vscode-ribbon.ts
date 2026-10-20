@@ -88,7 +88,7 @@ const POPOVER_MIN_SPACE = 160;
  *
  * @cssprop [--vsc-ribbon-tabs-height=32px] - 标签栏高度。
  * @cssprop [--vsc-ribbon-items-height=74px] - 按钮区高度。
- * @cssprop [--vsc-ribbon-icon-size=40px] - 全高按钮图标尺寸。
+ * @cssprop [--vsc-ribbon-icon-size=calc(var(--vsc-ribbon-items-height) / 2)] - 全高按钮图标尺寸。
  * @cssprop [--vsc-ribbon-compact-icon-size=22px] - 半高按钮图标尺寸。
  * @cssprop [--vscode-editor-background=#1f1f1f] - 功能区背景。
  * @cssprop [--vscode-foreground=#cccccc] - 功能区文字颜色。
