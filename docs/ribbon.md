@@ -159,3 +159,20 @@ Codicon 字体需要页面加载 `@vscode/codicons/dist/codicon.css`，并用固
   按原始布局完整展示，也可调整 `responsive` 声明或增大容器宽度。
 - **状态没有记住**：确认设置了 `persist-state` 与 `storage-key`，且存储在
   当前上下文可用。
+
+## 标题栏与功能面板分离集成
+
+标题栏中仅放置状态所有者 `vscode-ribbon`，在工作区上方的另一容器中放置
+`vscode-ribbon-panel`，通过 `ribbon.panel = panel` 关联。标题栏可以在左侧保留
+应用图标，面板则从窗口左侧开始；两者宽度独立，不需要占位元素或手工同步状态。
+
+数据、国际化文案、`persist-state` 和命令监听保持配置在原 Ribbon 上。
+不要改为监听面板上的 `vsc-ribbon-command`；业务事件由状态所有者派发一次。
+宿主重建页面时用 `ribbon.panel = null` 主动解除引用，再关联新面板。
+面板临时断开会回退一体布局，重新连接自动恢复；隐藏和显示容器后可调用
+`refreshLayout()` 重新测量。主题变量设置在两个容器共同祖先上，或分别配置。
+
+具体生命周期、跨 Shadow DOM 无障碍边界和可运行代码参见
+[分离布局说明](./components/ribbon#标签栏与内容面板分离布局)。
+
+<ExamplePreview example="ribbon-separated" />

@@ -362,3 +362,51 @@ vscode-ribbon::part(tab) {
 ## 相关指南
 
 [功能区集成与迁移](../ribbon) · [主题与图标](../guide/theming) · [常见问题](../guide/faq)
+
+## 标签栏与内容面板分离布局
+
+保留一个 `vscode-ribbon` 作为状态和事件的所有者，将可选的
+`vscode-ribbon-panel` 放入另一容器，通过 JavaScript 元素引用关联：
+
+```html
+<div class="titlebar">
+  <strong>◆ 应用标识</strong>
+  <vscode-ribbon id="app-ribbon"></vscode-ribbon>
+</div>
+<vscode-ribbon-panel id="app-panel"></vscode-ribbon-panel>
+```
+
+```js
+import 'nusys-ui/dist/vscode-ribbon/index.js';
+const ribbon = document.querySelector('#app-ribbon');
+const panel = document.querySelector('#app-panel');
+ribbon.tabs = tabs;
+ribbon.panel = panel;
+// 恢复一体布局：ribbon.panel = null;
+```
+
+标题栏使用 flex 布局，应用标识占据左侧空间，面板直接放在下方容器的左侧。
+两个组件可分别设置宽度；标签溢出独立横向滚动，功能降级、分组折叠和滚动始终
+测量面板实际宽度。折叠覆盖层从面板容器顶部展开，不使用标题栏的起点或宽度。
+`await ribbon.updateComplete` 同时等待关联面板完成渲染。
+
+| 项目           | 行为                                                                                                                                                                                                                         |
+| -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 状态归属       | `tabs`、`activeTabId`、`collapsed`、`theme`、翻译与持久化均配置在 Ribbon 上，面板不保存第二份状态。                                                                                                                          |
+| 事件           | 四类 `vsc-ribbon-*` 事件仍仅由 Ribbon 派发，监听 Ribbon 或它的祖先；面板的 DOM 祖先不接收这些业务事件。                                                                                                                      |
+| 关联范围       | 使用同一文档内的元素引用，可位于不同 Shadow DOM；不通过字符串 id 搜索。一个面板同时只能属于一个 Ribbon，重复占用或跨文档关联抛出错误且保留原关联。                                                                           |
+| 连接与断开     | 面板尚未连接或暂时移除时回退到一体布局，重新插入后自动恢复；关闭临时菜单和覆盖层，保留活动标签及折叠状态。Ribbon 断开时清空面板并暂停监听，重连后恢复。                                                                      |
+| 解除与重新关联 | 设置 `null` 或换成其他面板会清空旧容器、关闭弹层并重新测量；解除后面板可以交给其他 Ribbon。                                                                                                                                  |
+| 样式           | 标签栏的 slots 和 parts 保留在 Ribbon；内容、分组、菜单等同名 parts 位于面板上，例如 `vscode-ribbon-panel::part(group)`。VS Code CSS 变量从面板所在容器继承，应在共同祖先配置主题；显式图标主题仍由 Ribbon 的 `theme` 决定。 |
+
+标签保留 `tablist` / `tab` 和单个选中项，面板保留 `tabpanel` 并以当前标签标题
+独立命名。普通一体布局保留原有 `aria-controls` / `aria-labelledby`；分离布局
+不输出跨影子根无法解析的 ID 引用，使用独立可访问名称和实际键盘路径。
+辅助技术不会获得跨根的直接 ARIA 控制关系。左右方向键、Home、End 切换标签；
+在标签上按 ↓ 进入面板入口，在入口上按 ↑ 返回活动标签；随后 Tab 可访问命令。
+Escape 逐层返回混合子菜单、恢复触发焦点；折叠覆盖层关闭时回到活动标签。
+
+示例中的两个滑块独立调整标签栏和功能面板宽度，并实时显示事件次数；可以切换
+布局、折叠后点标签、逐层返回菜单，或点击工作区关闭覆盖层。
+
+<ExamplePreview example="ribbon-separated" />

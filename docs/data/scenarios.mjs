@@ -1,3 +1,4 @@
+import {ribbonSeparatedExample} from './ribbon-separated.mjs';
 import {
   ribbonResizeCss,
   ribbonResizeHtml,
@@ -80,7 +81,9 @@ export const componentScenarios = {
   'tab-header': ['tabs-panel', 'tabs-group-views'],
   'tab-panel': ['tabs-panel', 'tabs-group-views'],
   'tabs-group': ['tabs-group-views'],
+  'ribbon-panel': ['ribbon-separated'],
   ribbon: [
+    'ribbon-separated',
     'ribbon-menus',
     'ribbon-responsive',
     'ribbon-overflow',
@@ -546,6 +549,7 @@ export const extraExamples = {
     formScript,
     240
   ),
+  'ribbon-separated': ribbonSeparatedExample,
   'ribbon-menus': demo(
     '下拉、子菜单、面板与命令事件',
     [
