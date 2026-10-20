@@ -53,6 +53,7 @@ interface FlyoutMenuState {
   menu: RibbonMenuModel;
   anchor: HTMLElement;
   position: PopoverPosition | null;
+  history: {menu: RibbonMenuModel; triggerKey: string}[];
 }
 
 interface OpenGroupState {
@@ -1234,11 +1235,71 @@ export class VscodeRibbon extends VscElement {
   }
 
   private _closeFlyout(restoreFocus = false): void {
-    this._closeFlyoutsFrom(this._flyouts.length - 1, restoreFocus);
+    const index = this._flyouts.length - 1;
+    if (this._flyouts[index]?.history.length) {
+      this._popFlyoutMenu(index);
+    } else {
+      this._closeFlyoutsFrom(index, restoreFocus);
+    }
   }
 
-  private _pushMenu(item: RibbonItemModel): void {
+  private _popFlyoutMenu(index: number): void {
+    const state = this._flyouts[index];
+    const previous = state?.history[state.history.length - 1];
+    if (!previous) {
+      return;
+    }
+    this._flyouts = this._flyouts.slice(0, index + 1).map((flyout, i) =>
+      i === index
+        ? {
+            ...flyout,
+            menu: previous.menu,
+            history: flyout.history.slice(0, -1),
+          }
+        : flyout
+    );
+    this.updateComplete.then(() => {
+      this._positionFlyouts();
+      cancelAnimationFrame(this._menuFocusFrame ?? 0);
+      this._menuFocusFrame = requestAnimationFrame(() => {
+        this._menuFocusFrame = undefined;
+        this._focusableIn(this._flyoutElements()[index])
+          .find(
+            (element) =>
+              element.getAttribute('data-item-key') === previous.triggerKey
+          )
+          ?.focus();
+      });
+    });
+  }
+
+  private _pushMenu(item: RibbonItemModel, anchor: HTMLElement): void {
     if (!item.menu) {
+      return;
+    }
+    const parentIndex = this._flyoutElements().findIndex((element) =>
+      element.contains(anchor)
+    );
+    if (parentIndex >= 0) {
+      const menu = item.menu;
+      this._flyouts = this._flyouts
+        .slice(0, parentIndex + 1)
+        .map((flyout, index) =>
+          index === parentIndex
+            ? {
+                ...flyout,
+                menu,
+                history: [
+                  ...flyout.history,
+                  {menu: flyout.menu, triggerKey: item.key},
+                ],
+              }
+            : flyout
+        );
+      this.updateComplete.then(() => {
+        this._positionFlyouts();
+        this._focusFlyout('first');
+      });
       return;
     }
     this._flyouts = [];
@@ -1260,7 +1321,7 @@ export class VscodeRibbon extends VscElement {
     if (item.submenuMode === 'flyout') {
       this._openFlyout(item, anchor, focus);
     } else {
-      this._pushMenu(item);
+      this._pushMenu(item, anchor);
     }
   }
 
@@ -1284,7 +1345,7 @@ export class VscodeRibbon extends VscElement {
     );
     this._flyouts = [
       ...this._flyouts.slice(0, parentIndex + 1),
-      {item, menu: item.menu, anchor, position: null},
+      {item, menu: item.menu, anchor, position: null, history: []},
     ];
     this.updateComplete.then(() => {
       this._positionFlyouts();
@@ -2000,6 +2061,13 @@ export class VscodeRibbon extends VscElement {
           @keydown=${this._onMenuKeyDown}
           @focusout=${this._onMenuFocusOut}
         >
+          ${
+            flyout.history.length > 0
+              ? this._renderMenuBack(flyout.menu.layout === 'panel', () =>
+                  this._popFlyoutMenu(this._flyouts.indexOf(flyout))
+                )
+              : nothing
+          }
           ${this._renderMenuContent(flyout.menu, flyout.item.title, () =>
             this._closeFlyoutsFrom(this._flyouts.indexOf(flyout), true)
           )}
@@ -2036,24 +2104,25 @@ export class VscodeRibbon extends VscElement {
     >
       ${
         this._menuStack.length > 1
-          ? html`<button
-              type="button"
-              class="ribbon-menu-back"
-              part="menu-back"
-              role=${ifDefined(isPanel ? undefined : 'menuitem')}
-              aria-label=${this.backLabel}
-              @click=${this._popMenu}
-            >
-              <span
-                class="codicon codicon-arrow-left"
-                aria-hidden="true"
-              ></span>
-              <span>${this.backLabel}</span>
-            </button>`
+          ? this._renderMenuBack(isPanel, () => this._popMenu())
           : nothing
       }
       ${this._renderMenuContent(menu, state.item.title, () => this._closeMenu(true))}
     </div>`;
+  }
+
+  private _renderMenuBack(isPanel: boolean, back: () => void): TemplateResult {
+    return html`<button
+      type="button"
+      class="ribbon-menu-back"
+      part="menu-back"
+      role=${ifDefined(isPanel ? undefined : 'menuitem')}
+      aria-label=${this.backLabel}
+      @click=${back}
+    >
+      <span class="codicon codicon-arrow-left" aria-hidden="true"></span>
+      <span>${this.backLabel}</span>
+    </button>`;
   }
 
   private _renderMenuContent(

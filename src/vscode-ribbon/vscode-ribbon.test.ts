@@ -519,6 +519,122 @@ describe('vscode-ribbon', () => {
     expect(el.shadowRoot!.activeElement).to.equal(shadowButton(el, 'B'));
   });
 
+  for (const backAction of ['Escape', 'ArrowLeft', '返回']) {
+    it(`混合 flyout 与 replace 菜单通过 ${backAction} 逐层返回并恢复焦点`, async () => {
+      const tabs = basicTabs();
+      tabs[0].groups![0].items = [
+        {
+          type: 'dropdown',
+          title: '根菜单',
+          menu: {
+            items: [
+              {
+                title: '父 flyout',
+                submenuMode: 'flyout',
+                menu: {
+                  items: [
+                    {
+                      title: '子 replace',
+                      menu: {
+                        items: [
+                          {
+                            title: '孙 flyout',
+                            submenuMode: 'flyout',
+                            menu: {
+                              items: [
+                                {
+                                  title: '末 replace',
+                                  menu: {
+                                    items: [
+                                      {command: 'leaf', title: '叶子命令'},
+                                    ],
+                                  },
+                                },
+                              ],
+                            },
+                          },
+                        ],
+                      },
+                    },
+                    {command: 'sibling', title: '父层其他命令'},
+                  ],
+                },
+              },
+            ],
+          },
+        },
+      ];
+      const el = await createRibbon(tabs);
+      await openMenu(el, '根菜单');
+      const open = async (label: string) => {
+        await clickOnElement(shadowButton(el, label)!);
+        await el.updateComplete;
+        await aTimeout(40);
+      };
+      const back = async () => {
+        if (backAction === '返回') {
+          const buttons =
+            el.shadowRoot!.querySelectorAll<HTMLElement>('.ribbon-menu-back');
+          await clickOnElement(buttons[buttons.length - 1]);
+        } else {
+          (el.shadowRoot!.activeElement as HTMLElement).dispatchEvent(
+            new KeyboardEvent('keydown', {
+              key: backAction,
+              bubbles: true,
+              composed: true,
+            })
+          );
+        }
+        await el.updateComplete;
+        await aTimeout(40);
+      };
+      await open('父 flyout');
+      const parentBounds = el
+        .shadowRoot!.querySelector('.ribbon-flyout-popover')!
+        .getBoundingClientRect();
+      await open('子 replace');
+      await back();
+      expect(shadowButton(el, '父层其他命令')).to.not.equal(undefined);
+      expect(el.shadowRoot!.activeElement).to.equal(
+        shadowButton(el, '子 replace')
+      );
+      const restoredBounds = el
+        .shadowRoot!.querySelector('.ribbon-flyout-popover')!
+        .getBoundingClientRect();
+      expect(restoredBounds.left).to.equal(parentBounds.left);
+      expect(restoredBounds.top).to.equal(parentBounds.top);
+      await open('子 replace');
+      await open('孙 flyout');
+      await open('末 replace');
+      await back();
+      expect(el.shadowRoot!.activeElement).to.equal(
+        shadowButton(el, '末 replace')
+      );
+      // 关闭孙 flyout 后回到其 replace 父层，再返回原父 flyout。
+      (el.shadowRoot!.activeElement as HTMLElement).dispatchEvent(
+        new KeyboardEvent('keydown', {
+          key: 'Escape',
+          bubbles: true,
+          composed: true,
+        })
+      );
+      await el.updateComplete;
+      await aTimeout(40);
+      expect(el.shadowRoot!.activeElement).to.equal(
+        shadowButton(el, '孙 flyout')
+      );
+      await back();
+      expect(el.shadowRoot!.activeElement).to.equal(
+        shadowButton(el, '子 replace')
+      );
+      await open('父层其他命令');
+      expect(el.dataset.lastCommand).to.equal('sibling');
+      expect(el.shadowRoot!.querySelector('.ribbon-menu-popover')).to.equal(
+        null
+      );
+    });
+  }
+
   for (const type of ['dropdown', 'splitButton'] as const) {
     for (const keyboard of [false, true]) {
       it(`折叠分组中的 ${type} 通过${keyboard ? 'ArrowDown' : '点击'}打开菜单后保留锚点与 Escape 焦点`, async () => {
