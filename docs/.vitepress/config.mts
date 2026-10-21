@@ -99,9 +99,7 @@ export default defineConfig({
     returnToTopLabel: '返回顶部',
     docFooter: {prev: '上一页', next: '下一页'},
     lastUpdated: {text: '最后更新'},
-    socialLinks: [
-      {icon: 'github', link: 'https://github.com/171h/vscode-elements'},
-    ],
+    socialLinks: [{icon: 'github', link: 'https://github.com/171h/nusys-ui'}],
     footer: {
       message: '基于 VSCode Elements · MIT 许可证',
       copyright: 'Nusys UI 中文文档',

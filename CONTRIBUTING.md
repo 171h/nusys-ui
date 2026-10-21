@@ -1,10 +1,10 @@
 # 贡献指南
 
-感谢参与 VSCode Elements 的开发。
+感谢参与 Nusys UI 的开发。
 
 即使暂时不准备提交代码，也可以通过修正文档中的错别字、语法错误或不清晰的说明参与贡献。
 
-如果还不熟悉代码，建议从带有 [“good first issue”](https://github.com/171h/vscode-elements/issues?q=is%3Aissue%20state%3Aopen%20label%3A%22good%20first%20issue%22) 标签的任务开始。这些任务相对简单，也对项目有帮助。
+如果还不熟悉代码，建议从带有 [“good first issue”](https://github.com/171h/nusys-ui/issues?q=is%3Aissue%20state%3Aopen%20label%3A%22good%20first%20issue%22) 标签的任务开始。这些任务相对简单，也对项目有帮助。
 
 决定处理某个问题时，请在问题页面说明，避免重复工作。
 

@@ -1,6 +1,6 @@
-# nusys-ui
+# Nusys UI
 
-基于 Lit 的 Web Components 组件库，用于开发 VS Code 扩展，组件标签保留 `vscode-` 前缀。本仓库独立维护，项目地址为 [171h/vscode-elements](https://github.com/171h/vscode-elements)。
+基于 Lit 的 Web Components 组件库，用于开发 VS Code 扩展，npm 包名为 `nusys-ui`，组件标签保留 `vscode-` 前缀。本仓库独立维护，项目地址为 [171h/nusys-ui](https://github.com/171h/nusys-ui)，中文文档位于本仓库的 [docs](docs/index.md) 目录。
 
 ## 环境配置
 

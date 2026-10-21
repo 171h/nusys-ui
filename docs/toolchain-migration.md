@@ -52,4 +52,4 @@ PR 审查补充了三个原生输入回归用例，修复 iframe 焦点恢复、
 
 组件清单生成与模块构建采用一致的测试排除规则，测试桥接 API 不进入发布元数据；构建验证同时检查清单不包含测试工具和测试用例。
 
-CI 使用 pnpm 冻结锁文件安装，在 Windows、Linux 与 macOS 验证构建、类型、格式、浏览器测试及文档示例。工具链迁移 PR 审查中的键盘与动画修复已通过三平台远程 CI（提交 `dd6e525a`，[验证记录](https://github.com/171h/vscode-elements/actions/runs/37010406839)）；该迁移的验证状态参见 [PR #15](https://github.com/171h/vscode-elements/pull/15)。本地验证使用 Windows，未运行发布助手或发布包。
+CI 使用 pnpm 冻结锁文件安装，在 Windows、Linux 与 macOS 验证构建、类型、格式、浏览器测试及文档示例。工具链迁移 PR 审查中的键盘与动画修复已通过三平台远程 CI（提交 `dd6e525a`，[验证记录](https://github.com/171h/nusys-ui/actions/runs/37010406839)）；该迁移的验证状态参见 [PR #15](https://github.com/171h/nusys-ui/pull/15)。本地验证使用 Windows，未运行发布助手或发布包。

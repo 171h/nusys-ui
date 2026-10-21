@@ -4,7 +4,7 @@
 
 ## 项目背景
 
-VSCode Elements 是基于 Lit 的 Web Components 组件库，用于开发 VS Code 扩展。npm 包名为 `nusys-ui`，组件标签保留 `vscode-` 前缀。开发环境使用 Node.js 22.12+（22.x）、24.x 或 26+，并使用 pnpm 和现有的 `pnpm-lock.yaml` 管理依赖。
+Nusys UI（原名 VSCode Elements）是基于 Lit 的 Web Components 组件库，用于开发 VS Code 扩展。仓库地址为 [171h/nusys-ui](https://github.com/171h/nusys-ui)，npm 包名为 `nusys-ui`，组件标签保留 `vscode-` 前缀。开发环境使用 Node.js 22.12+（22.x）、24.x 或 26+，并使用 pnpm 和现有的 `pnpm-lock.yaml` 管理依赖。
 
 | 目录或文件           | 用途                                   |
 | -------------------- | -------------------------------------- |
