@@ -948,6 +948,11 @@ describe('vscode-ribbon', () => {
     ]);
     expect(headings[0].getAttribute('role')).to.equal('presentation');
     expect(menu.querySelectorAll('[role="menuitem"]')).to.have.length(3);
+    for (const item of menu.querySelectorAll<HTMLElement>(
+      '[role="menuitem"]'
+    )) {
+      expect(item.hasAttribute('title')).to.equal(false);
+    }
     expect(el.shadowRoot!.activeElement?.textContent).to.contain('此设备');
     const description = menu.querySelector<HTMLElement>(
       '.ribbon-menu-description'
@@ -1019,6 +1024,11 @@ describe('vscode-ribbon', () => {
     expect(descriptions).to.have.length(2);
     expect(descriptions[0].textContent).to.contain('上：2.5 厘米');
     expect(getComputedStyle(descriptions[0]).whiteSpace).to.equal('pre-line');
+    for (const item of el.shadowRoot!.querySelectorAll<HTMLElement>(
+      '.ribbon-panel-item'
+    )) {
+      expect(item.hasAttribute('title')).to.equal(false);
+    }
   });
 
   it('面板底部操作区支持键盘导航与命令执行', async () => {
@@ -1073,6 +1083,7 @@ describe('vscode-ribbon', () => {
       '.ribbon-panel-footer-item'
     )!;
     expect(footerItem.getAttribute('aria-label')).to.equal('自定义页边距');
+    expect(footerItem.hasAttribute('title')).to.equal(false);
     expect(
       footerItem.querySelector('.ribbon-menu-keybinding')?.textContent
     ).to.equal('A');
@@ -1162,6 +1173,9 @@ describe('vscode-ribbon', () => {
       items[2].querySelector('.ribbon-gallery-icon')?.className
     ).to.contain('codicon-symbol-color');
     expect(items[0].getAttribute('role')).to.equal('menuitem');
+    for (const item of items) {
+      expect(item.hasAttribute('title')).to.equal(false);
+    }
 
     items[1].click();
     await el.updateComplete;
@@ -1195,6 +1209,14 @@ describe('vscode-ribbon', () => {
     await waitFor(
       () => el.shadowRoot?.querySelectorAll('.ribbon-gallery-tile').length === 8
     );
+    const tiles = Array.from(
+      el.shadowRoot!.querySelectorAll<HTMLButtonElement>('.ribbon-gallery-tile')
+    );
+    for (const tile of tiles) {
+      expect(tile.getAttribute('title')).to.equal(
+        tile.getAttribute('aria-label')
+      );
+    }
     const viewport = el.shadowRoot!.querySelector<HTMLElement>(
       '.ribbon-gallery-viewport'
     )!;
@@ -1233,6 +1255,9 @@ describe('vscode-ribbon', () => {
       '.ribbon-gallery-popover .ribbon-gallery-tile'
     );
     expect(popoverTiles).to.have.length(8);
+    for (const tile of popoverTiles) {
+      expect(tile.hasAttribute('title')).to.equal(false);
+    }
     popoverTiles[1].click();
     await el.updateComplete;
     expect(command).to.equal('format-1');
