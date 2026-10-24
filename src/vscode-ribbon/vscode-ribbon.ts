@@ -1950,7 +1950,6 @@ export class VscodeRibbon extends VscElement {
     }
     const hasMenu = item.menu !== null;
     const isSplit = item.type === 'splitButton' && hasMenu && !!item.command;
-    const title = this._buttonTitle(item);
     const anchorEvent = (event: Event) => event.currentTarget as HTMLElement;
 
     if (isSplit) {
@@ -1960,7 +1959,6 @@ export class VscodeRibbon extends VscElement {
           class="ribbon-menu-item"
           part="menu-item"
           role="menuitem"
-          title=${title}
           aria-label=${item.title}
           data-item-key=${item.key}
           ?disabled=${item.disabled}
@@ -1976,7 +1974,6 @@ export class VscodeRibbon extends VscElement {
           class="ribbon-menu-item ribbon-menu-split-trigger"
           part="menu-item menu-split-trigger"
           role="menuitem"
-          title=${`${this.openMenuLabel}：${item.title}`}
           aria-label=${`${this.openMenuLabel}：${item.title}`}
           aria-haspopup=${item.menu?.layout === 'panel' ? 'dialog' : 'menu'}
           data-item-key=${item.key}
@@ -1997,7 +1994,6 @@ export class VscodeRibbon extends VscElement {
       class="ribbon-menu-item"
       part="menu-item"
       role="menuitem"
-      title=${title}
       aria-label=${item.title}
       aria-haspopup=${ifDefined(hasMenu ? (item.menu?.layout === 'panel' ? 'dialog' : 'menu') : undefined)}
       data-item-key=${item.key}
@@ -2051,7 +2047,6 @@ export class VscodeRibbon extends VscElement {
       type="button"
       class="ribbon-panel-item"
       part="panel-item"
-      title=${this._buttonTitle(item)}
       aria-label=${item.title}
       aria-haspopup=${ifDefined(hasMenu ? (item.menu?.layout === 'panel' ? 'dialog' : 'menu') : undefined)}
       data-item-key=${item.key}
@@ -2126,7 +2121,6 @@ export class VscodeRibbon extends VscElement {
       class="ribbon-panel-footer-item"
       part="panel-footer-item"
       role=${ifDefined(menuRole ? 'menuitem' : undefined)}
-      title=${this._buttonTitle(item)}
       aria-label=${item.title}
       aria-haspopup=${ifDefined(
         hasMenu
@@ -2360,7 +2354,6 @@ export class VscodeRibbon extends VscElement {
       class="ribbon-gallery-item"
       part="gallery-item"
       role="menuitem"
-      title=${this._buttonTitle(item)}
       aria-label=${item.title}
       aria-haspopup=${ifDefined(hasMenu ? (item.menu?.layout === 'panel' ? 'dialog' : 'menu') : undefined)}
       data-item-key=${item.key}
@@ -2386,7 +2379,9 @@ export class VscodeRibbon extends VscElement {
       type="button"
       class="ribbon-gallery-tile"
       part="gallery-tile"
-      title=${this._buttonTitle(item)}
+      title=${ifDefined(
+        context === 'ribbon' ? this._buttonTitle(item) : undefined
+      )}
       aria-label=${item.title}
       aria-haspopup=${ifDefined(hasMenu ? (item.menu?.layout === 'panel' ? 'dialog' : 'menu') : undefined)}
       ?disabled=${item.disabled}
