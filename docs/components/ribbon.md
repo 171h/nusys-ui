@@ -95,27 +95,27 @@ ArrowDown / ArrowUp 打开菜单并聚焦首项或末项。
 会随容器伸展，宽度不足时与其他分组相同，折叠为溢出下拉入口，弹层中以网格完整
 保留全部预览格子。
 
-| 字段          | 类型                                             | 说明                                                                                                         |
-| ------------- | ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------ |
-| `type`        | `'button' \| 'splitButton' \| 'dropdown'`        | 按钮类型，默认为 `button`                                                                                    |
-| `command`     | `string`                                         | 命令标识，原样放入 `vsc-ribbon-command` 事件                                                                 |
-| `arguments`   | `unknown[]`                                      | 命令参数，原样放入事件详情                                                                                   |
-| `title`       | `string`                                         | 按钮或菜单项标题                                                                                             |
-| `icon`        | 字符串、`{light, dark}` 或 `{codicon}` / `{url}` | 图标声明                                                                                                     |
-| `menu`        | `VscRibbonMenu`                                  | 下拉菜单，支持递归子菜单                                                                                     |
-| `submenuMode` | `'replace' \| 'flyout'`                          | 子菜单展开方式，默认为 `replace`                                                                             |
-| `size`        | `'full' \| 'half' \| 'third'`                    | 主区域尺寸，默认为 `full`                                                                                    |
-| `style`       | `'iconAndLabel' \| 'icon'`                       | 紧凑样式，默认为 `iconAndLabel`                                                                              |
-| `responsive`  | `VscRibbonResponsiveStep[]`                      | 宽度不足时依次尝试的尺寸与样式                                                                               |
-| `pressed`     | `boolean`                                        | 切换按钮的按下状态，输出 `aria-pressed`                                                                      |
-| `disabled`    | `boolean`                                        | 禁用项                                                                                                       |
-| `placeholder` | `boolean`                                        | 占位项，可见但不可执行                                                                                       |
-| `keybinding`  | `string`                                         | 菜单项右侧的快捷键文字                                                                                       |
-| `heading`     | `boolean`                                        | 在菜单或面板中渲染为不可交互的分组标题                                                                       |
-| `description` | `string`                                         | 菜单项、面板项的补充说明，支持多行文本                                                                       |
-| `preview`     | `string`                                         | 图库项预览图地址，推荐 `data:` URI                                                                           |
-| `separator`   | `boolean`                                        | 在菜单中渲染为分隔线                                                                                         |
-| `tooltip`     | `string`                                         | 主区域按钮的悬停提示，默认使用标题；菜单、面板与图库弹层中的选项不渲染悬停提示，补充信息请改用 `description` |
+| 字段          | 类型                                             | 说明                                         |
+| ------------- | ------------------------------------------------ | -------------------------------------------- |
+| `type`        | `'button' \| 'splitButton' \| 'dropdown'`        | 按钮类型，默认为 `button`                    |
+| `command`     | `string`                                         | 命令标识，原样放入 `vsc-ribbon-command` 事件 |
+| `arguments`   | `unknown[]`                                      | 命令参数，原样放入事件详情                   |
+| `title`       | `string`                                         | 按钮或菜单项标题                             |
+| `icon`        | 字符串、`{light, dark}` 或 `{codicon}` / `{url}` | 图标声明                                     |
+| `menu`        | `VscRibbonMenu`                                  | 下拉菜单，支持递归子菜单                     |
+| `submenuMode` | `'replace' \| 'flyout'`                          | 子菜单展开方式，默认为 `replace`             |
+| `size`        | `'full' \| 'half' \| 'third'`                    | 主区域尺寸，默认为 `full`                    |
+| `style`       | `'iconAndLabel' \| 'icon'`                       | 紧凑样式，默认为 `iconAndLabel`              |
+| `responsive`  | `VscRibbonResponsiveStep[]`                      | 宽度不足时依次尝试的尺寸与样式               |
+| `pressed`     | `boolean`                                        | 切换按钮的按下状态，输出 `aria-pressed`      |
+| `disabled`    | `boolean`                                        | 禁用项                                       |
+| `placeholder` | `boolean`                                        | 占位项，可见但不可执行                       |
+| `keybinding`  | `string`                                         | 菜单项右侧的快捷键文字                       |
+| `heading`     | `boolean`                                        | 在菜单或面板中渲染为不可交互的分组标题       |
+| `description` | `string`                                         | 菜单项、面板项的补充说明，支持多行文本       |
+| `preview`     | `string`                                         | 图库项预览图地址，推荐 `data:` URI           |
+| `separator`   | `boolean`                                        | 在菜单中渲染为分隔线                         |
+| `tooltip`     | `string`                                         | 鼠标悬停提示，默认使用标题                   |
 
 | 菜单字段  | 类型                             | 说明                                |
 | --------- | -------------------------------- | ----------------------------------- |

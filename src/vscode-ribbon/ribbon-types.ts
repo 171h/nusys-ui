@@ -112,7 +112,7 @@ export interface VscRibbonItem {
   disabled?: boolean;
   /** 切换按钮的按下状态；设置后输出 `aria-pressed`。 */
   pressed?: boolean;
-  /** 主区域按钮的鼠标悬停提示，默认使用标题；菜单、面板与图库弹层中的选项不渲染悬停提示，补充信息请使用 `description`。 */
+  /** 鼠标悬停提示；默认使用标题。 */
   tooltip?: string;
   /** 菜单项右侧的快捷键文字。 */
   keybinding?: string;
