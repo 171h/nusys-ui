@@ -1,6 +1,6 @@
 {
   "name": "nusys-ui",
-  "version": "4.2.0",
+  "version": "4.2.1",
   "description": "Nusys UI：基于 Lit 的 Web Components 组件库，用于开发 Visual Studio Code 扩展",
   "main": "dist/main.js",
   "module": "dist/main.js",
