@@ -29,22 +29,23 @@ pnpm docs:preview
 pnpm docs:test:dev
 ```
 
-构建输出在 `docs/.vitepress/dist`。部署到子路径时设置 `DOCS_BASE`（例如 `/nusys-ui/`）；预览、示例和资源均跟随该路径。未配置任何自动发布或远程推送。
+构建输出在 `docs/.vitepress/dist`。部署到子路径时设置 `DOCS_BASE`（例如 `/nusys-ui/`）；预览、示例和资源均跟随该路径。推送到 `main` 后，`.github/workflows/pages.yml` 会构建并发布到 <https://171h.github.io/nusys-ui/>，也可以在 Actions 中手动运行 **部署文档到 GitHub Pages** 工作流。工作流从 `actions/configure-pages` 获取子路径并设置 `DOCS_BASE`；仓库 Pages 的发布来源需设置为 GitHub Actions。
 
 ## 目录与数据来源
 
-| 路径                       | 用途                                      |
-| -------------------------- | ----------------------------------------- |
-| `docs/guide/`              | 安装、集成、主题、表单与常见问题          |
-| `docs/components/`         | 组件使用说明与示例引用                    |
-| `docs/data/components.mjs` | 组件名称、分类与摘要                      |
-| `docs/data/examples.mjs`   | 经审核的本地 HTML、CSS、JavaScript 示例   |
-| `docs/data/scenarios.mjs`  | 全部组件的功能场景与覆盖说明              |
-| `docs/data/showcase.mjs`   | 综合页的演示分类与去重                    |
-| `docs/api/generated/`      | 从当前自定义元素清单生成的 API，不提交    |
-| `docs/public/assets/`      | 当前库 bundle 与 Codicon 静态资源，不提交 |
-| `docs/.vitepress/`         | 配置、主题和示例预览组件                  |
-| `scripts/docs-*.mjs`       | API、资源生成及完整性与交互检查           |
+| 路径                          | 用途                                      |
+| ----------------------------- | ----------------------------------------- |
+| `docs/guide/`                 | 安装、集成、主题、表单与常见问题          |
+| `docs/components/`            | 组件使用说明与示例引用                    |
+| `docs/data/components.mjs`    | 组件名称、分类与摘要                      |
+| `docs/data/examples.mjs`      | 经审核的本地 HTML、CSS、JavaScript 示例   |
+| `docs/data/scenarios.mjs`     | 全部组件的功能场景与覆盖说明              |
+| `docs/data/showcase.mjs`      | 综合页的演示分类与去重                    |
+| `docs/api/generated/`         | 从当前自定义元素清单生成的 API，不提交    |
+| `docs/public/assets/`         | 当前库 bundle 与 Codicon 静态资源，不提交 |
+| `docs/.vitepress/`            | 配置、主题和示例预览组件                  |
+| `scripts/docs-*.mjs`          | API、资源生成及完整性与交互检查           |
+| `.github/workflows/pages.yml` | GitHub Pages 构建与部署                   |
 
 公开 API 内容来源于源码 JSDoc 和生成的 `custom-elements.json`，修正 API 应修改源码描述。生成页只展示公开成员，排除私有成员、内部成员和 Lit 生命周期方法。源码未声明的行为应在组件指南中说明，不把自动分析结果视为额外兼容性承诺。
 

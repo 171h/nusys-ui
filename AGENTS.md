@@ -64,6 +64,8 @@ Nusys UI（原名 VSCode Elements）是基于 Lit 的 Web Components 组件库�
 4. 为行为变化添加有意义的回归测试。按需更新相关 `docs/` 示例和文档；面向用户的变更日志按贡献指南维护。
 5. 执行适合本次修改的检查，复查最终差异，说明行为变化、验证结果与尚存限制。
 
+文档站点由 `.github/workflows/pages.yml` 在推送到 `main` 后构建并部署到 <https://171h.github.io/nusys-ui/>，构建时通过 `DOCS_BASE` 适配仓库子路径。修改部署流程时同步更新 README 与文档维护说明。
+
 以下命令均在 `package.json` 中定义：
 
 | 命令                 | 用途                                                      |

@@ -1,0 +1,53 @@
+name: 部署文档到 GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 检出源码
+        uses: actions/checkout@v7
+      - name: 安装 pnpm
+        uses: pnpm/action-setup@v4
+      - name: 配置 Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: pnpm
+      - name: 配置 GitHub Pages
+        id: pages
+        uses: actions/configure-pages@v6
+      - name: 安装锁定依赖
+        run: pnpm install --frozen-lockfile
+      - name: 构建文档站点
+        run: pnpm docs:build
+        env:
+          DOCS_BASE: ${{ steps.pages.outputs.base_path }}/
+      - name: 上传站点产物
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: docs/.vitepress/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: 部署到 GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v5
