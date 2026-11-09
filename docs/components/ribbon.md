@@ -157,7 +157,8 @@ ArrowDown / ArrowUp 打开菜单并聚焦首项或末项。
 设置 `collapsed` 可折叠按钮区；展开时折叠按钮位于功能区面板右下角，折叠后
 回到标签栏右端。折叠后点击标签会打开覆盖层，点击外部或按 Escape 关闭，执行
 命令后也会关闭。折叠按钮、标签双击与覆盖层行为均会派发
-`vsc-ribbon-collapse` 事件。
+`vsc-ribbon-collapse` 事件。通过 `collapse()` / `expand()` API 外部调用只改变
+折叠状态，不主动移动键盘焦点。
 
 设置 `persist-state` 与 `storage-key` 后，组件会把折叠状态与最后标签写入
 `localStorage`，页面刷新后恢复：
@@ -276,56 +277,56 @@ vscode-ribbon::part(tab) {
 }
 ```
 
-| 名称             | CSS part              | 说明                                        |
-| ---------------- | --------------------- | ------------------------------------------- |
-| 功能区根容器     | `base`                | 组件外层 header                             |
-| 标签栏           | `tabs`                | 标签所在行；折叠后展开按钮位于右端          |
-| 标签列表         | `tabs-list`           | 承载标签按钮的 tablist                      |
-| 标签按钮         | `tab`                 | 单个功能区标签                              |
-| 折叠按钮         | `collapse-button`     | 折叠/展开功能区的按钮；展开时在内容区右下角 |
-| 内容区           | `content`             | 标签内容与浮层容器                          |
-| 横向滚动视口     | `scroll-viewport`     | 承载功能组的可横向滚动视口                  |
-| 功能组容器       | `groups`              | 横向排列所有功能组                          |
-| 滚动按钮         | `scroll-button`       | 内容区两端的悬浮滚动按钮                    |
-| 功能组           | `group`               | 单个功能区分组                              |
-| 分组标题         | `group-title`         | 分组底部标题                                |
-| 分组折叠入口     | `group-button`        | 折叠后的整组下拉入口                        |
-| 对话框启动器     | `group-dialog`        | 分组右下角扩展按钮                          |
-| 分组按钮网格     | `items`               | 六轨按钮网格                                |
-| 按钮             | `item`                | 普通按钮、分割按钮或下拉按钮                |
-| 分割按钮主命令   | `item-primary`        | 分割按钮上半部分                            |
-| 分割按钮触发区   | `item-trigger`        | 分割按钮下半部分                            |
-| 分组溢出弹层     | `group-popover`       | 折叠分组展开的 dialog                       |
-| 下拉菜单容器     | `menu`                | 菜单、面板或图库浮层                        |
-| 菜单列表         | `menu-items`          | 菜单项列表                                  |
-| 菜单项           | `menu-item`           | 单个菜单项（含分割行上/下按钮）             |
-| 菜单分割触发区   | `menu-split-trigger`  | 分割菜单项的下方触发区                      |
-| 菜单分隔线       | `menu-separator`      | 不可交互分隔线                              |
-| 菜单分割行       | `menu-split`          | 分割菜单项容器                              |
-| 菜单返回入口     | `menu-back`           | 进入子菜单后的返回按钮                      |
-| 菜单分组标题     | `menu-heading`        | 不可聚焦的菜单分组标题                      |
-| 菜单说明文字     | `menu-description`    | 菜单项标题下方的补充说明                    |
-| flyout 子菜单    | `flyout`              | 在父菜单旁展开的子菜单浮层                  |
-| 面板标题栏       | `panel-header`        | 面板顶部标题与关闭按钮区域                  |
-| 面板关闭按钮     | `panel-close`         | 关闭面板的按钮                              |
-| 面板内容区       | `panel-body`          | 面板主体                                    |
-| 面板格子网格     | `panel-grid`          | 面板项网格                                  |
-| 面板项           | `panel-item`          | 面板内的单个操作项                          |
-| 面板分组标题     | `panel-heading`       | 面板内横跨整行的分组标题                    |
-| 面板说明文字     | `panel-description`   | 面板项补充说明                              |
-| 面板底部操作区   | `panel-footer`        | 面板底部整行操作区                          |
-| 面板底部操作项   | `panel-footer-item`   | 底部操作区内的单个操作项                    |
-| 图库网格         | `gallery`             | 图库式菜单的格子网格                        |
-| 图库格子         | `gallery-item`        | 图库菜单内的单个预览格子                    |
-| 图库预览区       | `gallery-preview`     | 预览图或图标容器                            |
-| 图库分组标题     | `gallery-heading`     | 图库网格中的分组标题                        |
-| 图库说明文字     | `gallery-description` | 图库格子下的补充说明                        |
-| 组内图库预览条   | `gallery-strip`       | 功能组内的横向图库容器                      |
-| 组内图库视口     | `gallery-viewport`    | 可横向滚动的图库视口                        |
-| 组内图库轨道     | `gallery-track`       | 横向排列图库格子的轨道                      |
-| 组内图库格子     | `gallery-tile`        | 图库功能组内的单个格子                      |
-| 组内图库滚动按钮 | `gallery-scroll`      | 图库预览条左右滚动按钮                      |
-| 自定义内容       | `custom-content`      | 面板中的沙箱 iframe                         |
+| 名称             | CSS part              | 说明                            |
+| ---------------- | --------------------- | ------------------------------- |
+| 功能区根容器     | `base`                | 组件外层 header                 |
+| 标签栏           | `tabs`                | 标签与折叠按钮所在行            |
+| 标签列表         | `tabs-list`           | 承载标签按钮的 tablist          |
+| 标签按钮         | `tab`                 | 单个功能区标签                  |
+| 折叠按钮         | `collapse-button`     | 折叠/展开功能区的按钮           |
+| 内容区           | `content`             | 标签内容与浮层容器              |
+| 横向滚动视口     | `scroll-viewport`     | 承载功能组的可横向滚动视口      |
+| 功能组容器       | `groups`              | 横向排列所有功能组              |
+| 滚动按钮         | `scroll-button`       | 内容区两端的悬浮滚动按钮        |
+| 功能组           | `group`               | 单个功能区分组                  |
+| 分组标题         | `group-title`         | 分组底部标题                    |
+| 分组折叠入口     | `group-button`        | 折叠后的整组下拉入口            |
+| 对话框启动器     | `group-dialog`        | 分组右下角扩展按钮              |
+| 分组按钮网格     | `items`               | 六轨按钮网格                    |
+| 按钮             | `item`                | 普通按钮、分割按钮或下拉按钮    |
+| 分割按钮主命令   | `item-primary`        | 分割按钮上半部分                |
+| 分割按钮触发区   | `item-trigger`        | 分割按钮下半部分                |
+| 分组溢出弹层     | `group-popover`       | 折叠分组展开的 dialog           |
+| 下拉菜单容器     | `menu`                | 菜单、面板或图库浮层            |
+| 菜单列表         | `menu-items`          | 菜单项列表                      |
+| 菜单项           | `menu-item`           | 单个菜单项（含分割行上/下按钮） |
+| 菜单分割触发区   | `menu-split-trigger`  | 分割菜单项的下方触发区          |
+| 菜单分隔线       | `menu-separator`      | 不可交互分隔线                  |
+| 菜单分割行       | `menu-split`          | 分割菜单项容器                  |
+| 菜单返回入口     | `menu-back`           | 进入子菜单后的返回按钮          |
+| 菜单分组标题     | `menu-heading`        | 不可聚焦的菜单分组标题          |
+| 菜单说明文字     | `menu-description`    | 菜单项标题下方的补充说明        |
+| flyout 子菜单    | `flyout`              | 在父菜单旁展开的子菜单浮层      |
+| 面板标题栏       | `panel-header`        | 面板顶部标题与关闭按钮区域      |
+| 面板关闭按钮     | `panel-close`         | 关闭面板的按钮                  |
+| 面板内容区       | `panel-body`          | 面板主体                        |
+| 面板格子网格     | `panel-grid`          | 面板项网格                      |
+| 面板项           | `panel-item`          | 面板内的单个操作项              |
+| 面板分组标题     | `panel-heading`       | 面板内横跨整行的分组标题        |
+| 面板说明文字     | `panel-description`   | 面板项补充说明                  |
+| 面板底部操作区   | `panel-footer`        | 面板底部整行操作区              |
+| 面板底部操作项   | `panel-footer-item`   | 底部操作区内的单个操作项        |
+| 图库网格         | `gallery`             | 图库式菜单的格子网格            |
+| 图库格子         | `gallery-item`        | 图库菜单内的单个预览格子        |
+| 图库预览区       | `gallery-preview`     | 预览图或图标容器                |
+| 图库分组标题     | `gallery-heading`     | 图库网格中的分组标题            |
+| 图库说明文字     | `gallery-description` | 图库格子下的补充说明            |
+| 组内图库预览条   | `gallery-strip`       | 功能组内的横向图库容器          |
+| 组内图库视口     | `gallery-viewport`    | 可横向滚动的图库视口            |
+| 组内图库轨道     | `gallery-track`       | 横向排列图库格子的轨道          |
+| 组内图库格子     | `gallery-tile`        | 图库功能组内的单个格子          |
+| 组内图库滚动按钮 | `gallery-scroll`      | 图库预览条左右滚动按钮          |
+| 自定义内容       | `custom-content`      | 面板中的沙箱 iframe             |
 
 ## 国际化与支持边界
 
