@@ -957,9 +957,9 @@ let english = false;
 function translate() {
   ribbon.lang = english ? 'en' : 'zh-CN';
   const labels = english
-    ? ['Project ribbon', 'Collapse ribbon', 'Expand ribbon', 'Open menu', 'Open group', 'Back', 'Close panel', 'Scroll left', 'Scroll right', 'Not implemented', 'Custom content']
-    : ['项目功能区', '折叠功能区', '展开功能区', '打开菜单', '打开分组菜单', '返回', '关闭面板', '向左滚动', '向右滚动', '功能尚未实现', '自定义内容'];
-  ['tablistLabel', 'collapseLabel', 'expandLabel', 'openMenuLabel', 'openGroupLabel', 'backLabel', 'closePanelLabel', 'scrollLeftLabel', 'scrollRightLabel', 'placeholderLabel', 'customContentLabel'].forEach((key, index) => { ribbon[key] = labels[index]; });
+    ? ['Project ribbon', 'Ribbon display options', 'Always show Ribbon', 'Show tabs only', 'Open menu', 'Open group', 'Back', 'Close panel', 'Scroll left', 'Scroll right', 'Not implemented', 'Custom content']
+    : ['项目功能区', '功能区显示方式', '始终显示功能区', '仅显示选项卡', '打开菜单', '打开分组菜单', '返回', '关闭面板', '向左滚动', '向右滚动', '功能尚未实现', '自定义内容'];
+  ['tablistLabel', 'displayModeLabel', 'fullRibbonLabel', 'tabsOnlyLabel', 'openMenuLabel', 'openGroupLabel', 'backLabel', 'closePanelLabel', 'scrollLeftLabel', 'scrollRightLabel', 'placeholderLabel', 'customContentLabel'].forEach((key, index) => { ribbon[key] = labels[index]; });
   ribbon.tabs = [{id: 'home', title: english ? 'Home' : '开始', groups: [{
     id: 'file', title: english ? 'File' : '文件',
     dialogLauncher: {title: english ? 'Open File dialog' : '打开文件对话框'},
