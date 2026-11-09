@@ -2038,7 +2038,11 @@ export class VscodeRibbon extends VscElement {
 
   private _onWindowScroll = (event: Event): void => {
     const target = event.composedPath()[0];
-    if (target instanceof Node && this._isInsideMenu(target)) {
+    if (
+      target instanceof Node &&
+      (this._isInsideMenu(target) ||
+        this._displayModeMenuEl()?.contains(target))
+    ) {
       return;
     }
     this._closeMenu(false);
