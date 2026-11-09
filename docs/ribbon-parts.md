@@ -31,7 +31,7 @@ var(--vscode-panel-border); }
 
 <img src="/ribbon-parts/tabs.png" alt="标签栏部件截图">
 
-标签、折叠按钮与插槽所在的一行，背景与分区与 VS Code 标题栏一致。
+标签与插槽所在的一行，背景与分区与 VS Code 标题栏一致；折叠后展开按钮也回到此行右端。
 
 ```html
 <!-- 通过插槽在标签栏两端插入自定义内容 -->
@@ -72,7 +72,7 @@ tabs: [
 
 <img src="/ribbon-parts/collapse-button.png" alt="折叠按钮部件截图">
 
-折叠/展开整个功能区的按钮；折叠后单击任意标签以浮层显示内容。
+折叠/展开整个功能区的按钮；展开时位于功能区面板右下角，折叠后回到标签栏右端。折叠后单击任意标签以浮层显示内容。
 
 ```js
 const ribbon = document.querySelector('vscode-ribbon');

@@ -335,6 +335,8 @@ export class VscodeRibbon extends VscElement {
   private _localeObserver?: MutationObserver;
   private _storedState: StoredRibbonState | null = null;
   private _restored = false;
+  /** 折叠按钮在标签栏与内容区之间移动后，把键盘焦点交还给新按钮。 */
+  private _focusCollapseAfterUpdate = false;
   private _menuFocusFrame?: number;
   private _instanceId = uniqueId('ribbon-');
   private _panelId = `${this._instanceId}-panel`;
@@ -441,6 +443,12 @@ export class VscodeRibbon extends VscElement {
       this._closeMenu(false);
       this._closeGroup(false);
       this._scheduleLayout();
+    }
+    if (this._focusCollapseAfterUpdate) {
+      this._focusCollapseAfterUpdate = false;
+      this.shadowRoot
+        ?.querySelector<HTMLButtonElement>('.ribbon-collapse')
+        ?.focus();
     }
   }
 
@@ -922,6 +930,12 @@ export class VscodeRibbon extends VscElement {
   private _onTabDoubleClick(): void {
     this._toggleCollapse();
   }
+
+  /** 折叠按钮在标签栏与面板右下角之间移动后保持键盘可达。 */
+  private _onCollapseButtonClick = (): void => {
+    this._focusCollapseAfterUpdate = true;
+    this._toggleCollapse();
+  };
 
   private _emitCommand(item: RibbonItemModel): void {
     if (item.disabled || item.placeholder || !item.command) {
@@ -2608,6 +2622,31 @@ export class VscodeRibbon extends VscElement {
     </div>`;
   }
 
+  /** 展开时位于面板右下角；折叠或外接面板时保留在标签栏右端。 */
+  private _renderCollapseButton(panel = false): TemplateResult {
+    return html`<button
+      type="button"
+      class=${classMap({
+        'ribbon-collapse': true,
+        'is-panel': panel,
+      })}
+      part="collapse-button"
+      title=${this.collapsed ? this.expandLabel : this.collapseLabel}
+      aria-label=${this.collapsed ? this.expandLabel : this.collapseLabel}
+      aria-expanded=${this.collapsed ? 'false' : 'true'}
+      @click=${this._onCollapseButtonClick}
+    >
+      <span
+        class=${classMap({
+          codicon: true,
+          'codicon-chevron-up': !this.collapsed,
+          'codicon-chevron-down': this.collapsed,
+        })}
+        aria-hidden="true"
+      ></span>
+    </button>`;
+  }
+
   private _renderPanel(): TemplateResult {
     const tab = this._activeTab;
     const activeIndex = this._models.findIndex((model) => model.id === tab?.id);
@@ -2625,6 +2664,8 @@ export class VscodeRibbon extends VscElement {
         class=${classMap({
           'ribbon-content': true,
           'is-overlay': this.collapsed,
+          'has-collapse':
+            this.collapsible && !this.collapsed && !this._separated,
         })}
         part="content"
         id=${this._panelId}
@@ -2689,6 +2730,11 @@ export class VscodeRibbon extends VscElement {
         }
         ${this._renderMenu()} ${this._renderFlyouts()}
         ${this._renderGroupPopover()}
+        ${
+          this.collapsible && !this.collapsed && !this._separated
+            ? this._renderCollapseButton(true)
+            : nothing
+        }
       </div>`;
   }
 
@@ -2741,25 +2787,8 @@ export class VscodeRibbon extends VscElement {
         </div>
         <slot name="tabs-end"></slot>
         ${
-          this.collapsible
-            ? html`<button
-                type="button"
-                class="ribbon-collapse"
-                part="collapse-button"
-                title=${this.collapsed ? this.expandLabel : this.collapseLabel}
-                aria-label=${this.collapsed ? this.expandLabel : this.collapseLabel}
-                aria-expanded=${this.collapsed ? 'false' : 'true'}
-                @click=${this._toggleCollapse}
-              >
-                <span
-                  class=${classMap({
-                    codicon: true,
-                    'codicon-chevron-up': !this.collapsed,
-                    'codicon-chevron-down': this.collapsed,
-                  })}
-                  aria-hidden="true"
-                ></span>
-              </button>`
+          this.collapsible && (this._separated || this.collapsed)
+            ? this._renderCollapseButton()
             : nothing
         }
       </div>

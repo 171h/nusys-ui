@@ -1669,6 +1669,37 @@ describe('vscode-ribbon', () => {
     expect(content.hidden).to.equal(true);
   });
 
+  it('展开时折叠按钮位于面板右下角，折叠后回到标签栏', async () => {
+    const el = await createRibbon();
+    const panel = el.shadowRoot!.querySelector<HTMLElement>('.ribbon-content')!;
+    const panelButton =
+      panel.querySelector<HTMLButtonElement>('.ribbon-collapse')!;
+    expect(panelButton).to.not.equal(null);
+    expect(panel.classList.contains('has-collapse')).to.equal(true);
+
+    const panelRect = panel.getBoundingClientRect();
+    const buttonRect = panelButton.getBoundingClientRect();
+    expect(panelRect.bottom - buttonRect.bottom).to.be.lessThan(8);
+    expect(panelRect.right - buttonRect.right).to.be.lessThan(8);
+
+    panelButton.focus();
+    panelButton.click();
+    await el.updateComplete;
+    const tabsButton = el.shadowRoot!.querySelector<HTMLButtonElement>(
+      '.ribbon-tabs > .ribbon-collapse'
+    )!;
+    expect(tabsButton).to.not.equal(null);
+    expect(el.shadowRoot!.activeElement).to.equal(tabsButton);
+
+    tabsButton.click();
+    await el.updateComplete;
+    const restoredButton = el.shadowRoot!.querySelector<HTMLButtonElement>(
+      '.ribbon-content > .ribbon-collapse'
+    )!;
+    expect(restoredButton).to.not.equal(null);
+    expect(el.shadowRoot!.activeElement).to.equal(restoredButton);
+  });
+
   it('宽度不足时将整组折叠为溢出下拉入口', async () => {
     const el = await createRibbon(overflowTabs(), 'width: 140px');
     await waitFor(

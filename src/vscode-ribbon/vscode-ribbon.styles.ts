@@ -137,6 +137,24 @@ const styles: CSSResultGroup = [
       cursor: pointer;
     }
 
+    /* 展开状态：折叠入口位于功能区面板右下角。 */
+    .ribbon-collapse.is-panel {
+      position: absolute;
+      right: 4px;
+      bottom: 4px;
+      z-index: 2;
+      width: 20px;
+      height: 18px;
+      border-radius: 3px;
+      background: var(--vscode-editor-background, #1f1f1f);
+      color: var(--vscode-descriptionForeground, #9d9d9d);
+      font-size: 12px;
+    }
+
+    .ribbon-collapse.is-panel:hover {
+      color: var(--vscode-foreground, #cccccc);
+    }
+
     /* =============================== 内容区 =============================== */
 
     .ribbon-content {
@@ -177,6 +195,11 @@ const styles: CSSResultGroup = [
       min-width: 100%;
       height: 100%;
       padding: 3px 6px 2px;
+    }
+
+    /* 为面板右下角的折叠入口预留空间，避免遮挡最后一组按钮。 */
+    .ribbon-content.has-collapse .ribbon-groups {
+      padding-right: 26px;
     }
 
     .ribbon-group {
@@ -846,6 +869,11 @@ const styles: CSSResultGroup = [
 
     .ribbon-scroll-button.right {
       right: 0;
+    }
+
+    /* 折叠入口占用右下角时，纵向滚动按钮让出底部区域。 */
+    .ribbon-content.has-collapse .ribbon-scroll-button.right {
+      height: calc(100% - 20px);
     }
 
     /* =============================== 弹层 =============================== */
