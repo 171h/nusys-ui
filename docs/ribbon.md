@@ -75,10 +75,13 @@ ribbon.addEventListener('vsc-ribbon-command', async (event) => {
 - `vsc-ribbon-collapse`：折叠状态变化，详情为 `{collapsed}`；
 - `vsc-ribbon-dialog`：点击分组右下角对话框启动器，详情为
   `{tabId, tab, groupId, group}`，由宿主打开对应对话框；
-- 组件在折叠覆盖层中执行命令后会关闭覆盖层，折叠按钮与标签双击也会派发折叠事件。
+- 组件在折叠覆盖层中执行命令后会关闭覆盖层；显示方式下拉菜单、标签双击与
+  覆盖层失焦收起也会派发折叠事件。仅显示选项卡时，焦点离开功能区（包括键盘
+  Tab、程序移动焦点与窗口失焦）会自动收起覆盖层。
 
 需要程序控制时使用 `selectTab(tabId)`、`collapse()`、`expand()`、
-`toggleCollapsed()`、`closeMenus()` 与 `refreshLayout()`。
+`toggleCollapsed()`、`closeMenus()` 与 `refreshLayout()`。`collapse()` /
+`expand()` 只改变折叠状态，不主动移动键盘焦点。
 
 ## 响应式与容器宽度
 

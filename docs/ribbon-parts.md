@@ -72,12 +72,14 @@ tabs: [
 
 <img src="/ribbon-parts/collapse-button.png" alt="折叠按钮部件截图">
 
-折叠/展开整个功能区的按钮；展开时位于功能区面板右下角，折叠后回到标签栏右端。折叠后单击任意标签以浮层显示内容。
+功能区显示方式下拉入口；面板可见时位于右下角，折叠后仅保留键盘可达的隐藏入口。
+点击后可在“始终显示功能区”与“仅显示选项卡”之间切换，当前选项带勾选状态。
+折叠后单击任意标签以浮层显示内容，焦点离开功能区时自动收起。
 
 ```js
 const ribbon = document.querySelector('vscode-ribbon');
-ribbon.collapsible = true; // 显示折叠按钮
-ribbon.collapsed = false; // 当前是否折叠
+ribbon.collapsible = true; // 显示显示方式入口
+ribbon.collapsed = false; // 当前是否仅显示选项卡
 ```
 
 ### 内容区 `content` {#part-content}

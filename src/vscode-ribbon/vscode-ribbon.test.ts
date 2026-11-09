@@ -151,8 +151,11 @@ describe('vscode-ribbon', () => {
       el.lang = english ? 'en' : 'zh-CN';
       el.theme = english ? 'dark' : 'light';
       el.tablistLabel = english ? 'Project ribbon' : '项目功能区';
-      el.collapseLabel = english ? 'Collapse ribbon' : '折叠功能区';
-      el.expandLabel = english ? 'Expand ribbon' : '展开功能区';
+      el.displayModeLabel = english
+        ? 'Ribbon display options'
+        : '功能区显示方式';
+      el.fullRibbonLabel = english ? 'Always show Ribbon' : '始终显示功能区';
+      el.tabsOnlyLabel = english ? 'Show tabs only' : '仅显示选项卡';
       el.openMenuLabel = english ? 'Open menu' : '打开菜单';
       el.openGroupLabel = english ? 'Open group' : '打开分组';
       el.backLabel = english ? 'Back' : '返回';
@@ -227,10 +230,10 @@ describe('vscode-ribbon', () => {
       );
       await el.updateComplete;
       expect(el.shadowRoot!.activeElement).to.equal(trigger);
-      expect(shadowButton(el, el.collapseLabel)).to.not.equal(undefined);
+      expect(shadowButton(el, el.displayModeLabel)).to.not.equal(undefined);
       el.collapse();
       await el.updateComplete;
-      expect(shadowButton(el, el.expandLabel)).to.not.equal(undefined);
+      expect(shadowButton(el, el.displayModeLabel)).to.not.equal(undefined);
       el.expand();
       await el.updateComplete;
     }
@@ -1647,9 +1650,7 @@ describe('vscode-ribbon', () => {
 
   it('折叠后点击标签打开覆盖层，Escape 关闭', async () => {
     const el = await createRibbon();
-    const collapse =
-      el.shadowRoot!.querySelector<HTMLButtonElement>('.ribbon-collapse')!;
-    collapse.click();
+    el.collapse();
     await el.updateComplete;
     expect(el.collapsed).to.equal(true);
     const content =
@@ -1669,11 +1670,12 @@ describe('vscode-ribbon', () => {
     expect(content.hidden).to.equal(true);
   });
 
-  it('展开时折叠按钮位于面板右下角，折叠后回到标签栏', async () => {
+  it('面板右下角下拉菜单切换显示方式，折叠时保留隐藏键盘入口', async () => {
     const el = await createRibbon();
     const panel = el.shadowRoot!.querySelector<HTMLElement>('.ribbon-content')!;
-    const panelButton =
-      panel.querySelector<HTMLButtonElement>('.ribbon-collapse')!;
+    const panelButton = panel.querySelector<HTMLButtonElement>(
+      '.ribbon-display-mode-trigger'
+    )!;
     expect(panelButton).to.not.equal(null);
     expect(panel.classList.contains('has-collapse')).to.equal(true);
 
@@ -1682,22 +1684,102 @@ describe('vscode-ribbon', () => {
     expect(panelRect.bottom - buttonRect.bottom).to.be.lessThan(8);
     expect(panelRect.right - buttonRect.right).to.be.lessThan(8);
 
-    panelButton.focus();
     panelButton.click();
     await el.updateComplete;
-    const tabsButton = el.shadowRoot!.querySelector<HTMLButtonElement>(
-      '.ribbon-tabs > .ribbon-collapse'
+    await aTimeout(32);
+    const menu = el.shadowRoot!.querySelector<HTMLElement>(
+      '.ribbon-display-mode-menu'
     )!;
-    expect(tabsButton).to.not.equal(null);
-    expect(el.shadowRoot!.activeElement).to.equal(tabsButton);
+    expect(menu).to.not.equal(null);
+    const items = Array.from(
+      menu.querySelectorAll<HTMLButtonElement>('.ribbon-display-mode-item')
+    );
+    expect(items).to.have.length(2);
+    expect(items[0].getAttribute('aria-checked')).to.equal('true');
+    expect(items[1].getAttribute('aria-checked')).to.equal('false');
+    expect(el.shadowRoot!.activeElement).to.equal(items[0]);
 
-    tabsButton.click();
+    items[0].dispatchEvent(
+      new KeyboardEvent('keydown', {
+        key: 'ArrowDown',
+        bubbles: true,
+        composed: true,
+      })
+    );
+    expect(el.shadowRoot!.activeElement).to.equal(items[1]);
+    items[1].click();
     await el.updateComplete;
-    const restoredButton = el.shadowRoot!.querySelector<HTMLButtonElement>(
-      '.ribbon-content > .ribbon-collapse'
+
+    expect(el.collapsed).to.equal(true);
+    expect(panel.hidden).to.equal(true);
+    expect(el.shadowRoot!.querySelector('.ribbon-display-mode-menu')).to.equal(
+      null
+    );
+    expect(panel.querySelector('.ribbon-display-mode-trigger')).to.equal(null);
+    const proxy = el.shadowRoot!.querySelector<HTMLButtonElement>(
+      '.ribbon-display-mode-trigger.is-collapsed-proxy'
     )!;
-    expect(restoredButton).to.not.equal(null);
-    expect(el.shadowRoot!.activeElement).to.equal(restoredButton);
+    expect(proxy).to.not.equal(null);
+
+    proxy.focus();
+    proxy.click();
+    await el.updateComplete;
+    await aTimeout(16);
+    const collapsedMenu = el.shadowRoot!.querySelector<HTMLElement>(
+      '.ribbon-display-mode-menu'
+    )!;
+    expect(collapsedMenu).to.not.equal(null);
+    const selected = collapsedMenu.querySelector<HTMLButtonElement>(
+      '[aria-checked="true"]'
+    )!;
+    expect(selected.textContent).to.contain(el.tabsOnlyLabel);
+
+    collapsedMenu
+      .querySelector<HTMLButtonElement>('[data-display-mode="full"]')!
+      .click();
+    await el.updateComplete;
+    expect(el.collapsed).to.equal(false);
+    expect(el.shadowRoot!.querySelector('.ribbon-display-mode-menu')).to.equal(
+      null
+    );
+    expect(panel.querySelector('.ribbon-display-mode-trigger')).to.not.equal(
+      null
+    );
+  });
+
+  it('仅显示选项卡时焦点离开功能区自动收起覆盖层', async () => {
+    const el = await createRibbon();
+    el.collapse();
+    await el.updateComplete;
+    const tab = el.shadowRoot!.querySelector<HTMLButtonElement>(
+      '.ribbon-tab.is-active'
+    )!;
+    tab.focus();
+    tab.click();
+    await el.updateComplete;
+    await aTimeout(16);
+    const content =
+      el.shadowRoot!.querySelector<HTMLElement>('.ribbon-content')!;
+    expect(content.hidden).to.equal(false);
+
+    const outside = document.createElement('button');
+    document.body.append(outside);
+    try {
+      outside.focus();
+      await aTimeout(0);
+      await el.updateComplete;
+      expect(content.hidden).to.equal(true);
+    } finally {
+      outside.remove();
+    }
+
+    tab.click();
+    await el.updateComplete;
+    await aTimeout(16);
+    expect(content.hidden).to.equal(false);
+    window.dispatchEvent(new Event('blur'));
+    await el.updateComplete;
+    expect(content.hidden).to.equal(true);
   });
 
   it('宽度不足时将整组折叠为溢出下拉入口', async () => {
@@ -2199,9 +2281,7 @@ describe('vscode-ribbon', () => {
     `);
     await first.updateComplete;
     await aTimeout(24);
-    first
-      .shadowRoot!.querySelector<HTMLButtonElement>('.ribbon-collapse')!
-      .click();
+    first.collapse();
     await first.updateComplete;
     expect(JSON.parse(localStorage.getItem(key)!).collapsed).to.equal(true);
 
@@ -2324,13 +2404,17 @@ describe('vscode-ribbon', () => {
 
     el.collapsible = false;
     await el.updateComplete;
-    expect(el.shadowRoot!.querySelector('.ribbon-collapse')).to.equal(null);
+    expect(
+      el.shadowRoot!.querySelector('.ribbon-display-mode-trigger')
+    ).to.equal(null);
     el.collapse();
     await el.updateComplete;
     expect(el.collapsed).to.equal(false);
     el.collapsible = true;
     await el.updateComplete;
-    expect(el.shadowRoot!.querySelector('.ribbon-collapse')).to.not.equal(null);
+    expect(
+      el.shadowRoot!.querySelector('.ribbon-display-mode-trigger')
+    ).to.not.equal(null);
     el.refreshLayout();
   });
 

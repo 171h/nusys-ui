@@ -184,6 +184,18 @@ export class VscodeRibbon extends VscElement {
   @property({attribute: 'expand-label'})
   expandLabel = '展开功能区';
 
+  /** 功能区显示方式下拉按钮的无障碍名称。 */
+  @property({attribute: 'display-mode-label'})
+  displayModeLabel = '功能区显示方式';
+
+  /** 始终显示功能区选项文字。 */
+  @property({attribute: 'full-ribbon-label'})
+  fullRibbonLabel = '始终显示功能区';
+
+  /** 仅显示选项卡选项文字。 */
+  @property({attribute: 'tabs-only-label'})
+  tabsOnlyLabel = '仅显示选项卡';
+
   /** 打开下拉菜单的无障碍名称前缀。 */
   @property({attribute: 'open-menu-label'})
   openMenuLabel = '打开菜单';
@@ -221,6 +233,15 @@ export class VscodeRibbon extends VscElement {
 
   @state()
   private _overlayOpen = false;
+
+  @state()
+  private _displayModeMenuOpen = false;
+
+  @state()
+  private _displayModeMenuPosition: PopoverPosition | null = null;
+
+  private _displayModeAnchor: HTMLElement | null = null;
+  private _displayModeFocusFrame?: number;
 
   @state()
   private _dark = false;
@@ -279,9 +300,11 @@ export class VscodeRibbon extends VscElement {
       this._onSurfacePointerDown,
       true
     );
+    this._panel?.removeEventListener('focusout', this._onSurfaceFocusOut);
     this._panel?.release(this);
     this._panel = value;
     value?.addEventListener('pointerdown', this._onSurfacePointerDown, true);
+    value?.addEventListener('focusout', this._onSurfaceFocusOut);
     this._onPanelConnection();
   }
 
@@ -335,8 +358,6 @@ export class VscodeRibbon extends VscElement {
   private _localeObserver?: MutationObserver;
   private _storedState: StoredRibbonState | null = null;
   private _restored = false;
-  /** 折叠按钮在标签栏与内容区之间移动后，把键盘焦点交还给新按钮。 */
-  private _focusCollapseAfterUpdate = false;
   private _menuFocusFrame?: number;
   private _instanceId = uniqueId('ribbon-');
   private _panelId = `${this._instanceId}-panel`;
@@ -370,16 +391,19 @@ export class VscodeRibbon extends VscElement {
       attributeFilter: ['lang'],
     });
     this.addEventListener('pointerdown', this._onSurfacePointerDown, true);
+    this.addEventListener('focusout', this._onSurfaceFocusOut);
     document.addEventListener('pointerdown', this._onDocumentPointerDown, true);
     document.addEventListener('keydown', this._onDocumentKeyDown);
     window.addEventListener('resize', this._onWindowResize);
     window.addEventListener('scroll', this._onWindowScroll, true);
+    window.addEventListener('blur', this._onWindowBlur);
     this._resizeObserver = new ResizeObserver(() => this._scheduleLayout());
     this._onPanelConnection();
   }
 
   override disconnectedCallback(): void {
     this.removeEventListener('pointerdown', this._onSurfacePointerDown, true);
+    this.removeEventListener('focusout', this._onSurfaceFocusOut);
     document.removeEventListener(
       'pointerdown',
       this._onDocumentPointerDown,
@@ -388,12 +412,18 @@ export class VscodeRibbon extends VscElement {
     document.removeEventListener('keydown', this._onDocumentKeyDown);
     window.removeEventListener('resize', this._onWindowResize);
     window.removeEventListener('scroll', this._onWindowScroll, true);
+    window.removeEventListener('blur', this._onWindowBlur);
     this._resizeObserver?.disconnect();
     this._themeObserver?.disconnect();
     this._localeObserver?.disconnect();
     clearTimeout(this._layoutTimer);
     this._layoutTimer = undefined;
     cancelAnimationFrame(this._menuFocusFrame ?? 0);
+    cancelAnimationFrame(this._displayModeFocusFrame ?? 0);
+    this._displayModeFocusFrame = undefined;
+    this._displayModeMenuOpen = false;
+    this._displayModeMenuPosition = null;
+    this._displayModeAnchor = null;
     this._layoutToken++;
     this.closeMenus();
     this._panel?.present(nothing, this);
@@ -442,13 +472,11 @@ export class VscodeRibbon extends VscElement {
     ) {
       this._closeMenu(false);
       this._closeGroup(false);
+      this._closeDisplayModeMenu(false);
       this._scheduleLayout();
     }
-    if (this._focusCollapseAfterUpdate) {
-      this._focusCollapseAfterUpdate = false;
-      this.shadowRoot
-        ?.querySelector<HTMLButtonElement>('.ribbon-collapse')
-        ?.focus();
+    if (changed.has('collapsible') && !this.collapsible) {
+      this._closeDisplayModeMenu(false);
     }
   }
 
@@ -813,7 +841,17 @@ export class VscodeRibbon extends VscElement {
   }
 
   private _setCollapsed(collapsed: boolean): void {
-    if (!this.collapsible || this.collapsed === collapsed) {
+    this._closeDisplayModeMenu(false);
+    if (!this.collapsible) {
+      return;
+    }
+    if (this.collapsed === collapsed) {
+      if (collapsed && this._overlayOpen) {
+        this._overlayOpen = false;
+        this._closeMenu(false);
+        this._closeGroup(false);
+        this._scheduleLayout();
+      }
       return;
     }
     this.collapsed = collapsed;
@@ -858,6 +896,7 @@ export class VscodeRibbon extends VscElement {
   closeMenus(): void {
     this._closeMenu(false);
     this._closeGroup(false);
+    this._closeDisplayModeMenu(false);
     this._overlayOpen = false;
   }
 
@@ -865,6 +904,7 @@ export class VscodeRibbon extends VscElement {
   refreshLayout(): void {
     this._closeMenu(false);
     this._closeGroup(false);
+    this._closeDisplayModeMenu(false);
     this._rebuildModels();
     this._resetResponsiveState();
     this._scheduleLayout();
@@ -931,11 +971,181 @@ export class VscodeRibbon extends VscElement {
     this._toggleCollapse();
   }
 
-  /** 折叠按钮在标签栏与面板右下角之间移动后保持键盘可达。 */
-  private _onCollapseButtonClick = (): void => {
-    this._focusCollapseAfterUpdate = true;
-    this._toggleCollapse();
+  private _toggleDisplayModeMenu(anchor: HTMLElement): void {
+    if (this._displayModeMenuOpen) {
+      this._closeDisplayModeMenu(true);
+      return;
+    }
+    this._closeMenu(false);
+    this._closeGroup(false);
+    this._displayModeAnchor = anchor;
+    this._displayModeMenuOpen = true;
+    this._displayModeMenuPosition = null;
+    void this.updateComplete.then(() => {
+      if (!this._displayModeMenuOpen) {
+        return;
+      }
+      this._positionDisplayModeMenu();
+      this._focusDisplayModeItem('selected');
+    });
+  }
+
+  private _closeDisplayModeMenu(restoreFocus: boolean): void {
+    if (!this._displayModeMenuOpen) {
+      return;
+    }
+    const anchor = this._displayModeAnchor;
+    this._displayModeMenuOpen = false;
+    this._displayModeMenuPosition = null;
+    this._displayModeAnchor = null;
+    cancelAnimationFrame(this._displayModeFocusFrame ?? 0);
+    this._displayModeFocusFrame = undefined;
+    if (restoreFocus) {
+      anchor?.focus();
+    }
+  }
+
+  private _displayModeMenuEl(): HTMLElement | null {
+    return (
+      this.shadowRoot?.querySelector<HTMLElement>(
+        '.ribbon-display-mode-menu'
+      ) ?? null
+    );
+  }
+
+  private _positionDisplayModeMenu(): void {
+    const anchor = this._displayModeAnchor;
+    const menu = this._displayModeMenuEl();
+    if (!anchor || !menu) {
+      return;
+    }
+    this._displayModeMenuPosition = this._resolvePopoverPosition(
+      anchor.getBoundingClientRect(),
+      menu.getBoundingClientRect()
+    );
+    void this.updateComplete.then(() => {
+      if (!this._displayModeMenuOpen) {
+        return;
+      }
+      const nextMenu = this._displayModeMenuEl();
+      const nextAnchor = this._displayModeAnchor;
+      if (!nextMenu || !nextAnchor) {
+        return;
+      }
+      const next = this._resolvePopoverPosition(
+        nextAnchor.getBoundingClientRect(),
+        nextMenu.getBoundingClientRect()
+      );
+      if (
+        !this._displayModeMenuPosition ||
+        next.left !== this._displayModeMenuPosition.left ||
+        next.top !== this._displayModeMenuPosition.top ||
+        next.maxHeight !== this._displayModeMenuPosition.maxHeight
+      ) {
+        this._displayModeMenuPosition = next;
+      }
+    });
+  }
+
+  private _displayModeItems(): HTMLButtonElement[] {
+    return Array.from(
+      this.shadowRoot?.querySelectorAll<HTMLButtonElement>(
+        '.ribbon-display-mode-item'
+      ) ?? []
+    );
+  }
+
+  private _focusDisplayModeItem(position: 'first' | 'last' | 'selected'): void {
+    cancelAnimationFrame(this._displayModeFocusFrame ?? 0);
+    void this.updateComplete.then(() => {
+      this._displayModeFocusFrame = requestAnimationFrame(() => {
+        this._displayModeFocusFrame = undefined;
+        if (!this._displayModeMenuOpen) {
+          return;
+        }
+        const items = this._displayModeItems();
+        if (!items.length) {
+          return;
+        }
+        const selected = items.find(
+          (item) => item.getAttribute('aria-checked') === 'true'
+        );
+        const target =
+          position === 'first'
+            ? items[0]
+            : position === 'last'
+              ? items[items.length - 1]
+              : (selected ?? items[0]);
+        target.focus();
+      });
+    });
+  }
+
+  private _onDisplayModeMenuKeyDown = (event: KeyboardEvent): void => {
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      event.stopPropagation();
+      this._closeDisplayModeMenu(true);
+      return;
+    }
+    const keys = ['ArrowDown', 'ArrowUp', 'Home', 'End'];
+    if (!keys.includes(event.key)) {
+      return;
+    }
+    const items = this._displayModeItems();
+    if (!items.length) {
+      return;
+    }
+    event.preventDefault();
+    const active = this.shadowRoot?.activeElement as HTMLElement | null;
+    const index = items.indexOf(active as HTMLButtonElement);
+    let next = index;
+    if (event.key === 'ArrowDown') {
+      next = index < 0 ? 0 : (index + 1) % items.length;
+    } else if (event.key === 'ArrowUp') {
+      next = index <= 0 ? items.length - 1 : index - 1;
+    } else if (event.key === 'Home') {
+      next = 0;
+    } else if (event.key === 'End') {
+      next = items.length - 1;
+    }
+    items[next]?.focus();
   };
+
+  private _onDisplayModeMenuFocusOut = (event: FocusEvent): void => {
+    const related = event.relatedTarget;
+    if (!(related instanceof Node)) {
+      this._closeDisplayModeMenu(false);
+      return;
+    }
+    if (this._displayModeMenuEl()?.contains(related)) {
+      return;
+    }
+    if (this._displayModeAnchor?.contains(related)) {
+      return;
+    }
+    this._closeDisplayModeMenu(false);
+  };
+
+  private _selectDisplayMode(collapsed: boolean): void {
+    this._closeDisplayModeMenu(false);
+    if (collapsed) {
+      this.collapse();
+    } else {
+      this.expand();
+    }
+    void this.updateComplete.then(() => {
+      if (this.collapsed) {
+        this._focusActiveTab();
+        return;
+      }
+      this.shadowRoot
+        ?.querySelector<HTMLButtonElement>(
+          '.ribbon-display-mode-trigger.is-panel'
+        )
+        ?.focus();
+    });
+  }
 
   private _emitCommand(item: RibbonItemModel): void {
     if (item.disabled || item.placeholder || !item.command) {
@@ -1664,6 +1874,70 @@ export class VscodeRibbon extends VscElement {
     this._closeGroup(false);
   }
 
+  private _isInsideSurface(node: Node | null): boolean {
+    if (!node) {
+      return false;
+    }
+    if (
+      node === this ||
+      this.contains(node) ||
+      this.shadowRoot?.contains(node)
+    ) {
+      return true;
+    }
+    const panel = this._panel;
+    return Boolean(
+      panel &&
+      (node === panel ||
+        panel.contains(node) ||
+        panel.shadowRoot?.contains(node))
+    );
+  }
+
+  private _closeOverlay(): void {
+    if (!this._overlayOpen) {
+      return;
+    }
+    this._overlayOpen = false;
+    this._closeMenu(false);
+    this._closeGroup(false);
+    this._closeDisplayModeMenu(false);
+  }
+
+  private _deepActiveElement(): Element | null {
+    let active: Element | null =
+      this.ownerDocument?.activeElement ?? document.activeElement;
+    while (active?.shadowRoot?.activeElement) {
+      active = active.shadowRoot.activeElement;
+    }
+    return active;
+  }
+
+  private _onSurfaceFocusOut = (event: FocusEvent): void => {
+    if (!this.collapsed || !this._overlayOpen) {
+      return;
+    }
+    if (this._isInsideSurface(event.relatedTarget as Node | null)) {
+      return;
+    }
+    // 焦点跨影子根移动时 relatedTarget 可能为 null，等焦点稳定后再检查实际
+    // 活动元素，避免把进入外接面板或菜单的焦点误判为离开功能区。
+    queueMicrotask(() => {
+      if (!this.collapsed || !this._overlayOpen) {
+        return;
+      }
+      if (this._isInsideSurface(this._deepActiveElement())) {
+        return;
+      }
+      this._closeOverlay();
+    });
+  };
+
+  private _onWindowBlur = (): void => {
+    this._closeOverlay();
+    this._closeDisplayModeMenu(false);
+  };
+
   private _surfacePointerPaths = new WeakMap<Event, EventTarget[]>();
 
   private _onSurfacePointerDown = (event: Event): void => {
@@ -1698,17 +1972,31 @@ export class VscodeRibbon extends VscElement {
         this._closeGroup(false);
       }
     }
+    if (this._displayModeMenuOpen) {
+      if (
+        !path.includes(this._displayModeMenuEl() ?? this) &&
+        !path.includes(this._displayModeAnchor ?? this)
+      ) {
+        this._closeDisplayModeMenu(false);
+      }
+    }
     if (
       this._overlayOpen &&
       !path.includes(this) &&
       !path.includes(this._panel!)
     ) {
-      this._overlayOpen = false;
+      this._closeOverlay();
     }
   }
 
   private _onDocumentKeyDown = (event: KeyboardEvent): void => {
     if (event.key !== 'Escape') {
+      return;
+    }
+    if (this._displayModeMenuOpen) {
+      event.preventDefault();
+      event.stopPropagation();
+      this._closeDisplayModeMenu(true);
       return;
     }
     if (this._openMenu) {
@@ -1730,7 +2018,7 @@ export class VscodeRibbon extends VscElement {
       return;
     }
     if (this._overlayOpen) {
-      this._overlayOpen = false;
+      this._closeOverlay();
       this._focusActiveTab();
     }
   };
@@ -1744,6 +2032,7 @@ export class VscodeRibbon extends VscElement {
   private _onWindowResize = (): void => {
     this._closeMenu(false);
     this._closeGroup(false);
+    this._closeDisplayModeMenu(false);
     this._scheduleLayout();
   };
 
@@ -1754,6 +2043,7 @@ export class VscodeRibbon extends VscElement {
     }
     this._closeMenu(false);
     this._closeGroup(false);
+    this._closeDisplayModeMenu(false);
   };
 
   private _renderIcon(
@@ -2622,29 +2912,81 @@ export class VscodeRibbon extends VscElement {
     </div>`;
   }
 
-  /** 展开时位于面板右下角；折叠或外接面板时保留在标签栏右端。 */
-  private _renderCollapseButton(panel = false): TemplateResult {
+  /** 功能区显示方式下拉入口；面板内可见，折叠时只保留键盘可达的隐藏入口。 */
+  private _renderDisplayModeButton(panel = false): TemplateResult {
     return html`<button
       type="button"
       class=${classMap({
-        'ribbon-collapse': true,
+        'ribbon-display-mode-trigger': true,
         'is-panel': panel,
+        'is-collapsed-proxy': !panel,
       })}
       part="collapse-button"
-      title=${this.collapsed ? this.expandLabel : this.collapseLabel}
-      aria-label=${this.collapsed ? this.expandLabel : this.collapseLabel}
-      aria-expanded=${this.collapsed ? 'false' : 'true'}
-      @click=${this._onCollapseButtonClick}
+      title=${this.displayModeLabel}
+      aria-label=${this.displayModeLabel}
+      aria-haspopup="menu"
+      aria-expanded=${this._displayModeMenuOpen ? 'true' : 'false'}
+      @click=${(event: Event) =>
+        this._toggleDisplayModeMenu(event.currentTarget as HTMLElement)}
+    >
+      <span class="codicon codicon-chevron-down" aria-hidden="true"></span>
+    </button>`;
+  }
+
+  private _renderDisplayModeItem(
+    collapsed: boolean,
+    label: string
+  ): TemplateResult {
+    const selected = this.collapsed === collapsed;
+    return html`<button
+      type="button"
+      class=${classMap({
+        'ribbon-display-mode-item': true,
+        'is-selected': selected,
+      })}
+      role="menuitemradio"
+      aria-checked=${selected ? 'true' : 'false'}
+      tabindex="-1"
+      data-display-mode=${collapsed ? 'tabs' : 'full'}
+      @click=${() => this._selectDisplayMode(collapsed)}
     >
       <span
-        class=${classMap({
-          codicon: true,
-          'codicon-chevron-up': !this.collapsed,
-          'codicon-chevron-down': this.collapsed,
-        })}
+        class="codicon codicon-check ribbon-display-mode-check"
         aria-hidden="true"
       ></span>
+      <span class="ribbon-display-mode-label">${label}</span>
     </button>`;
+  }
+
+  private _renderDisplayModeMenu(): TemplateResult | typeof nothing {
+    if (!this._displayModeMenuOpen) {
+      return nothing;
+    }
+    const position = this._displayModeMenuPosition;
+    return html`<div
+      class="ribbon-display-mode-menu"
+      part="display-mode-menu"
+      role="menu"
+      aria-label=${this.displayModeLabel}
+      tabindex="-1"
+      .style=${stylePropertyMap(
+        position
+          ? {
+              visibility: 'visible',
+              left: `${position.left}px`,
+              top: `${position.top}px`,
+              maxHeight: `${position.maxHeight}px`,
+            }
+          : {
+              visibility: 'hidden',
+            }
+      )}
+      @keydown=${this._onDisplayModeMenuKeyDown}
+      @focusout=${this._onDisplayModeMenuFocusOut}
+    >
+      ${this._renderDisplayModeItem(false, this.fullRibbonLabel)}
+      ${this._renderDisplayModeItem(true, this.tabsOnlyLabel)}
+    </div>`;
   }
 
   private _renderPanel(): TemplateResult {
@@ -2664,8 +3006,7 @@ export class VscodeRibbon extends VscElement {
         class=${classMap({
           'ribbon-content': true,
           'is-overlay': this.collapsed,
-          'has-collapse':
-            this.collapsible && !this.collapsed && !this._separated,
+          'has-collapse': this.collapsible && contentVisible,
         })}
         part="content"
         id=${this._panelId}
@@ -2731,8 +3072,8 @@ export class VscodeRibbon extends VscElement {
         ${this._renderMenu()} ${this._renderFlyouts()}
         ${this._renderGroupPopover()}
         ${
-          this.collapsible && !this.collapsed && !this._separated
-            ? this._renderCollapseButton(true)
+          this.collapsible && contentVisible
+            ? this._renderDisplayModeButton(true)
             : nothing
         }
       </div>`;
@@ -2787,12 +3128,13 @@ export class VscodeRibbon extends VscElement {
         </div>
         <slot name="tabs-end"></slot>
         ${
-          this.collapsible && (this._separated || this.collapsed)
-            ? this._renderCollapseButton()
+          this.collapsible && this.collapsed && !this._overlayOpen
+            ? this._renderDisplayModeButton()
             : nothing
         }
       </div>
       ${this._separated ? nothing : this._renderPanel()}
+      ${this._renderDisplayModeMenu()}
     </header>`;
   }
 }

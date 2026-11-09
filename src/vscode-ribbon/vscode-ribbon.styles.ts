@@ -85,7 +85,7 @@ const styles: CSSResultGroup = [
     }
 
     .ribbon-tab:hover,
-    .ribbon-collapse:hover,
+    .ribbon-display-mode-trigger:hover,
     .ribbon-scroll-button:hover {
       background: var(
         --vscode-toolbar-hoverBackground,
@@ -104,8 +104,9 @@ const styles: CSSResultGroup = [
     }
 
     .ribbon-tab:focus-visible,
-    .ribbon-collapse:focus-visible,
+    .ribbon-display-mode-trigger:focus-visible,
     .ribbon-scroll-button:focus-visible,
+    .ribbon-display-mode-item:focus-visible,
     .ribbon-group-dropdown:focus-visible,
     .ribbon-item:focus-visible,
     .ribbon-item-primary:focus-visible,
@@ -123,7 +124,7 @@ const styles: CSSResultGroup = [
       outline-offset: -1px;
     }
 
-    .ribbon-collapse {
+    .ribbon-display-mode-trigger {
       display: flex;
       flex: none;
       align-items: center;
@@ -137,8 +138,8 @@ const styles: CSSResultGroup = [
       cursor: pointer;
     }
 
-    /* 展开状态：折叠入口位于功能区面板右下角。 */
-    .ribbon-collapse.is-panel {
+    /* 面板内：功能区显示方式下拉入口位于右下角。 */
+    .ribbon-display-mode-trigger.is-panel {
       position: absolute;
       right: 4px;
       bottom: 4px;
@@ -151,8 +152,83 @@ const styles: CSSResultGroup = [
       font-size: 12px;
     }
 
-    .ribbon-collapse.is-panel:hover {
+    .ribbon-display-mode-trigger.is-panel:hover {
       color: var(--vscode-foreground, #cccccc);
+    }
+
+    /*
+     * 折叠时入口只保留键盘可达的隐藏焦点目标；Tab 聚焦后显示，
+     * 避免在仅显示选项卡模式下占用标题栏空间。
+     */
+    .ribbon-display-mode-trigger.is-collapsed-proxy {
+      width: 20px;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .ribbon-display-mode-trigger.is-collapsed-proxy:focus-visible {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    /* 功能区显示方式菜单；固定定位，避免被内容区裁剪。 */
+    .ribbon-display-mode-menu {
+      position: fixed;
+      z-index: 70;
+      min-width: 180px;
+      overflow: auto;
+      padding: 4px;
+      border: 1px solid
+        var(--vscode-menu-border, var(--vscode-panel-border, #454545));
+      border-radius: 6px;
+      background: var(--vscode-menu-background, #1f1f1f);
+      color: var(--vscode-menu-foreground, var(--vscode-foreground, #cccccc));
+      box-shadow: 0 6px 16px var(--vscode-widget-shadow, rgba(0, 0, 0, 0.24));
+      box-sizing: border-box;
+    }
+
+    .ribbon-display-mode-item {
+      display: flex;
+      box-sizing: border-box;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+      height: 28px;
+      padding: 0 8px;
+      border: 0;
+      border-radius: 4px;
+      background: transparent;
+      color: inherit;
+      font: inherit;
+      font-size: 12px;
+      text-align: left;
+      cursor: pointer;
+    }
+
+    .ribbon-display-mode-item:hover {
+      background: var(
+        --vscode-menu-selectionBackground,
+        var(--vscode-list-activeSelectionBackground, #0078d4)
+      );
+      color: var(
+        --vscode-menu-selectionForeground,
+        var(--vscode-list-activeSelectionForeground, #ffffff)
+      );
+    }
+
+    .ribbon-display-mode-check {
+      flex: none;
+      width: 14px;
+      visibility: hidden;
+    }
+
+    .ribbon-display-mode-item.is-selected .ribbon-display-mode-check {
+      visibility: visible;
+    }
+
+    .ribbon-display-mode-label {
+      flex: 1 1 auto;
+      white-space: nowrap;
     }
 
     /* =============================== 内容区 =============================== */
