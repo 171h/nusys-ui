@@ -1031,13 +1031,19 @@ export async function testScenarios(page, url) {
     await frame.locator('#ribbon-state-output').textContent(),
     '功能区已折叠'
   );
+  await stateRibbon.evaluate(async (element) => {
+    await element.updateComplete;
+  });
   const collapsedTrigger = stateRibbon.locator(
     '.ribbon-display-mode-trigger.is-collapsed-proxy'
   );
   await collapsedTrigger.evaluate((element) => element.click());
-  await frame
-    .getByRole('menuitemradio', {name: '始终显示功能区', exact: true})
-    .click();
+  const fullMode = frame.getByRole('menuitemradio', {
+    name: '始终显示功能区',
+    exact: true,
+  });
+  await fullMode.waitFor({state: 'visible'});
+  await fullMode.click();
   assert.equal(
     await frame.locator('#ribbon-state-output').textContent(),
     '功能区已展开'
