@@ -69,6 +69,7 @@ export default defineConfig({
         items: [
           {text: 'API 索引', link: '/api/'},
           {text: '文档维护', link: '/guide/contributing'},
+          {text: 'AI 协作与交付', link: '/ai/ai-collaboration-playbook'},
         ],
       },
     ],

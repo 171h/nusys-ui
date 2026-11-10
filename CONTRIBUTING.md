@@ -20,6 +20,8 @@
 
 提交前请确保代码遵循项目风格且格式正确，可使用 README 中介绍的 lint 和 Prettier 脚本。行为变化应添加有意义的回归测试；面向用户的功能变化应更新变更日志。
 
+使用 AI 编码代理时，请先阅读 [AGENTS.md](AGENTS.md) 与 [AI 协作与交付手册](docs/ai/ai-collaboration-playbook.md)。代理输出、工作区隔离、逐项提交、代码评审与交付报告以这两份文档为准。
+
 文档相关文件、代码注释、JSDoc 描述及 HTML/CSS 注释统一使用中文。API 名称、文件路径、命令、链接及工具指令保留原格式。
 
 所有后续提交必须遵循 Conventional Commits，描述与正文尽可能以中文为主，类型和作用域保留标准形式，例如 `fix(textfield): 修复百分比模式的数值校验`。格式、类型和破坏性变更示例参见 [AGENTS.md](AGENTS.md#提交信息规范)。提交信息也尽量遵循 [50/72 风格](https://tbaggery.com/2008/04/19/a-note-about-git-commit-messages.html)。
