@@ -64,12 +64,27 @@ export async function testRibbonSeparated(frame) {
     await insert.evaluate((el) => el.getRootNode().activeElement === el),
     true
   );
-  await ribbon.getByRole('button', {name: '折叠功能区', exact: true}).click();
+  await panel.locator('.ribbon-display-mode-trigger.is-panel').click();
+  await frame
+    .getByRole('menuitemradio', {name: '仅显示选项卡', exact: true})
+    .click();
   await insert.click();
   await panel.getByRole('tabpanel').waitFor({state: 'visible'});
   await panel.getByRole('tabpanel').press('Escape');
   await panel.getByRole('tabpanel').waitFor({state: 'hidden'});
-  await ribbon.getByRole('button', {name: '展开功能区', exact: true}).click();
+  await ribbon.evaluate(async (element) => {
+    await element.updateComplete;
+  });
+  const collapsedTrigger = ribbon.locator(
+    '.ribbon-display-mode-trigger.is-collapsed-proxy'
+  );
+  await collapsedTrigger.evaluate((element) => element.click());
+  const fullMode = frame.getByRole('menuitemradio', {
+    name: '始终显示功能区',
+    exact: true,
+  });
+  await fullMode.waitFor({state: 'visible'});
+  await fullMode.click();
   await frame
     .getByRole('button', {name: '切换为一体布局', exact: true})
     .click();

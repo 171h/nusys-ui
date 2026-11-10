@@ -154,9 +154,17 @@ ArrowDown / ArrowUp 打开菜单并聚焦首项或末项。
 
 ## 折叠与持久化
 
-设置 `collapsed` 可折叠按钮区；折叠后点击标签会打开覆盖层，点击外部或按
-Escape 关闭，执行命令后也会关闭。折叠按钮、标签双击与覆盖层行为均会派发
-`vsc-ribbon-collapse` 事件。
+设置 `collapsed` 可折叠按钮区。功能区面板右下角的显示方式下拉按钮提供
+“始终显示功能区”与“仅显示选项卡”两个选项，当前生效选项带勾选状态；选择后
+立即切换面板显示方式。按钮只在面板可见时显示；折叠为仅显示选项卡后，仍保留
+一个键盘可达的隐藏入口，通过 Tab 聚焦或程序触发时可打开同一菜单。面板折叠或
+隐藏时，已打开的显示方式菜单会自动关闭。
+
+仅显示选项卡时，点击标签会打开覆盖层；无论通过 Tab、Shift+Tab、点击其他区域、
+程序移动焦点还是窗口失焦导致功能区失去焦点，覆盖层都会自动收起。执行命令或按
+Escape 也会关闭覆盖层。显示方式切换、标签双击与覆盖层行为均会派发
+`vsc-ribbon-collapse` 事件。通过 `collapse()` / `expand()` API 外部调用只改变
+折叠状态，不主动移动键盘焦点。
 
 设置 `persist-state` 与 `storage-key` 后，组件会把折叠状态与最后标签写入
 `localStorage`，页面刷新后恢复：
@@ -221,16 +229,17 @@ Escape 关闭，执行命令后也会关闭。折叠按钮、标签双击与覆�
 | `vsc-ribbon-collapse` | 功能区折叠或展开；详情包含 `collapsed`                                     |
 | `vsc-ribbon-dialog`   | 点击分组对话框启动器；详情包含 `tabId`、`tab`、`groupId`、`group`          |
 
-| 方法 / 属性                                     | 说明                                                           |
-| ----------------------------------------------- | -------------------------------------------------------------- |
-| `tabs`                                          | 标签、分组与按钮声明                                           |
-| `activeTabId`                                   | 当前标签 id，无匹配时使用 `default` 标签或第一个标签           |
-| `collapsed`                                     | 折叠状态                                                       |
-| `collapsible`                                   | 是否显示折叠按钮，默认为 `true`；设为 `false` 后功能区始终展开 |
-| `selectTab(tabId)`                              | 程序切换到指定标签                                             |
-| `collapse()` / `expand()` / `toggleCollapsed()` | 程序控制折叠状态                                               |
-| `closeMenus()`                                  | 关闭下拉菜单、分组弹层与折叠覆盖层                             |
-| `refreshLayout()`                               | 重新测量并执行一次响应式降级                                   |
+| 方法 / 属性                                              | 说明                                                               |
+| -------------------------------------------------------- | ------------------------------------------------------------------ |
+| `tabs`                                                   | 标签、分组与按钮声明                                               |
+| `activeTabId`                                            | 当前标签 id，无匹配时使用 `default` 标签或第一个标签               |
+| `collapsed`                                              | 折叠状态；`true` 表示仅显示选项卡                                  |
+| `collapsible`                                            | 是否显示显示方式入口，默认为 `true`；设为 `false` 后功能区始终展开 |
+| `displayModeLabel` / `fullRibbonLabel` / `tabsOnlyLabel` | 显示方式入口、始终显示功能区与仅显示选项卡的文案                   |
+| `selectTab(tabId)`                                       | 程序切换到指定标签                                                 |
+| `collapse()` / `expand()` / `toggleCollapsed()`          | 程序控制折叠状态                                                   |
+| `closeMenus()`                                           | 关闭下拉菜单、分组弹层与折叠覆盖层                                 |
+| `refreshLayout()`                                        | 重新测量并执行一次响应式降级                                       |
 
 ## 键盘与无障碍
 
@@ -238,6 +247,8 @@ Escape 关闭，执行命令后也会关闭。折叠按钮、标签双击与覆�
 - 带有菜单的按钮支持 ArrowDown / ArrowUp 打开菜单并聚焦首项或末项；
 - 菜单支持 ArrowDown / ArrowUp / Home / End 导航，ArrowRight 进入子菜单，
   ArrowLeft 返回上一层，Escape 关闭并恢复触发按钮焦点；
+- 显示方式下拉菜单支持 ArrowDown / ArrowUp / Home / End 导航，Escape 关闭并恢复入口焦点；
+- 仅显示选项卡时，显示方式入口保持隐藏但仍可通过 Tab 聚焦并打开菜单；
 - 折叠分组入口支持 ArrowDown 打开分组弹层，Escape 关闭并恢复焦点；
 - 对话框启动器通过标题提供无障碍名称，并声明 `aria-haspopup="dialog"`；
 - 图标按钮通过 `label` 或标题提供无障碍名称，占位项输出禁用的可访问状态。
@@ -256,6 +267,7 @@ Escape 关闭，执行命令后也会关闭。折叠按钮、标签双击与覆�
 | `gallery` / `gallery-item` / `gallery-preview` / `gallery-heading` / `gallery-description`                                                                  | 图库网格、图库格子、预览区、分组标题与说明文字                                                       |
 | `gallery-strip` / `gallery-viewport` / `gallery-track` / `gallery-tile` / `gallery-scroll`                                                                  | 组内图库预览条、滚动视口与轨道、图库格子与左右滚动按钮                                               |
 | `group-popover` / `scroll-button` / `custom-content`                                                                                                        | 折叠分组弹层（含分组标题与启动器）、悬浮滚动按钮与沙箱内容 iframe                                    |
+| `display-mode-menu`                                                                                                                                         | 功能区显示方式下拉菜单                                                                               |
 
 ## 组件名称与调试定位
 

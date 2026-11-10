@@ -1022,12 +1022,28 @@ export async function testScenarios(page, url) {
     await frame.locator('#ribbon-state-output').textContent(),
     '命令：toggle-sidebar'
   );
-  await frame.getByRole('button', {name: '折叠功能区', exact: true}).click();
+  const stateRibbon = frame.locator('#ribbon-state');
+  await stateRibbon.locator('.ribbon-display-mode-trigger.is-panel').click();
+  await frame
+    .getByRole('menuitemradio', {name: '仅显示选项卡', exact: true})
+    .click();
   assert.equal(
     await frame.locator('#ribbon-state-output').textContent(),
     '功能区已折叠'
   );
-  await frame.getByRole('button', {name: '展开功能区', exact: true}).click();
+  await stateRibbon.evaluate(async (element) => {
+    await element.updateComplete;
+  });
+  const collapsedTrigger = stateRibbon.locator(
+    '.ribbon-display-mode-trigger.is-collapsed-proxy'
+  );
+  await collapsedTrigger.evaluate((element) => element.click());
+  const fullMode = frame.getByRole('menuitemradio', {
+    name: '始终显示功能区',
+    exact: true,
+  });
+  await fullMode.waitFor({state: 'visible'});
+  await fullMode.click();
   assert.equal(
     await frame.locator('#ribbon-state-output').textContent(),
     '功能区已展开'

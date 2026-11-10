@@ -198,14 +198,14 @@ describe('Ribbon 分离布局', () => {
       },
     ];
     ribbon.tablistLabel = 'Project ribbon';
-    ribbon.collapseLabel = 'Collapse';
+    ribbon.displayModeLabel = 'Ribbon display options';
     await ribbon.updateComplete;
     expect(ribbon.activeTabId).toBe('next');
     expect(
       root.querySelector('[role="tabpanel"]')!.getAttribute('aria-label')
     ).toBe('Updated');
     expect(button(root, 'New command')).toBeDefined();
-    expect(button(ribbon.shadowRoot!, 'Collapse')).toBeDefined();
+    expect(button(root, 'Ribbon display options')).toBeDefined();
   });
 
   it('响应式降级及滚动只采用面板宽度，标签栏可独立溢出', async () => {
