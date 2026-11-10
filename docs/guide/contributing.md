@@ -36,6 +36,7 @@ pnpm docs:test:dev
 | 路径                          | 用途                                      |
 | ----------------------------- | ----------------------------------------- |
 | `docs/guide/`                 | 安装、集成、主题、表单与常见问题          |
+| `docs/ai/`                    | AI 协作与交付等维护者流程                 |
 | `docs/components/`            | 组件使用说明与示例引用                    |
 | `docs/data/components.mjs`    | 组件名称、分类与摘要                      |
 | `docs/data/examples.mjs`      | 经审核的本地 HTML、CSS、JavaScript 示例   |

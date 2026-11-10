@@ -9,3 +9,6 @@ docs/.vitepress/dist
 docs/public/assets
 docs/api/generated
 coverage
+tmp
+logs
+.cache

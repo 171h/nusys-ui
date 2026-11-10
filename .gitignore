@@ -20,6 +20,10 @@ vscode.*-custom-data.json
 
 /.vitest/
 
+/tmp/
+/logs/
+/.cache/
+
 /docs/.vitepress/cache/
 /docs/.vitepress/dist/
 /docs/public/assets/

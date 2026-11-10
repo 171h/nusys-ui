@@ -55,7 +55,7 @@ Vite 负责开发、生产构建和生产预览；不再使用 Wireit、Rollup �
 
 `pnpm docs:test:dev` 在独立副本中验证 Markdown 热更新、组件源码和样式自动重载，以及编译错误后的恢复，不修改开发者的源码。
 
-开发要求参见 [AGENTS.md](AGENTS.md) 和 [CONTRIBUTING.md](CONTRIBUTING.md)。工具链迁移与功能、性能验证结果参见 [迁移报告](docs/toolchain-migration.md)。
+开发要求参见 [AGENTS.md](AGENTS.md) 和 [CONTRIBUTING.md](CONTRIBUTING.md)。使用 AI 编码代理时，另需阅读 [AI 协作与交付手册](docs/ai/ai-collaboration-playbook.md)，其中约定任务拆解、工作区隔离、逐项提交、代码评审、文档卫生与交付报告。工具链迁移与功能、性能验证结果参见 [迁移报告](docs/toolchain-migration.md)。
 
 标签页新增功能与交互约定参见 [标签页溢出显示](docs/tabs-overflow.md)，涵盖换行、滚动、溢出菜单与标题图标布局。
 
